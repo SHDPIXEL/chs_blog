@@ -28,15 +28,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(409).json({ message: "Email already registered" });
       }
 
-      // Hash password
-      const salt = await bcrypt.genSalt(10);
-      const hashedPassword = await bcrypt.hash(validatedData.password, salt);
-
-      // Create user with hashed password
-      const newUser = await storage.createUser({
-        ...validatedData,
-        password: hashedPassword
-      });
+      // Create user (password will be hashed in storage implementation)
+      const newUser = await storage.createUser(validatedData);
 
       // Return user without password
       const { password, ...userWithoutPassword } = newUser;

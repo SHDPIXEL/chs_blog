@@ -152,7 +152,7 @@ const ArticleItem: React.FC<ArticleItemProps> = ({ article }) => {
               {article.title}
             </p>
             <div className="ml-2 flex-shrink-0 flex">
-              <Badge variant={article.published ? "success" : "secondary"}>
+              <Badge variant={article.published ? "default" : "secondary"}>
                 {article.published ? 'Published' : 'Draft'}
               </Badge>
             </div>

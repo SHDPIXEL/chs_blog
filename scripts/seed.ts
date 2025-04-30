@@ -56,8 +56,7 @@ seed()
     console.error("Error during seeding:", e);
     process.exit(1);
   })
-  .finally(async () => {
-    // Close the database connection when done
-    await db.end?.();
+  .finally(() => {
+    // Simply exit the process, the pool will be cleaned up automatically
     process.exit(0);
   });
