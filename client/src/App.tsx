@@ -4,6 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/context/AuthContext";
+import { ProtectedRoute } from "@/lib/protected-route";
 
 // Pages
 import Home from "@/pages/Home";
@@ -22,10 +23,10 @@ function Router() {
       <Route path="/auth/register" component={Register} />
       
       {/* Protected admin routes */}
-      <Route path="/admin/dashboard" component={AdminDashboard} />
+      <ProtectedRoute path="/admin/dashboard" component={AdminDashboard} role="admin" />
       
       {/* Protected author routes */}
-      <Route path="/author/dashboard" component={AuthorDashboard} />
+      <ProtectedRoute path="/author/dashboard" component={AuthorDashboard} role="author" />
       
       {/* Fallback to 404 */}
       <Route component={NotFound} />
