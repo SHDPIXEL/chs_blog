@@ -1,0 +1,16 @@
+import React from 'react';
+import AuthForm from '@/components/auth/AuthForm';
+import { Helmet } from 'react-helmet';
+
+const Register: React.FC = () => {
+  return (
+    <>
+      <Helmet>
+        <title>Register | BlogCMS</title>
+      </Helmet>
+      <AuthForm />
+    </>
+  );
+};
+
+export default Register;
