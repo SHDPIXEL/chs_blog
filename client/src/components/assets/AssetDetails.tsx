@@ -1,243 +1,322 @@
 import React, { useState } from 'react';
 import { Asset } from '@shared/schema';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { useAssetManager, AssetMetadata } from '@/context/AssetManagerContext';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { 
-  Calendar, Edit, Trash2, Save, X, Tag, Plus,
-  FileIcon, Image, FileText, Video, Music, Copy
-} from 'lucide-react';
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle 
+} from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
+import { useMutation } from '@tanstack/react-query';
+import { apiRequest, queryClient } from '@/lib/queryClient';
+import { useAssetManager } from '@/context/AssetManagerContext';
+import { 
+  Calendar, 
+  Copy, 
+  Download, 
+  Edit, 
+  FileText, 
+  Image, 
+  Info, 
+  Music, 
+  Pencil, 
+  Tag, 
+  Trash2, 
+  User, 
+  Video 
+} from 'lucide-react';
 
 interface AssetDetailsProps {
   asset: Asset;
 }
 
 const AssetDetails: React.FC<AssetDetailsProps> = ({ asset }) => {
-  const { deleteAsset, updateAssetMetadata } = useAssetManager();
   const { toast } = useToast();
+  const { deleteAsset, updateAssetMetadata } = useAssetManager();
+  
   const [isEditing, setIsEditing] = useState(false);
-  const [metadata, setMetadata] = useState<AssetMetadata>({
-    title: asset.title || '',
-    description: asset.description || '',
-    tags: asset.tags as string[] || [],
-  });
-  const [newTag, setNewTag] = useState('');
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [title, setTitle] = useState(asset.title || '');
+  const [description, setDescription] = useState(asset.description || '');
+  const [tagInput, setTagInput] = useState('');
+  const [tags, setTags] = useState<string[]>(
+    Array.isArray(asset.tags) ? [...asset.tags] : []
+  );
 
-  // Format file size
-  const formatFileSize = (bytes: number): string => {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(2)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+  // Format file size for display
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  // Get appropriate icon based on mimetype
-  const getAssetIcon = () => {
-    if (asset.mimetype.startsWith('image/')) {
-      return <Image className="h-6 w-6 text-blue-500" />;
-    } else if (asset.mimetype.startsWith('video/')) {
-      return <Video className="h-6 w-6 text-purple-500" />;
-    } else if (asset.mimetype.startsWith('audio/')) {
-      return <Music className="h-6 w-6 text-green-500" />;
+  // Get appropriate icon for file type
+  const getAssetIcon = (mimetype: string) => {
+    if (mimetype.startsWith('image/')) {
+      return <Image className="h-5 w-5" />;
+    } else if (mimetype.startsWith('application/pdf') || mimetype.startsWith('text/')) {
+      return <FileText className="h-5 w-5" />;
+    } else if (mimetype.startsWith('video/')) {
+      return <Video className="h-5 w-5" />;
+    } else if (mimetype.startsWith('audio/')) {
+      return <Music className="h-5 w-5" />;
     } else {
-      return <FileText className="h-6 w-6 text-gray-500" />;
+      return <FileText className="h-5 w-5" />;
     }
   };
 
-  // Handle delete confirmation
-  const handleDelete = async () => {
-    if (window.confirm('Are you sure you want to delete this asset? This action cannot be undone.')) {
-      await deleteAsset(asset.id);
+  // Add a tag to the list
+  const addTag = () => {
+    if (tagInput.trim() && !tags.includes(tagInput.trim())) {
+      setTags([...tags, tagInput.trim()]);
+      setTagInput('');
     }
   };
 
-  // Handle save metadata
-  const handleSave = async () => {
-    await updateAssetMetadata(asset.id, metadata);
-    setIsEditing(false);
+  // Remove a tag from the list
+  const removeTag = (tagToRemove: string) => {
+    setTags(tags.filter(tag => tag !== tagToRemove));
   };
 
   // Copy asset URL to clipboard
   const copyToClipboard = () => {
-    navigator.clipboard.writeText(asset.url);
-    toast({
-      title: 'URL Copied',
-      description: 'Asset URL has been copied to clipboard',
+    navigator.clipboard.writeText(asset.url).then(() => {
+      toast({
+        title: "URL Copied",
+        description: "Asset URL copied to clipboard",
+      });
     });
   };
 
-  // Handle adding a tag
-  const handleAddTag = () => {
-    if (!newTag.trim()) return;
-    setMetadata(prev => ({
-      ...prev,
-      tags: [...(prev.tags || []), newTag.trim()]
-    }));
-    setNewTag('');
+  // Handle saving metadata changes
+  const handleSaveChanges = async () => {
+    try {
+      await updateAssetMetadata(asset.id, {
+        title,
+        description,
+        tags,
+      });
+      
+      setIsEditing(false);
+      toast({
+        title: "Changes Saved",
+        description: "Asset information has been updated",
+      });
+    } catch (error) {
+      toast({
+        title: "Update Failed",
+        description: error instanceof Error ? error.message : "Failed to update asset",
+        variant: "destructive",
+      });
+    }
   };
 
-  // Handle removing a tag
-  const handleRemoveTag = (tag: string) => {
-    setMetadata(prev => ({
-      ...prev,
-      tags: prev.tags ? prev.tags.filter(t => t !== tag) : []
-    }));
+  // Handle asset deletion
+  const handleDelete = async () => {
+    try {
+      await deleteAsset(asset.id);
+      setShowDeleteDialog(false);
+      toast({
+        title: "Asset Deleted",
+        description: "The asset has been removed",
+      });
+    } catch (error) {
+      toast({
+        title: "Deletion Failed",
+        description: error instanceof Error ? error.message : "Failed to delete asset",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Preview */}
-      <div className="mb-4">
-        {asset.mimetype.startsWith('image/') ? (
-          <div className="rounded-md overflow-hidden bg-gray-100 border">
-            <img
-              src={asset.url}
-              alt={asset.title || asset.originalName}
-              className="w-full object-contain max-h-[200px]"
-            />
-          </div>
-        ) : (
-          <div className="rounded-md overflow-hidden bg-gray-100 border h-[200px] flex items-center justify-center">
-            {getAssetIcon()}
-          </div>
-        )}
-      </div>
+    <div className="space-y-4">
+      {/* Image preview for image assets */}
+      {asset.mimetype.startsWith('image/') && (
+        <div className="border rounded-md overflow-hidden">
+          <img
+            src={asset.url}
+            alt={asset.title || asset.originalName}
+            className="w-full h-auto max-h-48 object-contain bg-gray-50"
+          />
+        </div>
+      )}
 
-      {/* Actions */}
-      <div className="flex justify-between mb-4">
-        {isEditing ? (
-          <>
-            <Button variant="outline" size="sm" onClick={() => setIsEditing(false)}>
-              <X className="h-4 w-4 mr-1" /> Cancel
-            </Button>
-            <Button size="sm" onClick={handleSave}>
-              <Save className="h-4 w-4 mr-1" /> Save
-            </Button>
-          </>
-        ) : (
-          <>
-            <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
-              <Edit className="h-4 w-4 mr-1" /> Edit
-            </Button>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={copyToClipboard}>
-                <Copy className="h-4 w-4" />
-              </Button>
-              <Button variant="destructive" size="sm" onClick={handleDelete}>
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          </>
-        )}
-      </div>
-
-      {/* Details */}
-      <div className="flex-1 overflow-y-auto">
-        {isEditing ? (
-          // Edit mode
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">Title</label>
+      {isEditing ? (
+        // Edit mode
+        <Card>
+          <CardContent className="p-4 space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="asset-title">Title</Label>
               <Input
-                value={metadata.title}
-                onChange={(e) => setMetadata(prev => ({ ...prev, title: e.target.value }))}
+                id="asset-title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
                 placeholder="Asset title"
               />
             </div>
-            
-            <div>
-              <label className="block text-sm font-medium mb-1">Description</label>
-              <textarea
-                value={metadata.description}
-                onChange={(e) => setMetadata(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="Brief description of the asset"
-                className="w-full rounded-md border p-2 min-h-[100px] text-sm"
+
+            <div className="space-y-2">
+              <Label htmlFor="asset-description">Description</Label>
+              <Textarea
+                id="asset-description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Add a description"
+                rows={3}
               />
             </div>
-            
-            <div>
-              <label className="block text-sm font-medium mb-1">Tags</label>
-              <div className="flex gap-2 mb-2">
+
+            <div className="space-y-2">
+              <Label htmlFor="asset-tags">Tags</Label>
+              <div className="flex space-x-2">
                 <Input
-                  value={newTag}
-                  onChange={(e) => setNewTag(e.target.value)}
-                  placeholder="Add a tag"
-                  className="flex-1"
-                  onKeyDown={(e) => e.key === 'Enter' && handleAddTag()}
+                  id="asset-tags"
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  placeholder="Add tags"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addTag();
+                    }
+                  }}
                 />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleAddTag}
-                >
-                  <Plus className="h-4 w-4" />
+                <Button type="button" variant="outline" onClick={addTag}>
+                  Add
                 </Button>
               </div>
               
-              <div className="flex flex-wrap gap-2">
-                {metadata.tags?.map((tag) => (
-                  <Badge key={tag} variant="secondary" className="px-3 py-1">
-                    <Tag className="h-3 w-3 mr-1" />
+              <div className="flex flex-wrap gap-2 mt-2">
+                {tags.map((tag, index) => (
+                  <Badge key={index} variant="secondary" className="px-2 py-1">
                     {tag}
-                    <button 
-                      className="ml-1"
-                      onClick={() => handleRemoveTag(tag)}
+                    <button
+                      onClick={() => removeTag(tag)}
+                      className="ml-1 text-gray-400 hover:text-gray-600"
                     >
-                      <X className="h-3 w-3" />
+                      &times;
                     </button>
                   </Badge>
                 ))}
               </div>
             </div>
-          </div>
-        ) : (
-          // View mode
-          <div className="space-y-4">
-            <div>
-              <h3 className="text-lg font-medium">{asset.title || asset.originalName}</h3>
-              <p className="text-sm text-gray-500">
-                Original name: {asset.originalName}
-              </p>
+
+            <div className="flex justify-end space-x-2 pt-2">
+              <Button variant="outline" onClick={() => setIsEditing(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleSaveChanges}>
+                Save Changes
+              </Button>
             </div>
-            
+          </CardContent>
+        </Card>
+      ) : (
+        // View mode
+        <Card>
+          <CardContent className="p-4 space-y-4">
+            <div className="flex justify-between items-start">
+              <h3 className="font-medium text-lg">
+                {asset.title || asset.originalName}
+              </h3>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsEditing(true)}
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+            </div>
+
+            <div className="text-sm text-gray-600 space-y-1">
+              <div className="flex gap-2 items-center">
+                <Info className="w-4 h-4 text-gray-400" />
+                <span>{asset.mimetype}</span>
+              </div>
+              
+              <div className="flex gap-2 items-center">
+                <Calendar className="w-4 h-4 text-gray-400" />
+                <span>{new Date(asset.createdAt).toLocaleString()}</span>
+              </div>
+              
+              <div className="flex gap-2 items-center">
+                <FileText className="w-4 h-4 text-gray-400" />
+                <span>{formatFileSize(asset.size)}</span>
+              </div>
+            </div>
+
             {asset.description && (
-              <div>
-                <h4 className="text-sm font-medium mb-1">Description</h4>
-                <p className="text-sm text-gray-600">{asset.description}</p>
+              <div className="pt-2 border-t border-gray-100">
+                <p className="text-sm">{asset.description}</p>
               </div>
             )}
-            
-            <div>
-              <h4 className="text-sm font-medium mb-1">File Details</h4>
-              <div className="text-sm space-y-1">
-                <p className="flex items-center text-gray-600">
-                  <FileIcon className="h-4 w-4 mr-1" />
-                  {asset.mimetype} ({formatFileSize(asset.size)})
-                </p>
-                <p className="flex items-center text-gray-600">
-                  <Calendar className="h-4 w-4 mr-1" />
-                  Uploaded on {new Date(asset.createdAt).toLocaleDateString()}
-                </p>
-              </div>
-            </div>
-            
-            {asset.tags && asset.tags.length > 0 && (
-              <div>
-                <h4 className="text-sm font-medium mb-1">Tags</h4>
+
+            {Array.isArray(asset.tags) && asset.tags.length > 0 && (
+              <div className="pt-2 border-t border-gray-100">
+                <div className="flex items-center gap-2 mb-2">
+                  <Tag className="w-4 h-4 text-gray-400" />
+                  <span className="text-sm font-medium">Tags</span>
+                </div>
                 <div className="flex flex-wrap gap-2">
-                  {(asset.tags as string[]).map((tag, index) => (
-                    <Badge key={index} variant="secondary" className="px-3 py-1">
-                      <Tag className="h-3 w-3 mr-1" />
+                  {asset.tags.map((tag: string, index: number) => (
+                    <Badge key={index} variant="secondary" className="text-xs">
                       {tag}
                     </Badge>
                   ))}
                 </div>
               </div>
             )}
-          </div>
-        )}
-      </div>
+
+            <div className="pt-2 border-t border-gray-100 flex space-x-2">
+              <Button variant="outline" size="sm" onClick={copyToClipboard}>
+                <Copy className="h-4 w-4 mr-2" />
+                Copy URL
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="text-red-500 hover:text-red-600" 
+                onClick={() => setShowDeleteDialog(true)}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Delete confirmation dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Asset</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this asset? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDelete}>
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
