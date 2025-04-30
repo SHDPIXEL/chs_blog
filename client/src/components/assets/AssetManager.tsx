@@ -9,7 +9,7 @@ import { AssetGrid } from '@/components/assets';
 import { AssetDetails } from '@/components/assets';
 import { 
   Upload, Search, X, Tag, Plus, Image, FileText, 
-  Video, Music, FileIcon, Filter 
+  Video, Music, FileIcon, Filter, CheckCircle
 } from 'lucide-react';
 import { Asset } from '@shared/schema';
 
@@ -208,15 +208,19 @@ const AssetManager: React.FC = () => {
                   <Button
                     disabled={selectedAssets.length === 0}
                     onClick={handleConfirmSelection}
+                    className="bg-primary hover:bg-primary/90"
                   >
-                    Select {selectedAssets.length > 0 ? `${selectedAssets.length} Assets` : 'Assets'}
+                    <CheckCircle className="mr-2 h-4 w-4" />
+                    Continue with {selectedAssets.length > 0 ? `${selectedAssets.length} Selected` : 'Selection'}
                   </Button>
                 ) : (
                   <Button
                     disabled={!selectedAsset}
                     onClick={() => onAssetSelect && selectedAsset && onAssetSelect(selectedAsset)}
+                    className="bg-primary hover:bg-primary/90"
                   >
-                    Select Asset
+                    <CheckCircle className="mr-2 h-4 w-4" />
+                    Continue with Selection
                   </Button>
                 )}
               </div>
