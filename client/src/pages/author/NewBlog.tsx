@@ -1,91 +1,71 @@
-import React from "react";
-import { useLocation } from "wouter";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { useMutation } from "@tanstack/react-query";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
-import AuthorLayout from "@/components/layout/AuthorLayout";
-import PageHeader from "@/components/ui/PageHeader";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArticleStatus } from "@shared/schema";
+import React from 'react';
+import { useLocation } from 'wouter';
+import AuthorLayout from '@/components/layout/AuthorLayout';
+import { useMutation } from '@tanstack/react-query';
+import { apiRequest, queryClient } from '@/lib/queryClient';
+import { useToast } from '@/hooks/use-toast';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import PageHeader from '@/components/ui/PageHeader';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft, Save, Eye } from 'lucide-react';
+import { ArticleStatus } from '@shared/schema';
 
-// Blog form schema
+// Define form schema using zod
 const blogFormSchema = z.object({
-  title: z.string().min(5, {
-    message: "Title must be at least 5 characters",
-  }),
-  content: z.string().min(50, {
-    message: "Content must be at least 50 characters",
-  }),
-  excerpt: z.string().optional(),
+  title: z.string().min(5, 'Title must be at least 5 characters').max(100, 'Title cannot exceed 100 characters'),
+  content: z.string().min(50, 'Content must be at least 50 characters'),
+  excerpt: z.string().max(200, 'Excerpt cannot exceed 200 characters').optional(),
   status: z.enum([ArticleStatus.DRAFT, ArticleStatus.REVIEW, ArticleStatus.PUBLISHED]),
-  featuredImage: z.string().url().optional().or(z.literal("")),
+  featuredImage: z.string().url('Please enter a valid image URL').optional().or(z.literal('')),
 });
 
 type BlogFormValues = z.infer<typeof blogFormSchema>;
 
-const NewBlogPage = () => {
-  const [, setLocation] = useLocation();
+const NewBlogPage: React.FC = () => {
+  const [, navigate] = useLocation();
   const { toast } = useToast();
   
-  // Default form values
-  const defaultValues: Partial<BlogFormValues> = {
-    title: "",
-    content: "",
-    excerpt: "",
-    status: ArticleStatus.DRAFT,
-    featuredImage: "",
-  };
-  
-  // Form definition with validation
+  // Set up form with default values
   const form = useForm<BlogFormValues>({
     resolver: zodResolver(blogFormSchema),
-    defaultValues,
-    mode: "onChange",
+    defaultValues: {
+      title: '',
+      content: '',
+      excerpt: '',
+      status: ArticleStatus.DRAFT,
+      featuredImage: '',
+    },
   });
   
-  // Create blog mutation
+  // Submit mutation
   const createBlogMutation = useMutation({
     mutationFn: async (data: BlogFormValues) => {
-      const res = await apiRequest("POST", "/api/articles", data);
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/author/articles"] });
-      toast({
-        title: "Success",
-        description: "Blog post created successfully",
+      const res = await apiRequest('POST', '/api/articles', {
+        ...data,
+        published: data.status === ArticleStatus.PUBLISHED,
       });
-      setLocation("/author/blogs");
+      return await res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/author/articles'] });
+      toast({
+        title: 'Blog created',
+        description: `Your blog "${data.title}" has been created successfully`,
+      });
+      navigate('/author/blogs');
     },
     onError: (error: Error) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to create blog post",
-        variant: "destructive",
+        title: 'Failed to create blog',
+        description: error.message,
+        variant: 'destructive',
       });
     },
   });
@@ -101,195 +81,181 @@ const NewBlogPage = () => {
         <PageHeader 
           title="Create New Blog" 
           buttonText="Back to Blogs"
-          onButtonClick={() => setLocation("/author/blogs")}
+          buttonIcon={ArrowLeft}
+          onButtonClick={() => navigate('/author/blogs')}
         />
         
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)}>
-            <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Main content column */}
-              <div className="lg:col-span-2 space-y-6">
-                <Card>
-                  <CardContent className="pt-6">
-                    <FormField
-                      control={form.control}
-                      name="title"
-                      render={({ field }) => (
-                        <FormItem className="mb-4">
-                          <FormLabel>Title</FormLabel>
-                          <FormControl>
-                            <Input 
-                              placeholder="Enter blog title"
-                              className="text-lg" 
-                              {...field} 
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <Tabs defaultValue="write">
-                      <TabsList className="mb-4">
-                        <TabsTrigger value="write">Write</TabsTrigger>
-                        <TabsTrigger value="preview">Preview</TabsTrigger>
-                      </TabsList>
-                      
-                      <TabsContent value="write">
-                        <FormField
-                          control={form.control}
-                          name="content"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormControl>
-                                <Textarea
-                                  placeholder="Write your blog content here..."
-                                  className="min-h-[400px]"
-                                  {...field}
-                                />
-                              </FormControl>
-                              <FormDescription>
-                                You can use Markdown formatting.
-                              </FormDescription>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </TabsContent>
-                      
-                      <TabsContent value="preview">
-                        <div className="prose prose-blue max-w-none min-h-[400px] p-4 border rounded-md">
-                          {form.watch("content") ? (
-                            <div dangerouslySetInnerHTML={{ __html: form.watch("content") }} />
-                          ) : (
-                            <div className="text-gray-400 italic">
-                              Your preview will appear here...
-                            </div>
-                          )}
-                        </div>
-                      </TabsContent>
-                    </Tabs>
-                  </CardContent>
-                </Card>
-              </div>
-              
-              {/* Sidebar column */}
-              <div className="space-y-6">
-                <Card>
-                  <CardContent className="pt-6">
-                    <FormField
-                      control={form.control}
-                      name="status"
-                      render={({ field }) => (
-                        <FormItem className="mb-4">
-                          <FormLabel>Status</FormLabel>
-                          <Select
-                            onValueChange={field.onChange}
-                            defaultValue={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select status" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value={ArticleStatus.DRAFT}>Draft</SelectItem>
-                              <SelectItem value={ArticleStatus.REVIEW}>Send for Review</SelectItem>
-                              <SelectItem value={ArticleStatus.PUBLISHED}>Publish</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormDescription>
-                            Set the status of your blog post
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="excerpt"
-                      render={({ field }) => (
-                        <FormItem className="mb-4">
-                          <FormLabel>Excerpt</FormLabel>
-                          <FormControl>
-                            <Textarea
-                              placeholder="Brief summary of your blog"
-                              className="resize-none"
-                              rows={3}
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            A short summary that appears in blog listings
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="featuredImage"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Featured Image URL</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="https://example.com/image.jpg"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            URL for the featured image
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </CardContent>
+        <div className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>New Blog Post</CardTitle>
+              <CardDescription>
+                Create a new blog post to share your knowledge and insights
+              </CardDescription>
+            </CardHeader>
+            
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)}>
+                <CardContent className="space-y-6">
+                  {/* Title field */}
+                  <FormField
+                    control={form.control}
+                    name="title"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Title</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="Enter a compelling title" 
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          A clear and engaging title that summarizes your blog post
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                   
-                  <CardFooter className="flex justify-between border-t p-4">
-                    <Button
-                      variant="outline"
-                      onClick={() => setLocation("/author/blogs")}
-                      type="button"
-                    >
-                      Cancel
-                    </Button>
-                    <Button
+                  {/* Content field */}
+                  <FormField
+                    control={form.control}
+                    name="content"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Content</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Write your blog content here..." 
+                            className="min-h-[300px] font-mono"
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Supports Markdown formatting for rich content
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  {/* Excerpt field */}
+                  <FormField
+                    control={form.control}
+                    name="excerpt"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Excerpt</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="A brief summary of your blog post" 
+                            className="resize-none"
+                            rows={3}
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          A short description that appears in blog listings (max 200 characters)
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  {/* Featured image field */}
+                  <FormField
+                    control={form.control}
+                    name="featuredImage"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Featured Image URL</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="https://example.com/your-image.jpg" 
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          A URL to an image that represents your blog post
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  {/* Status field */}
+                  <FormField
+                    control={form.control}
+                    name="status"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Status</FormLabel>
+                        <Select 
+                          onValueChange={field.onChange} 
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a status" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value={ArticleStatus.DRAFT}>Draft</SelectItem>
+                            <SelectItem value={ArticleStatus.REVIEW}>Submit for Review</SelectItem>
+                            <SelectItem value={ArticleStatus.PUBLISHED}>Publish</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          Draft: Save as work in progress<br />
+                          Review: Submit for editorial review<br />
+                          Publish: Make this blog post public
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </CardContent>
+                
+                <CardFooter className="flex justify-between">
+                  <Button 
+                    type="button" 
+                    variant="outline"
+                    onClick={() => navigate('/author/blogs')}
+                  >
+                    Cancel
+                  </Button>
+                  
+                  <div className="flex space-x-2">
+                    <Button 
                       type="submit"
+                      variant="default"
                       disabled={createBlogMutation.isPending}
                     >
-                      {createBlogMutation.isPending
-                        ? "Saving..."
-                        : "Save Blog"}
+                      <Save className="mr-2 h-4 w-4" />
+                      {createBlogMutation.isPending ? 'Saving...' : 'Save Blog'}
                     </Button>
-                  </CardFooter>
-                </Card>
-                
-                {/* Preview of featured image */}
-                {form.watch("featuredImage") && (
-                  <Card>
-                    <CardContent className="pt-6">
-                      <Label>Featured Image Preview</Label>
-                      <div className="mt-2 rounded-md overflow-hidden border">
-                        <img
-                          src={form.watch("featuredImage")}
-                          alt="Featured"
-                          className="w-full h-auto object-cover"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = "https://placehold.co/600x400?text=Invalid+Image+URL";
-                          }}
-                        />
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-            </div>
-          </form>
-        </Form>
+                    
+                    <Button 
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        // Preview functionality would be implemented here
+                        toast({
+                          title: 'Preview',
+                          description: 'Preview functionality coming soon',
+                        });
+                      }}
+                    >
+                      <Eye className="mr-2 h-4 w-4" />
+                      Preview
+                    </Button>
+                  </div>
+                </CardFooter>
+              </form>
+            </Form>
+          </Card>
+        </div>
       </div>
     </AuthorLayout>
   );
