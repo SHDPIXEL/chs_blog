@@ -47,6 +47,10 @@ const AssetManager: React.FC = () => {
     multiSelect,
     onAssetSelect,
   } = useAssetManager();
+  
+  // Debug output
+  console.log("multiSelect : " + multiSelect);
+  console.log("selectMode : " + selectMode);
 
   const [activeTab, setActiveTab] = useState<string>("browse");
   const [searchQuery, setSearchQuery] = useState<string>("");
