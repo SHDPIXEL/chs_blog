@@ -236,6 +236,7 @@ const ProfilePage = () => {
                                   }));
                                 }
                               }}
+                              selectMode={true}
                               accept="image"
                               variant="outline"
                             >
@@ -294,6 +295,7 @@ const ProfilePage = () => {
                                   }));
                                 }
                               }}
+                              selectMode={true}
                               accept="all"
                               variant="outline"
                             >
