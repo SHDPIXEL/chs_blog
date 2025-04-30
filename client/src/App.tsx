@@ -18,8 +18,8 @@ function Router() {
     <Switch>
       {/* Public routes */}
       <Route path="/" component={Home} />
-      <Route path="/login" component={Login} />
-      <Route path="/register" component={Register} />
+      <Route path="/auth/login" component={Login} />
+      <Route path="/auth/register" component={Register} />
       
       {/* Protected admin routes */}
       <Route path="/admin/dashboard" component={AdminDashboard} />
