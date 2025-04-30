@@ -1,8 +1,12 @@
-import type { Express } from "express";
+import express, { type Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+import { randomUUID } from "crypto";
 import { 
   loginUserSchema, 
   insertUserSchema, 
@@ -10,7 +14,9 @@ import {
   updateArticleSchema,
   UserRole,
   ArticleStatus,
-  insertArticleSchema
+  insertArticleSchema,
+  searchAssetsSchema,
+  updateAssetSchema
 } from "@shared/schema";
 import { z } from "zod";
 import { authenticateToken, requireAdmin, requireAuthor, requireAuth, type AuthRequest } from "./middleware/auth";
@@ -387,6 +393,237 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({ message: "Server error" });
     }
   });
+
+  // Configure multer for file uploads
+  const uploadsFolder = path.join(process.cwd(), 'uploads');
+  
+  // Ensure uploads directory exists
+  if (!fs.existsSync(uploadsFolder)) {
+    fs.mkdirSync(uploadsFolder, { recursive: true });
+  }
+  
+  // Configure storage
+  const storage_config = multer.diskStorage({
+    destination: (req, file, cb) => {
+      cb(null, uploadsFolder);
+    },
+    filename: (req, file, cb) => {
+      // Generate a unique filename with original extension
+      const fileExt = path.extname(file.originalname);
+      const fileName = `${randomUUID()}${fileExt}`;
+      cb(null, fileName);
+    }
+  });
+  
+  // File filter function
+  const fileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+    // Accept images and common document types
+    const allowedMimeTypes = [
+      'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml',
+      'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    ];
+    
+    if (allowedMimeTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Only images and documents are allowed.'));
+    }
+  };
+  
+  // Initialize multer upload
+  const upload = multer({
+    storage: storage_config,
+    fileFilter,
+    limits: {
+      fileSize: 5 * 1024 * 1024, // 5MB max size
+    }
+  });
+  
+  // Asset routes
+  
+  // Get assets by user
+  app.get("/api/assets", authenticateToken, requireAuth, async (req: AuthRequest, res) => {
+    try {
+      if (!req.user?.id) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+
+      const assets = await storage.getAssetsByUser(req.user.id);
+      return res.json(assets);
+    } catch (error) {
+      return res.status(500).json({ message: "Server error" });
+    }
+  });
+  
+  // Search assets
+  app.get("/api/assets/search", authenticateToken, requireAuth, async (req: AuthRequest, res) => {
+    try {
+      if (!req.user?.id) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      
+      // Parse query parameters
+      const searchParams = searchAssetsSchema.parse({
+        query: req.query.query as string | undefined,
+        tags: req.query.tags ? (req.query.tags as string).split(',') : undefined,
+        mimetype: req.query.mimetype as string | undefined,
+        page: req.query.page ? parseInt(req.query.page as string) : 1,
+        limit: req.query.limit ? parseInt(req.query.limit as string) : 20
+      });
+      
+      const result = await storage.searchAssets(searchParams, req.user.id);
+      return res.json(result);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Validation error", 
+          errors: error.errors 
+        });
+      }
+      return res.status(500).json({ message: "Server error" });
+    }
+  });
+  
+  // Get asset by ID
+  app.get("/api/assets/:id", authenticateToken, requireAuth, async (req: AuthRequest, res) => {
+    try {
+      if (!req.user?.id) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      
+      const assetId = parseInt(req.params.id);
+      if (isNaN(assetId)) {
+        return res.status(400).json({ message: "Invalid asset ID" });
+      }
+      
+      const asset = await storage.getAsset(assetId);
+      
+      if (!asset) {
+        return res.status(404).json({ message: "Asset not found" });
+      }
+      
+      // Check if user owns the asset or is admin
+      if (asset.userId !== req.user.id && req.user.role !== UserRole.ADMIN) {
+        return res.status(403).json({ message: "You don't have permission to access this asset" });
+      }
+      
+      return res.json(asset);
+    } catch (error) {
+      return res.status(500).json({ message: "Server error" });
+    }
+  });
+  
+  // Upload asset
+  app.post("/api/assets", authenticateToken, requireAuth, upload.single('file'), async (req: AuthRequest, res) => {
+    try {
+      if (!req.user?.id) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+      
+      // Create asset record in database
+      const assetData = {
+        filename: req.file.filename,
+        originalName: req.file.originalname,
+        path: req.file.path,
+        url: `/uploads/${req.file.filename}`, // URL path to access the file
+        mimetype: req.file.mimetype,
+        size: req.file.size,
+        userId: req.user.id,
+        title: req.body.title || req.file.originalname,
+        description: req.body.description || '',
+        tags: req.body.tags ? JSON.parse(req.body.tags) : [],
+      };
+      
+      const asset = await storage.createAsset(assetData);
+      return res.status(201).json(asset);
+    } catch (error) {
+      return res.status(500).json({ message: "Server error" });
+    }
+  });
+  
+  // Update asset metadata
+  app.patch("/api/assets/:id", authenticateToken, requireAuth, async (req: AuthRequest, res) => {
+    try {
+      if (!req.user?.id) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      
+      const assetId = parseInt(req.params.id);
+      if (isNaN(assetId)) {
+        return res.status(400).json({ message: "Invalid asset ID" });
+      }
+      
+      // Check if asset exists and belongs to the user
+      const asset = await storage.getAsset(assetId);
+      
+      if (!asset) {
+        return res.status(404).json({ message: "Asset not found" });
+      }
+      
+      if (asset.userId !== req.user.id && req.user.role !== UserRole.ADMIN) {
+        return res.status(403).json({ message: "You don't have permission to update this asset" });
+      }
+      
+      const validatedData = updateAssetSchema.parse(req.body);
+      const updatedAsset = await storage.updateAsset(assetId, validatedData);
+      
+      return res.json(updatedAsset);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Validation error", 
+          errors: error.errors 
+        });
+      }
+      return res.status(500).json({ message: "Server error" });
+    }
+  });
+  
+  // Delete asset
+  app.delete("/api/assets/:id", authenticateToken, requireAuth, async (req: AuthRequest, res) => {
+    try {
+      if (!req.user?.id) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      
+      const assetId = parseInt(req.params.id);
+      if (isNaN(assetId)) {
+        return res.status(400).json({ message: "Invalid asset ID" });
+      }
+      
+      // Check if asset exists and belongs to the user
+      const asset = await storage.getAsset(assetId);
+      
+      if (!asset) {
+        return res.status(404).json({ message: "Asset not found" });
+      }
+      
+      if (asset.userId !== req.user.id && req.user.role !== UserRole.ADMIN) {
+        return res.status(403).json({ message: "You don't have permission to delete this asset" });
+      }
+      
+      // Delete file from disk
+      const filePath = asset.path;
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+      
+      // Delete from database
+      await storage.deleteAsset(assetId);
+      
+      return res.status(200).json({ message: "Asset deleted successfully" });
+    } catch (error) {
+      return res.status(500).json({ message: "Server error" });
+    }
+  });
+  
+  // Serve static files from uploads directory
+  app.use('/uploads', express.static(uploadsFolder));
 
   const httpServer = createServer(app);
   return httpServer;
