@@ -151,13 +151,13 @@ export class DatabaseStorage implements IStorage {
   }
   
   async searchAssets(params: SearchAssets, userId: number): Promise<{ assets: Asset[], total: number }> {
-    // Build the query based on search parameters
-    let query = db.select().from(assets).where(eq(assets.userId, userId));
+    // Start with base conditions
+    let conditions = [eq(assets.userId, userId)];
     
     // Apply text search if query is provided
     if (params.query) {
       const searchTerm = `%${params.query}%`;
-      query = query.where(
+      conditions.push(
         or(
           sql`${assets.title} ILIKE ${searchTerm}`,
           sql`${assets.description} ILIKE ${searchTerm}`,
@@ -168,7 +168,7 @@ export class DatabaseStorage implements IStorage {
     
     // Filter by mimetype
     if (params.mimetype) {
-      query = query.where(eq(assets.mimetype, params.mimetype));
+      conditions.push(eq(assets.mimetype, params.mimetype));
     }
     
     // Filter by tags - more complex since tags is a jsonb array
@@ -177,13 +177,16 @@ export class DatabaseStorage implements IStorage {
       const tagConditions = params.tags.map(tag => 
         sql`${assets.tags} @> ${JSON.stringify([tag])}`
       );
-      // Combine conditions with OR
-      query = query.where(or(...tagConditions));
+      // Combine conditions with OR for tags
+      conditions.push(or(...tagConditions));
     }
     
+    // Build the query with all conditions using AND
+    const baseQuery = db.select().from(assets).where(and(...conditions));
+    
     // Count total matching records
-    const totalCount = await db.select({ count: sql<number>`count(*)` })
-      .from(query.as('filtered_assets'));
+    const countQuery = db.select({ count: sql<number>`count(*)` }).from(assets).where(and(...conditions));
+    const totalCount = await countQuery;
     const total = totalCount[0]?.count || 0;
     
     // Apply pagination
@@ -192,7 +195,7 @@ export class DatabaseStorage implements IStorage {
     const offset = (page - 1) * limit;
     
     // Get paginated results
-    const results = await query
+    const results = await baseQuery
       .orderBy(desc(assets.createdAt))
       .limit(limit)
       .offset(offset);

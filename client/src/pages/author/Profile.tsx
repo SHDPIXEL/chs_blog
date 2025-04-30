@@ -202,80 +202,100 @@ const ProfilePage = () => {
                       
                       <div className="space-y-2">
                         <Label htmlFor="avatarUrl">Profile Picture</Label>
-                        <div className="flex items-start space-x-2">
-                          <div className="flex-1">
+                        <div className="flex-1 flex flex-col gap-2">
+                          {formData.avatarUrl && (
+                            <div className="w-16 h-16 rounded-full overflow-hidden border">
+                              <img 
+                                src={formData.avatarUrl} 
+                                alt="Avatar preview" 
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          )}
+                          <div className="flex gap-2 items-center">
                             <Input
+                              type="hidden"
                               id="avatarUrl"
                               name="avatarUrl"
-                              value={formData.avatarUrl}
-                              onChange={handleChange}
-                              placeholder="https://example.com/profile-image.jpg"
+                              value={formData.avatarUrl || ''}
                             />
-                          </div>
-                          <div className="flex-shrink-0">
                             <AssetPickerButton 
                               onSelect={(asset) => {
-                                setFormData(prev => ({
-                                  ...prev,
-                                  avatarUrl: asset.url
-                                }));
+                                if (asset && asset.url) {
+                                  setFormData(prev => ({
+                                    ...prev,
+                                    avatarUrl: asset.url
+                                  }));
+                                }
                               }}
                               variant="outline"
-                              size="sm"
                             >
                               <CameraIcon className="h-4 w-4 mr-2" />
-                              Browse
+                              {formData.avatarUrl ? 'Change Profile Picture' : 'Select Profile Picture'}
                             </AssetPickerButton>
+                            
+                            {formData.avatarUrl && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="text-red-500 hover:text-red-700"
+                                onClick={() => setFormData(prev => ({ ...prev, avatarUrl: '' }))}
+                              >
+                                Remove
+                              </Button>
+                            )}
                           </div>
                         </div>
-                        {formData.avatarUrl && (
-                          <div className="mt-2 w-16 h-16 rounded-full overflow-hidden border">
-                            <img 
-                              src={formData.avatarUrl} 
-                              alt="Avatar preview" 
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                        )}
                       </div>
                       
                       <div className="space-y-2">
                         <Label htmlFor="bannerUrl">Banner Image</Label>
-                        <div className="flex items-start space-x-2">
-                          <div className="flex-1">
+                        <div className="flex-1 flex flex-col gap-2">
+                          {formData.bannerUrl && (
+                            <div className="border rounded-md overflow-hidden w-full max-w-xs h-24">
+                              <img 
+                                src={formData.bannerUrl} 
+                                alt="Banner preview" 
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          )}
+                          <div className="flex gap-2 items-center">
                             <Input
+                              type="hidden"
                               id="bannerUrl"
                               name="bannerUrl"
-                              value={formData.bannerUrl}
-                              onChange={handleChange}
-                              placeholder="https://example.com/banner-image.jpg"
+                              value={formData.bannerUrl || ''}
                             />
-                          </div>
-                          <div className="flex-shrink-0">
                             <AssetPickerButton 
                               onSelect={(asset) => {
-                                setFormData(prev => ({
-                                  ...prev,
-                                  bannerUrl: asset.url
-                                }));
+                                if (asset && asset.url) {
+                                  setFormData(prev => ({
+                                    ...prev,
+                                    bannerUrl: asset.url
+                                  }));
+                                }
                               }}
                               variant="outline"
-                              size="sm"
                             >
                               <ImageIcon className="h-4 w-4 mr-2" />
-                              Browse
+                              {formData.bannerUrl ? 'Change Banner Image' : 'Select Banner Image'}
                             </AssetPickerButton>
+                            
+                            {formData.bannerUrl && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="text-red-500 hover:text-red-700"
+                                onClick={() => setFormData(prev => ({ ...prev, bannerUrl: '' }))}
+                              >
+                                Remove
+                              </Button>
+                            )}
                           </div>
                         </div>
-                        {formData.bannerUrl && (
-                          <div className="mt-2 border rounded-md overflow-hidden w-full max-w-xs h-24">
-                            <img 
-                              src={formData.bannerUrl} 
-                              alt="Banner preview" 
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                        )}
                       </div>
                       
                       <div className="space-y-2">
@@ -289,7 +309,7 @@ const ProfilePage = () => {
                           rows={3}
                         />
                         <p className="text-xs text-gray-500">
-                          Enter your social links in JSON format, e.g. {"{"}"twitter": "https://twitter.com/yourusername"{"}"}
+                          Enter your social links in JSON format
                         </p>
                       </div>
                     </CardContent>
