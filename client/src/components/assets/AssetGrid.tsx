@@ -1,9 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Asset } from '@shared/schema';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Loader2, Image, FileText, Video, Music, File } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
@@ -20,22 +18,8 @@ const AssetGrid: React.FC<AssetGridProps> = ({
   onSelect,
   selectedAsset,
 }) => {
-  const [filter, setFilter] = useState('');
-
-  // Filter assets based on search query
-  const filteredAssets = filter
-    ? assets.filter(
-        (asset) =>
-          asset.title?.toLowerCase().includes(filter.toLowerCase()) ||
-          asset.originalName.toLowerCase().includes(filter.toLowerCase()) ||
-          asset.description?.toLowerCase().includes(filter.toLowerCase()) ||
-          (Array.isArray(asset.tags) && 
-            asset.tags.some((tag: string) => 
-              tag.toLowerCase().includes(filter.toLowerCase())
-            )
-          )
-      )
-    : assets;
+  // No longer filtering locally - assets should already be filtered by the parent component
+  const filteredAssets = assets;
 
   // Get appropriate icon for file type
   const getAssetIcon = (mimetype: string) => {
@@ -63,45 +47,15 @@ const AssetGrid: React.FC<AssetGridProps> = ({
 
   if (filteredAssets.length === 0) {
     return (
-      <div className="space-y-4">
-        <div className="mb-4">
-          <Input
-            placeholder="Search assets..."
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-            className="w-full"
-          />
-        </div>
-        <div className="flex flex-col items-center justify-center h-64 py-12 border-2 border-dashed rounded-md">
-          <File className="h-12 w-12 text-gray-300 mb-4" />
-          <p className="text-gray-500 text-center mb-2">
-            {filter ? 'No assets match your search.' : 'No assets yet.'}
-          </p>
-          {filter && (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setFilter('')}
-              className="mt-2"
-            >
-              Clear search
-            </Button>
-          )}
-        </div>
+      <div className="flex flex-col items-center justify-center h-64 py-12 border-2 border-dashed rounded-md">
+        <File className="h-12 w-12 text-gray-300 mb-4" />
+        <p className="text-gray-500 text-center mb-2">No assets available</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-4">
-      <div className="mb-4">
-        <Input
-          placeholder="Search assets..."
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-          className="w-full"
-        />
-      </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredAssets.map((asset) => (
           <Card 

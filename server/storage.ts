@@ -168,7 +168,8 @@ export class DatabaseStorage implements IStorage {
     
     // Filter by mimetype
     if (params.mimetype) {
-      conditions.push(eq(assets.mimetype, params.mimetype));
+      // Use LIKE for partial mimetype matching (e.g., 'image/' should match 'image/png')
+      conditions.push(sql`${assets.mimetype} LIKE ${params.mimetype + '%'}`);
     }
     
     // Filter by tags - more complex since tags is a jsonb array

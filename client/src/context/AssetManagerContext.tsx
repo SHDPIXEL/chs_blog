@@ -71,6 +71,8 @@ export const AssetManagerProvider: React.FC<AssetManagerProviderProps> = ({ chil
       if (searchParams.page) queryParams.set('page', searchParams.page.toString());
       if (searchParams.limit) queryParams.set('limit', searchParams.limit.toString());
       
+      console.log('Fetching assets with params:', Object.fromEntries(queryParams.entries()));
+      
       const response = await apiRequest('GET', `/api/assets/search?${queryParams.toString()}`);
       return response.json();
     },
@@ -182,9 +184,10 @@ export const AssetManagerProvider: React.FC<AssetManagerProviderProps> = ({ chil
     if (filterCallback) {
       const filteredParams = filterCallback(searchParams);
       setSearchParams(filteredParams);
+      // Don't call refetch here - the useEffect with searchParams dependency will trigger it
+    } else {
+      refetch(); // Only refetch if no filter was applied to prevent double fetch
     }
-    
-    refetch();
   }, [refetch, searchParams]);
 
   // Close asset manager
