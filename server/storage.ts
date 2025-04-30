@@ -1,6 +1,16 @@
-import { users, type User, type InsertUser, articles, type Article, type InsertArticle } from "@shared/schema";
+import { 
+  users, 
+  type User, 
+  type InsertUser, 
+  type UpdateUserProfile,
+  articles, 
+  type Article, 
+  type InsertArticle,
+  type UpdateArticle,
+  type ArticleStatusType
+} from "@shared/schema";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import * as bcrypt from "bcrypt";
 
 // Interface for storage operations
@@ -9,13 +19,16 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUserProfile(id: number, profileData: UpdateUserProfile): Promise<User | undefined>;
   
   // Article operations 
   getArticle(id: number): Promise<Article | undefined>;
   getArticlesByAuthor(authorId: number): Promise<Article[]>;
+  getArticlesByStatus(authorId: number, status: ArticleStatusType): Promise<Article[]>;
   getPublishedArticles(): Promise<Article[]>;
   createArticle(article: InsertArticle): Promise<Article>;
-  updateArticle(id: number, article: Partial<InsertArticle>): Promise<Article | undefined>;
+  updateArticle(id: number, article: Partial<UpdateArticle>): Promise<Article | undefined>;
+  updateArticleStatus(id: number, status: ArticleStatusType): Promise<Article | undefined>;
   deleteArticle(id: number): Promise<boolean>;
 }
 
@@ -39,6 +52,15 @@ export class DatabaseStorage implements IStorage {
       ...insertUser,
       password: hashedPassword
     }).returning();
+    
+    return user;
+  }
+  
+  async updateUserProfile(id: number, profileData: UpdateUserProfile): Promise<User | undefined> {
+    const [user] = await db.update(users)
+      .set(profileData)
+      .where(eq(users.id, id))
+      .returning();
     
     return user;
   }
