@@ -17,7 +17,7 @@ interface AssetPickerButtonProps {
 
 const AssetPickerButton: React.FC<AssetPickerButtonProps> = ({
   onSelect,
-  selectMode = false, // Default selectMode to false
+  selectMode = true, // Default selectMode to false
   children,
   accept = 'image',
   multiSelect = false,
