@@ -23,8 +23,12 @@ const AssetManager: React.FC = () => {
     assets,
     isLoading,
     selectedAsset,
+    selectedAssets,
     setSelectedAsset,
+    addSelectedAsset,
+    removeSelectedAsset,
     selectMode,
+    multiSelect,
     onAssetSelect,
   } = useAssetManager();
 

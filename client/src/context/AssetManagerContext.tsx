@@ -7,8 +7,9 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 interface AssetManagerContextType {
   isOpen: boolean;
   openAssetManager: (
-    onSelect?: (asset: Asset) => void,
-    filterCallback?: (params: AssetSearchParams) => AssetSearchParams
+    onSelect?: (assets: Asset | Asset[]) => void,
+    filterCallback?: (params: AssetSearchParams) => AssetSearchParams,
+    allowMultiple?: boolean
   ) => void;
   closeAssetManager: () => void;
   uploadAsset: (file: File, metadata?: AssetMetadata) => Promise<Asset>;

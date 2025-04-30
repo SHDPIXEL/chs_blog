@@ -1,7 +1,7 @@
 import React from 'react';
 import { Asset } from '@shared/schema';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
-import { Loader2, Image, FileText, Video, Music, File } from 'lucide-react';
+import { Loader2, Image, FileText, Video, Music, File, CheckCircle2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
@@ -10,6 +10,9 @@ interface AssetGridProps {
   isLoading: boolean;
   onSelect: (asset: Asset) => void;
   selectedAsset: Asset | null;
+  selectedAssets?: Asset[];
+  multiSelect?: boolean;
+  onToggleSelect?: (asset: Asset) => void;
 }
 
 const AssetGrid: React.FC<AssetGridProps> = ({
@@ -17,6 +20,9 @@ const AssetGrid: React.FC<AssetGridProps> = ({
   isLoading,
   onSelect,
   selectedAsset,
+  selectedAssets = [],
+  multiSelect = false,
+  onToggleSelect,
 }) => {
   // No longer filtering locally - assets should already be filtered by the parent component
   const filteredAssets = assets;
@@ -62,9 +68,9 @@ const AssetGrid: React.FC<AssetGridProps> = ({
             key={asset.id} 
             className={cn(
               "overflow-hidden cursor-pointer transition-all hover:ring-2 hover:ring-primary/50",
-              selectedAsset?.id === asset.id && "ring-2 ring-primary"
+              (selectedAsset?.id === asset.id || (multiSelect && selectedAssets.some(a => a.id === asset.id))) && "ring-2 ring-primary"
             )}
-            onClick={() => onSelect(asset)}
+            onClick={() => multiSelect && onToggleSelect ? onToggleSelect(asset) : onSelect(asset)}
           >
             <div className="relative aspect-square w-full overflow-hidden bg-gray-100">
               {asset.mimetype.startsWith('image/') ? (
