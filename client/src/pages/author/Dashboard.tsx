@@ -25,8 +25,8 @@ const AuthorDashboard: React.FC = () => {
     queryKey: ['/api/author/dashboard'],
   });
 
-  const handleNewArticle = () => {
-    setLocation('/author/articles/new');
+  const handleNewBlog = () => {
+    setLocation('/author/blogs/new');
   };
 
   return (
@@ -37,9 +37,9 @@ const AuthorDashboard: React.FC = () => {
       <div className="py-6">
         <PageHeader 
           title="Author Dashboard" 
-          buttonText="New Article" 
+          buttonText="New Blog" 
           buttonIcon={FilePlus} 
-          onButtonClick={handleNewArticle}
+          onButtonClick={handleNewBlog}
         />
         
         <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
@@ -87,9 +87,9 @@ const AuthorDashboard: React.FC = () => {
               ) : null}
             </div>
 
-            {/* Recent Articles */}
+            {/* Recent Blogs */}
             <div className="mt-8">
-              <h2 className="text-lg leading-6 font-medium text-gray-900 mb-4">Your Recent Articles</h2>
+              <h2 className="text-lg leading-6 font-medium text-gray-900 mb-4">Your Recent Blogs</h2>
               <Card>
                 {isLoading ? (
                   // Skeleton loader for articles list
@@ -125,7 +125,7 @@ const AuthorDashboard: React.FC = () => {
                 ) : (
                   <div className="p-6 text-center text-gray-500">
                     <FileText className="h-12 w-12 mx-auto text-gray-400 mb-2" />
-                    <p>No articles yet. Create your first article to get started!</p>
+                    <p>No blogs yet. Create your first blog to get started!</p>
                   </div>
                 )}
               </Card>
@@ -145,7 +145,7 @@ interface ArticleItemProps {
 const ArticleItem: React.FC<ArticleItemProps> = ({ article }) => {
   return (
     <li>
-      <a href={`/author/articles/${article.id}`} className="block hover:bg-gray-50">
+      <a href={`/author/blogs/${article.id}`} className="block hover:bg-gray-50">
         <div className="px-4 py-4 sm:px-6">
           <div className="flex items-center justify-between">
             <p className="text-sm font-medium text-primary truncate">

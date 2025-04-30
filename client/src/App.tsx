@@ -12,6 +12,9 @@ import Login from "@/pages/auth/Login";
 import Register from "@/pages/auth/Register";
 import AdminDashboard from "@/pages/admin/Dashboard";
 import AuthorDashboard from "@/pages/author/Dashboard";
+import AuthorProfile from "@/pages/author/Profile";
+import AuthorBlogs from "@/pages/author/Blogs";
+import NewBlog from "@/pages/author/NewBlog";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -27,6 +30,9 @@ function Router() {
       
       {/* Protected author routes */}
       <ProtectedRoute path="/author/dashboard" component={AuthorDashboard} role="author" />
+      <ProtectedRoute path="/author/profile" component={AuthorProfile} role="author" />
+      <ProtectedRoute path="/author/blogs" component={AuthorBlogs} role="author" />
+      <ProtectedRoute path="/author/blogs/new" component={NewBlog} role="author" />
       
       {/* Fallback to 404 */}
       <Route component={NotFound} />
