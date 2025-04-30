@@ -232,6 +232,7 @@ export const AssetManagerProvider: React.FC<AssetManagerProviderProps> = ({
       isSelectMode: boolean = false,
     ) => {
       setIsOpen(true);
+      console.log("onSelect : " + onSelect);
       setOnAssetSelect(onSelect);
       setSelectedAsset(null);
       setSelectedAssets([]);

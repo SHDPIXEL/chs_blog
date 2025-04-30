@@ -264,11 +264,7 @@ const AssetManager: React.FC = () => {
                 ) : (
                   <Button
                     disabled={!selectedAsset}
-                    onClick={() => {
-                      if (onAssetSelect && selectedAsset) {
-                        onAssetSelect(selectedAsset);
-                      }
-                    }}
+                    onClick={handleConfirmSelection}
                     className="bg-primary hover:bg-primary/90"
                   >
                     <CheckCircle className="mr-2 h-4 w-4" />
