@@ -47,7 +47,12 @@ const AssetPickerButton: React.FC<AssetPickerButtonProps> = ({
       };
     };
     
-    openAssetManager(onSelect, filterCallback, multiSelect);
+    // Pass the onSelect callback as onAssetSelect to trigger select mode
+    const handleAssetSelect = (asset: Asset | Asset[]) => {
+      onSelect(asset);
+    };
+    
+    openAssetManager(handleAssetSelect, filterCallback, multiSelect);
   };
 
   return (
