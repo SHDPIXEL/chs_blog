@@ -121,7 +121,7 @@ const AssetManager: React.FC = () => {
   const handleSelectAsset = (asset: Asset) => {
     // Always set the selected asset for the details panel
     setSelectedAsset(asset);
-    
+
     // In multi-select mode, we don't auto-close or auto-select
     // Let user explicitly confirm with the Continue button
   };
@@ -130,7 +130,7 @@ const AssetManager: React.FC = () => {
   const handleToggleAsset = (asset: Asset) => {
     // Always update selected asset for detail view
     setSelectedAsset(asset);
-    
+
     // Only toggle in multi-select mode
     if (multiSelect) {
       // Check if asset is already selected
@@ -176,6 +176,9 @@ const AssetManager: React.FC = () => {
         return "";
     }
   };
+
+  console.log("multiSelect : " + multiSelect);
+  console.log("selectMode : " + selectMode);
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && closeAssetManager()}>
@@ -240,7 +243,7 @@ const AssetManager: React.FC = () => {
               <Button variant="outline" onClick={closeAssetManager}>
                 Cancel
               </Button>
-              
+
               {/* Show continue button in selection mode */}
               {selectMode && multiSelect && (
                 <Button
@@ -255,7 +258,7 @@ const AssetManager: React.FC = () => {
                     : "Selection"}
                 </Button>
               )}
-              
+
               {selectMode && !multiSelect && (
                 <Button
                   disabled={!selectedAsset}
