@@ -263,12 +263,12 @@ const AssetManager: React.FC = () => {
                   </Button>
                 ) : (
                   <Button
-                    //disabled={!selectedAsset}
-                    onClick={() =>
-                      onAssetSelect ||
-                      selectedAsset ||
-                      onAssetSelect(selectedAsset)
-                    }
+                    disabled={!selectedAsset}
+                    onClick={() => {
+                      if (onAssetSelect && selectedAsset) {
+                        onAssetSelect(selectedAsset);
+                      }
+                    }}
                     className="bg-primary hover:bg-primary/90"
                   >
                     <CheckCircle className="mr-2 h-4 w-4" />
