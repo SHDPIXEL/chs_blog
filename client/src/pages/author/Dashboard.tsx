@@ -15,7 +15,7 @@ import {
   Edit
 } from 'lucide-react';
 import { AuthorDashboardData, Article } from '@/types/auth';
-import { Helmet } from 'react-helmet';
+import { Helmet } from 'react-helmet-async';
 import { formatDistanceToNow } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 

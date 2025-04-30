@@ -12,7 +12,7 @@ import {
   MessageSquare 
 } from 'lucide-react';
 import { AdminDashboardData } from '@/types/auth';
-import { Helmet } from 'react-helmet';
+import { Helmet } from 'react-helmet-async';
 
 const AdminDashboard: React.FC = () => {
   const { data, isLoading, error } = useQuery<AdminDashboardData>({
