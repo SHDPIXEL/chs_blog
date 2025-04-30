@@ -1,4 +1,7 @@
 import { users, type User, type InsertUser, articles, type Article, type InsertArticle } from "@shared/schema";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
+import * as bcrypt from "bcrypt";
 
 // Interface for storage operations
 export interface IStorage {
@@ -16,90 +19,68 @@ export interface IStorage {
   deleteArticle(id: number): Promise<boolean>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private articles: Map<number, Article>;
-  private userIdCounter: number;
-  private articleIdCounter: number;
-
-  constructor() {
-    this.users = new Map();
-    this.articles = new Map();
-    this.userIdCounter = 1;
-    this.articleIdCounter = 1;
-  }
-
+export class DatabaseStorage implements IStorage {
   // User methods
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.email.toLowerCase() === email.toLowerCase(),
-    );
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.userIdCounter++;
-    const timestamp = new Date();
-    const user: User = { 
-      ...insertUser, 
-      id,
-      createdAt: timestamp 
-    };
-    this.users.set(id, user);
+    // Hash password before storing
+    const hashedPassword = await bcrypt.hash(insertUser.password, 10);
+    
+    const [user] = await db.insert(users).values({
+      ...insertUser,
+      password: hashedPassword
+    }).returning();
+    
     return user;
   }
 
   // Article methods
   async getArticle(id: number): Promise<Article | undefined> {
-    return this.articles.get(id);
+    const [article] = await db.select().from(articles).where(eq(articles.id, id));
+    return article;
   }
 
   async getArticlesByAuthor(authorId: number): Promise<Article[]> {
-    return Array.from(this.articles.values()).filter(
-      (article) => article.authorId === authorId
-    );
+    return await db.select().from(articles).where(eq(articles.authorId, authorId));
   }
 
   async getPublishedArticles(): Promise<Article[]> {
-    return Array.from(this.articles.values()).filter(
-      (article) => article.published
-    );
+    return await db.select().from(articles).where(eq(articles.published, true));
   }
 
   async createArticle(insertArticle: InsertArticle): Promise<Article> {
-    const id = this.articleIdCounter++;
-    const timestamp = new Date();
-    const article: Article = {
-      ...insertArticle,
-      id,
-      createdAt: timestamp,
-      updatedAt: timestamp
-    };
-    this.articles.set(id, article);
+    const [article] = await db.insert(articles).values(insertArticle).returning();
     return article;
   }
 
   async updateArticle(id: number, updateData: Partial<InsertArticle>): Promise<Article | undefined> {
-    const article = this.articles.get(id);
-    if (!article) return undefined;
-
-    const updatedArticle: Article = {
-      ...article,
-      ...updateData,
-      updatedAt: new Date()
-    };
+    const [article] = await db.update(articles)
+      .set({
+        ...updateData,
+        updatedAt: new Date()
+      })
+      .where(eq(articles.id, id))
+      .returning();
     
-    this.articles.set(id, updatedArticle);
-    return updatedArticle;
+    return article;
   }
 
   async deleteArticle(id: number): Promise<boolean> {
-    if (!this.articles.has(id)) return false;
-    return this.articles.delete(id);
+    const result = await db.delete(articles)
+      .where(eq(articles.id, id))
+      .returning({ id: articles.id });
+    
+    return result.length > 0;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
