@@ -75,8 +75,8 @@ export const insertUserSchema = createInsertSchema(users).omit({
 export const updateUserProfileSchema = z.object({
   name: z.string().min(2).optional(),
   bio: z.string().optional(),
-  avatarUrl: z.union([z.string().url(), z.null()]).optional(),
-  bannerUrl: z.union([z.string().url(), z.null()]).optional(),
+  avatarUrl: z.union([z.string().url(), z.string().max(0), z.null()]).optional(),
+  bannerUrl: z.union([z.string().url(), z.string().max(0), z.null()]).optional(),
   socialLinks: z.string().optional().nullable(),
 });
 
