@@ -7,10 +7,15 @@ import {
   type Article, 
   type InsertArticle,
   type UpdateArticle,
-  type ArticleStatusType
+  type ArticleStatusType,
+  assets,
+  type Asset,
+  type InsertAsset,
+  type UpdateAsset,
+  type SearchAssets
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, or, desc, sql } from "drizzle-orm";
 import * as bcrypt from "bcrypt";
 
 // Interface for storage operations
@@ -30,6 +35,14 @@ export interface IStorage {
   updateArticle(id: number, article: Partial<UpdateArticle>): Promise<Article | undefined>;
   updateArticleStatus(id: number, status: ArticleStatusType): Promise<Article | undefined>;
   deleteArticle(id: number): Promise<boolean>;
+  
+  // Asset operations
+  getAsset(id: number): Promise<Asset | undefined>;
+  getAssetsByUser(userId: number): Promise<Asset[]>;
+  searchAssets(params: SearchAssets, userId: number): Promise<{ assets: Asset[], total: number }>;
+  createAsset(asset: InsertAsset): Promise<Asset>;
+  updateAsset(id: number, asset: UpdateAsset): Promise<Asset | undefined>;
+  deleteAsset(id: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -123,6 +136,94 @@ export class DatabaseStorage implements IStorage {
     const result = await db.delete(articles)
       .where(eq(articles.id, id))
       .returning({ id: articles.id });
+    
+    return result.length > 0;
+  }
+  
+  // Asset methods
+  async getAsset(id: number): Promise<Asset | undefined> {
+    const [asset] = await db.select().from(assets).where(eq(assets.id, id));
+    return asset;
+  }
+  
+  async getAssetsByUser(userId: number): Promise<Asset[]> {
+    return await db.select().from(assets).where(eq(assets.userId, userId));
+  }
+  
+  async searchAssets(params: SearchAssets, userId: number): Promise<{ assets: Asset[], total: number }> {
+    // Build the query based on search parameters
+    let query = db.select().from(assets).where(eq(assets.userId, userId));
+    
+    // Apply text search if query is provided
+    if (params.query) {
+      const searchTerm = `%${params.query}%`;
+      query = query.where(
+        or(
+          sql`${assets.title} ILIKE ${searchTerm}`,
+          sql`${assets.description} ILIKE ${searchTerm}`,
+          sql`${assets.originalName} ILIKE ${searchTerm}`
+        )
+      );
+    }
+    
+    // Filter by mimetype
+    if (params.mimetype) {
+      query = query.where(eq(assets.mimetype, params.mimetype));
+    }
+    
+    // Filter by tags - more complex since tags is a jsonb array
+    if (params.tags && params.tags.length > 0) {
+      // Create a condition for each tag to check if it exists in the array
+      const tagConditions = params.tags.map(tag => 
+        sql`${assets.tags} @> ${JSON.stringify([tag])}`
+      );
+      // Combine conditions with OR
+      query = query.where(or(...tagConditions));
+    }
+    
+    // Count total matching records
+    const totalCount = await db.select({ count: sql<number>`count(*)` })
+      .from(query.as('filtered_assets'));
+    const total = totalCount[0]?.count || 0;
+    
+    // Apply pagination
+    const page = params.page || 1;
+    const limit = params.limit || 20;
+    const offset = (page - 1) * limit;
+    
+    // Get paginated results
+    const results = await query
+      .orderBy(desc(assets.createdAt))
+      .limit(limit)
+      .offset(offset);
+    
+    return {
+      assets: results,
+      total: Number(total),
+    };
+  }
+  
+  async createAsset(asset: InsertAsset): Promise<Asset> {
+    const [createdAsset] = await db.insert(assets).values(asset).returning();
+    return createdAsset;
+  }
+  
+  async updateAsset(id: number, assetData: UpdateAsset): Promise<Asset | undefined> {
+    const [asset] = await db.update(assets)
+      .set({
+        ...assetData,
+        updatedAt: new Date()
+      })
+      .where(eq(assets.id, id))
+      .returning();
+    
+    return asset;
+  }
+  
+  async deleteAsset(id: number): Promise<boolean> {
+    const result = await db.delete(assets)
+      .where(eq(assets.id, id))
+      .returning({ id: assets.id });
     
     return result.length > 0;
   }

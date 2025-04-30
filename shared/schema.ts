@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -30,6 +30,23 @@ export const users = pgTable("users", {
   bannerUrl: text("banner_url"),
   socialLinks: text("social_links"), // JSON string containing social media links
   createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Assets table
+export const assets = pgTable("assets", {
+  id: serial("id").primaryKey(),
+  filename: text("filename").notNull(),
+  originalName: text("original_name").notNull(),
+  path: text("path").notNull(),
+  url: text("url").notNull(),
+  mimetype: text("mimetype").notNull(),
+  size: integer("size").notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  title: text("title"),
+  description: text("description"),
+  tags: jsonb("tags").default([]),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // Articles table
@@ -86,6 +103,27 @@ export const updateArticleSchema = z.object({
   featuredImage: z.string().url().optional().nullable(),
 });
 
+// Define asset schemas
+export const insertAssetSchema = createInsertSchema(assets).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const updateAssetSchema = z.object({
+  title: z.string().optional(),
+  description: z.string().optional(),
+  tags: z.array(z.string()).optional(),
+});
+
+export const searchAssetsSchema = z.object({
+  query: z.string().optional(),
+  tags: z.array(z.string()).optional(),
+  mimetype: z.string().optional(),
+  page: z.number().optional(),
+  limit: z.number().optional(),
+});
+
 // Type definitions based on schema
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -94,3 +132,7 @@ export type LoginUser = z.infer<typeof loginUserSchema>;
 export type InsertArticle = z.infer<typeof insertArticleSchema>;
 export type UpdateArticle = z.infer<typeof updateArticleSchema>;
 export type Article = typeof articles.$inferSelect;
+export type Asset = typeof assets.$inferSelect;
+export type InsertAsset = z.infer<typeof insertAssetSchema>;
+export type UpdateAsset = z.infer<typeof updateAssetSchema>;
+export type SearchAssets = z.infer<typeof searchAssetsSchema>;
