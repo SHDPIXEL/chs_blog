@@ -119,25 +119,28 @@ const ProfilePage = () => {
     if (!profile?.socialLinks) return null;
     
     try {
-      const socialData = JSON.parse(profile.socialLinks);
-      return (
-        <div className="flex space-x-4 mt-2">
-          {Object.entries(socialData).map(([platform, url]) => (
-            url && (
-              <a 
-                key={platform} 
-                href={url as string} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-blue-500 hover:text-blue-700"
-              >
-                <LinkIcon className="h-5 w-5" />
-                <span className="sr-only">{platform}</span>
-              </a>
-            )
-          ))}
-        </div>
-      );
+      const socialData = JSON.parse(profile.socialLinks) as Record<string, string>;
+      
+      const links: React.ReactNode[] = [];
+      
+      Object.entries(socialData).forEach(([platform, url]) => {
+        if (!url) return;
+        
+        links.push(
+          <a 
+            key={platform} 
+            href={url} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-blue-500 hover:text-blue-700"
+          >
+            <LinkIcon className="h-5 w-5" />
+            <span className="sr-only">{platform}</span>
+          </a>
+        );
+      });
+      
+      return <div className="flex space-x-4 mt-2">{links}</div>;
     } catch (e) {
       return null;
     }

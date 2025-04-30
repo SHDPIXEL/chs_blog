@@ -1,7 +1,7 @@
 import { db } from "../server/db";
 import { users, UserRole, articles, ArticleStatus } from "../shared/schema";
 import * as bcrypt from "bcrypt";
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 async function seed() {
   console.log("Starting to seed database...");
@@ -80,8 +80,9 @@ async function seed() {
   }
   
   // Check if we need to create sample blogs
-  const countResult = await db.execute(sql`SELECT COUNT(*) FROM articles`);
-  const count = Number(countResult.rows[0]?.count || 0);
+  // First query to get a count from the articles table
+  const articlesResult = await db.select().from(articles).limit(1);
+  const count = articlesResult.length;
   
   if (count === 0) {
     console.log("Creating sample blog posts...");

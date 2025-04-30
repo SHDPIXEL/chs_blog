@@ -1,146 +1,66 @@
-import React, { useState } from "react";
-import { Link, useLocation } from "wouter";
-import AuthorLayout from "@/components/layout/AuthorLayout";
-import { useQuery } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import PageHeader from "@/components/ui/PageHeader";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { PlusIcon, Edit, Trash2, Eye, Clock } from "lucide-react";
-import { ArticleStatus, ArticleStatusType } from "@shared/schema";
+import React, { useState } from 'react';
+import { Link, useLocation } from 'wouter';
+import AuthorLayout from '@/components/layout/AuthorLayout';
+import { useQuery } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
+import { Article } from '@shared/schema';
+import { useToast } from '@/hooks/use-toast';
+import PageHeader from '@/components/ui/PageHeader';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Pencil, Clock, Eye, MessageSquare, Trash2, FileText, Plus } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
+import { ArticleStatusType } from '@shared/schema';
 
-// Article type from API
-type Article = {
-  id: number;
-  title: string;
-  content: string;
-  excerpt?: string;
-  authorId: number;
-  status: ArticleStatusType;
-  published: boolean;
-  featuredImage?: string;
-  createdAt: string;
-  updatedAt: string;
-};
+type ArticleStatusFilter = 'all' | ArticleStatusType;
 
-const BlogsPage = () => {
-  const [, setLocation] = useLocation();
+const AuthorBlogs: React.FC = () => {
+  const [, navigate] = useLocation();
+  const { toast } = useToast();
+  const [statusFilter, setStatusFilter] = useState<ArticleStatusFilter>('all');
   
-  // Fetch all articles
-  const { data: articles, isLoading } = useQuery<Article[]>({
-    queryKey: ['/api/author/articles'],
+  // Fetch all articles or filter by status
+  const { data: articles, isLoading, error } = useQuery<Article[]>({
+    queryKey: ['/api/author/articles', statusFilter],
     queryFn: async () => {
-      const res = await apiRequest('GET', '/api/author/articles');
+      const endpoint = statusFilter === 'all' 
+        ? '/api/author/articles' 
+        : `/api/author/articles/${statusFilter}`;
+      
+      const res = await apiRequest('GET', endpoint);
       return res.json();
     }
   });
   
-  // Filter articles by status
-  const draftArticles = articles?.filter(article => article.status === ArticleStatus.DRAFT) || [];
-  const reviewArticles = articles?.filter(article => article.status === ArticleStatus.REVIEW) || [];
-  const publishedArticles = articles?.filter(article => article.status === ArticleStatus.PUBLISHED) || [];
-  
-  // Handle new blog creation
-  const handleNewBlog = () => {
-    setLocation('/author/blogs/new');
-  };
-  
-  // Status badge component
-  const StatusBadge = ({ status }: { status: ArticleStatusType }) => {
+  // Status badge color mapping
+  const getStatusBadgeVariant = (status: ArticleStatusType) => {
     switch (status) {
-      case ArticleStatus.DRAFT:
-        return <Badge variant="outline">Draft</Badge>;
-      case ArticleStatus.REVIEW:
-        return <Badge variant="secondary">In Review</Badge>;
-      case ArticleStatus.PUBLISHED:
-        return <Badge variant="default">Published</Badge>;
-      default:
-        return null;
+      case 'published': return 'default';
+      case 'draft': return 'secondary';
+      case 'review': return 'outline';
+      default: return 'secondary';
     }
   };
   
-  // Format date for display
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
-  
-  // Render article table
-  const ArticleTable = ({ articles }: { articles: Article[] }) => {
-    if (articles.length === 0) {
-      return (
-        <div className="text-center py-8">
-          <p className="text-gray-500">No articles found</p>
-        </div>
-      );
-    }
-    
-    return (
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Title</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Last Updated</TableHead>
-            <TableHead className="w-[150px]">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {articles.map((article) => (
-            <TableRow key={article.id}>
-              <TableCell className="font-medium">{article.title}</TableCell>
-              <TableCell><StatusBadge status={article.status} /></TableCell>
-              <TableCell>{formatDate(article.updatedAt)}</TableCell>
-              <TableCell>
-                <div className="flex space-x-2">
-                  <Button variant="ghost" size="icon" asChild>
-                    <Link to={`/author/blogs/${article.id}`}>
-                      <Eye className="h-4 w-4" />
-                      <span className="sr-only">View</span>
-                    </Link>
-                  </Button>
-                  <Button variant="ghost" size="icon" asChild>
-                    <Link to={`/author/blogs/${article.id}/edit`}>
-                      <Edit className="h-4 w-4" />
-                      <span className="sr-only">Edit</span>
-                    </Link>
-                  </Button>
-                  <Button variant="ghost" size="icon">
-                    <Trash2 className="h-4 w-4" />
-                    <span className="sr-only">Delete</span>
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    );
-  };
-  
-  // Loading skeleton
+  // Render loading state
   if (isLoading) {
     return (
       <AuthorLayout>
         <div className="py-6 px-4 sm:px-6 lg:px-8">
-          <div className="animate-pulse">
-            <div className="h-8 w-1/3 bg-gray-200 rounded mb-5"></div>
-            <div className="h-64 bg-gray-200 rounded mb-5"></div>
+          <div className="flex justify-between mb-6">
+            <div className="animate-pulse h-8 w-1/4 bg-gray-200 rounded"></div>
+            <div className="animate-pulse h-10 w-32 bg-gray-200 rounded"></div>
           </div>
+          
+          <div className="mb-6 animate-pulse h-12 w-full bg-gray-200 rounded"></div>
+          
+          {Array(3).fill(null).map((_, i) => (
+            <div key={i} className="mb-4 animate-pulse">
+              <div className="h-32 w-full bg-gray-200 rounded"></div>
+            </div>
+          ))}
         </div>
       </AuthorLayout>
     );
@@ -152,71 +72,64 @@ const BlogsPage = () => {
         <PageHeader 
           title="My Blogs" 
           buttonText="New Blog"
-          buttonIcon={PlusIcon}
-          onButtonClick={handleNewBlog}
+          buttonIcon={Plus}
+          onButtonClick={() => navigate('/author/blogs/new')}
         />
         
+        {/* Status filter tabs */}
         <div className="mt-6">
-          <Tabs defaultValue="all">
-            <TabsList className="mb-4">
-              <TabsTrigger value="all">All Blogs</TabsTrigger>
-              <TabsTrigger value="drafts">Drafts</TabsTrigger>
+          <Tabs 
+            defaultValue="all" 
+            value={statusFilter}
+            onValueChange={(value) => setStatusFilter(value as ArticleStatusFilter)}
+            className="w-full"
+          >
+            <TabsList className="grid grid-cols-4 w-full md:w-2/3 lg:w-1/2">
+              <TabsTrigger value="all">All</TabsTrigger>
+              <TabsTrigger value="draft">Drafts</TabsTrigger>
               <TabsTrigger value="review">In Review</TabsTrigger>
               <TabsTrigger value="published">Published</TabsTrigger>
             </TabsList>
             
-            <TabsContent value="all">
+            <TabsContent value={statusFilter} className="mt-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>All Blogs</CardTitle>
+                  <CardTitle className="capitalize">
+                    {statusFilter === 'all' ? 'All Blogs' : `${statusFilter} Blogs`}
+                  </CardTitle>
                   <CardDescription>
-                    Manage all your blog posts
+                    {statusFilter === 'all' && 'View and manage all your blog posts'}
+                    {statusFilter === 'draft' && 'Blog posts you\'re still working on'}
+                    {statusFilter === 'review' && 'Blog posts submitted for review'}
+                    {statusFilter === 'published' && 'Blog posts that are live on the site'}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <ArticleTable articles={articles || []} />
-                </CardContent>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="drafts">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Draft Blogs</CardTitle>
-                  <CardDescription>
-                    Continue working on your drafts
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ArticleTable articles={draftArticles} />
-                </CardContent>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="review">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Blogs In Review</CardTitle>
-                  <CardDescription>
-                    Blogs awaiting approval
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ArticleTable articles={reviewArticles} />
-                </CardContent>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="published">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Published Blogs</CardTitle>
-                  <CardDescription>
-                    Your published blog posts
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ArticleTable articles={publishedArticles} />
+                  {error ? (
+                    <div className="text-red-600 p-4">
+                      Error loading blogs: {error instanceof Error ? error.message : 'Unknown error'}
+                    </div>
+                  ) : articles && articles.length > 0 ? (
+                    <div className="space-y-4">
+                      {articles.map((article) => (
+                        <BlogItem key={article.id} article={article} />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center p-8">
+                      <FileText className="mx-auto h-12 w-12 text-gray-400 mb-3" />
+                      <h3 className="text-lg font-medium text-gray-900 mb-1">No blogs found</h3>
+                      <p className="text-gray-500 mb-4">
+                        {statusFilter === 'all' && "You haven't created any blogs yet."}
+                        {statusFilter === 'draft' && "You don't have any draft blogs."}
+                        {statusFilter === 'review' && "You don't have any blogs in review."}
+                        {statusFilter === 'published' && "You don't have any published blogs."}
+                      </p>
+                      <Button onClick={() => navigate('/author/blogs/new')}>
+                        <Plus className="mr-2 h-4 w-4" /> Create New Blog
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -227,4 +140,90 @@ const BlogsPage = () => {
   );
 };
 
-export default BlogsPage;
+interface BlogItemProps {
+  article: Article;
+}
+
+const BlogItem: React.FC<BlogItemProps> = ({ article }) => {
+  return (
+    <div className="border rounded-lg overflow-hidden hover:border-gray-300 transition-colors">
+      <div className="flex flex-col md:flex-row">
+        {/* Featured image (if available) */}
+        {article.featuredImage && (
+          <div className="md:w-1/4 h-48 md:h-auto">
+            <img
+              src={article.featuredImage}
+              alt={article.title}
+              className="w-full h-full object-cover"
+            />
+          </div>
+        )}
+        
+        {/* Content */}
+        <div className={`p-4 ${article.featuredImage ? 'md:w-3/4' : 'w-full'}`}>
+          <div className="flex justify-between items-start mb-2">
+            <h3 className="text-lg font-semibold text-gray-900">{article.title}</h3>
+            <Badge variant={getStatusBadgeVariant(article.status as ArticleStatusType)} className="capitalize">
+              {article.status}
+            </Badge>
+          </div>
+          
+          {article.excerpt && (
+            <p className="text-gray-600 mb-4 line-clamp-2">{article.excerpt}</p>
+          )}
+          
+          <div className="flex items-center text-sm text-gray-500 mb-4">
+            <Clock className="mr-1 h-4 w-4" />
+            <span>
+              {article.status === 'published'
+                ? `Published ${formatDistanceToNow(new Date(article.createdAt), { addSuffix: true })}`
+                : `Last edited ${formatDistanceToNow(new Date(article.updatedAt), { addSuffix: true })}`}
+            </span>
+            
+            {article.status === 'published' && (
+              <>
+                <span className="mx-2">•</span>
+                <Eye className="mr-1 h-4 w-4" />
+                <span>243 views</span>
+                
+                <span className="mx-2">•</span>
+                <MessageSquare className="mr-1 h-4 w-4" />
+                <span>5 comments</span>
+              </>
+            )}
+          </div>
+          
+          <div className="flex justify-end space-x-2">
+            <Button variant="outline" size="sm" asChild>
+              <Link href={`/author/blogs/${article.id}`}>
+                <Pencil className="mr-1 h-4 w-4" /> Edit
+              </Link>
+            </Button>
+            <Button variant="outline" size="sm">
+              <Trash2 className="mr-1 h-4 w-4" /> Delete
+            </Button>
+            {article.status === 'published' && (
+              <Button variant="default" size="sm" asChild>
+                <Link href={`/blog/${article.id}`}>
+                  <Eye className="mr-1 h-4 w-4" /> View
+                </Link>
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Helper function to get badge variant based on status
+const getStatusBadgeVariant = (status: ArticleStatusType) => {
+  switch (status) {
+    case 'published': return 'default';
+    case 'draft': return 'secondary';
+    case 'review': return 'outline';
+    default: return 'secondary';
+  }
+};
+
+export default AuthorBlogs;
