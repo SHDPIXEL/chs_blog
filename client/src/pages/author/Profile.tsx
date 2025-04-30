@@ -12,7 +12,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { PencilIcon, UserCircle, CameraIcon, Link as LinkIcon } from 'lucide-react';
+import { PencilIcon, UserCircle, CameraIcon, Link as LinkIcon, ImageIcon } from 'lucide-react';
+import { AssetPickerButton } from '@/components/assets';
 
 type ProfileData = {
   id: number;
@@ -200,25 +201,81 @@ const ProfilePage = () => {
                       </div>
                       
                       <div className="space-y-2">
-                        <Label htmlFor="avatarUrl">Profile Picture URL</Label>
-                        <Input
-                          id="avatarUrl"
-                          name="avatarUrl"
-                          value={formData.avatarUrl}
-                          onChange={handleChange}
-                          placeholder="https://example.com/profile-image.jpg"
-                        />
+                        <Label htmlFor="avatarUrl">Profile Picture</Label>
+                        <div className="flex items-start space-x-2">
+                          <div className="flex-1">
+                            <Input
+                              id="avatarUrl"
+                              name="avatarUrl"
+                              value={formData.avatarUrl}
+                              onChange={handleChange}
+                              placeholder="https://example.com/profile-image.jpg"
+                            />
+                          </div>
+                          <div className="flex-shrink-0">
+                            <AssetPickerButton 
+                              onSelect={(asset) => {
+                                setFormData(prev => ({
+                                  ...prev,
+                                  avatarUrl: asset.url
+                                }));
+                              }}
+                              variant="outline"
+                              size="sm"
+                            >
+                              <CameraIcon className="h-4 w-4 mr-2" />
+                              Browse
+                            </AssetPickerButton>
+                          </div>
+                        </div>
+                        {formData.avatarUrl && (
+                          <div className="mt-2 w-16 h-16 rounded-full overflow-hidden border">
+                            <img 
+                              src={formData.avatarUrl} 
+                              alt="Avatar preview" 
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        )}
                       </div>
                       
                       <div className="space-y-2">
-                        <Label htmlFor="bannerUrl">Banner Image URL</Label>
-                        <Input
-                          id="bannerUrl"
-                          name="bannerUrl"
-                          value={formData.bannerUrl}
-                          onChange={handleChange}
-                          placeholder="https://example.com/banner-image.jpg"
-                        />
+                        <Label htmlFor="bannerUrl">Banner Image</Label>
+                        <div className="flex items-start space-x-2">
+                          <div className="flex-1">
+                            <Input
+                              id="bannerUrl"
+                              name="bannerUrl"
+                              value={formData.bannerUrl}
+                              onChange={handleChange}
+                              placeholder="https://example.com/banner-image.jpg"
+                            />
+                          </div>
+                          <div className="flex-shrink-0">
+                            <AssetPickerButton 
+                              onSelect={(asset) => {
+                                setFormData(prev => ({
+                                  ...prev,
+                                  bannerUrl: asset.url
+                                }));
+                              }}
+                              variant="outline"
+                              size="sm"
+                            >
+                              <ImageIcon className="h-4 w-4 mr-2" />
+                              Browse
+                            </AssetPickerButton>
+                          </div>
+                        </div>
+                        {formData.bannerUrl && (
+                          <div className="mt-2 border rounded-md overflow-hidden w-full max-w-xs h-24">
+                            <img 
+                              src={formData.bannerUrl} 
+                              alt="Banner preview" 
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        )}
                       </div>
                       
                       <div className="space-y-2">

@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Save, Eye } from 'lucide-react';
 import { ArticleStatus } from '@shared/schema';
+import { AssetPickerButton } from '@/components/assets';
 
 // Define form schema using zod
 const blogFormSchema = z.object({
@@ -169,13 +170,36 @@ const NewBlogPage: React.FC = () => {
                     name="featuredImage"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Featured Image URL</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="https://example.com/your-image.jpg" 
-                            {...field} 
-                          />
-                        </FormControl>
+                        <FormLabel>Featured Image</FormLabel>
+                        <div className="flex items-start space-x-2">
+                          <div className="flex-1">
+                            <FormControl>
+                              <Input 
+                                placeholder="https://example.com/your-image.jpg" 
+                                {...field} 
+                              />
+                            </FormControl>
+                          </div>
+                          <div className="flex-shrink-0">
+                            <AssetPickerButton 
+                              onSelect={(asset) => {
+                                field.onChange(asset.url);
+                              }}
+                              variant="outline"
+                            >
+                              Browse Assets
+                            </AssetPickerButton>
+                          </div>
+                        </div>
+                        {field.value && (
+                          <div className="mt-2 border rounded-md overflow-hidden w-full max-w-xs">
+                            <img 
+                              src={field.value} 
+                              alt="Featured image preview" 
+                              className="w-full h-auto max-h-40 object-cover"
+                            />
+                          </div>
+                        )}
                         <FormDescription>
                           A URL to an image that represents your blog post
                         </FormDescription>
