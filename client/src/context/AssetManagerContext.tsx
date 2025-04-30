@@ -20,9 +20,13 @@ interface AssetManagerContextType {
   isLoading: boolean;
   error: Error | null;
   selectedAsset: Asset | null;
+  selectedAssets: Asset[];
   setSelectedAsset: (asset: Asset | null) => void;
+  addSelectedAsset: (asset: Asset) => void;
+  removeSelectedAsset: (assetId: number) => void;
   selectMode: boolean;
-  onAssetSelect?: (asset: Asset) => void;
+  multiSelect: boolean;
+  onAssetSelect?: (assets: Asset | Asset[]) => void;
   deleteAsset: (assetId: number) => Promise<void>;
   updateAssetMetadata: (assetId: number, metadata: AssetMetadata) => Promise<Asset>;
 }
@@ -51,7 +55,9 @@ export const AssetManagerProvider: React.FC<AssetManagerProviderProps> = ({ chil
   const [isOpen, setIsOpen] = useState(false);
   const [searchParams, setSearchParams] = useState<AssetSearchParams>({ page: 1, limit: 20 });
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
-  const [onAssetSelect, setOnAssetSelect] = useState<((asset: Asset) => void) | undefined>(undefined);
+  const [selectedAssets, setSelectedAssets] = useState<Asset[]>([]);
+  const [multiSelect, setMultiSelect] = useState(false);
+  const [onAssetSelect, setOnAssetSelect] = useState<((assets: Asset | Asset[]) => void) | undefined>(undefined);
   const { toast } = useToast();
 
   // Fetch assets query
@@ -173,12 +179,15 @@ export const AssetManagerProvider: React.FC<AssetManagerProviderProps> = ({ chil
 
   // Open asset manager with optional filtering
   const openAssetManager = useCallback((
-    onSelect?: (asset: Asset) => void,
-    filterCallback?: (params: AssetSearchParams) => AssetSearchParams
+    onSelect?: (assets: Asset | Asset[]) => void,
+    filterCallback?: (params: AssetSearchParams) => AssetSearchParams,
+    allowMultiple: boolean = false
   ) => {
     setIsOpen(true);
     setOnAssetSelect(onSelect);
     setSelectedAsset(null);
+    setSelectedAssets([]);
+    setMultiSelect(allowMultiple);
     
     // Apply filter if provided
     if (filterCallback) {
@@ -195,6 +204,8 @@ export const AssetManagerProvider: React.FC<AssetManagerProviderProps> = ({ chil
     setIsOpen(false);
     setOnAssetSelect(undefined);
     setSelectedAsset(null);
+    setSelectedAssets([]);
+    setMultiSelect(false);
   }, []);
 
   // Upload asset
@@ -216,6 +227,22 @@ export const AssetManagerProvider: React.FC<AssetManagerProviderProps> = ({ chil
   const updateAssetMetadata = useCallback(async (assetId: number, metadata: AssetMetadata) => {
     return updateMetadataMutation.mutateAsync({ assetId, metadata });
   }, [updateMetadataMutation]);
+  
+  // Add asset to selection (for multi-select mode)
+  const addSelectedAsset = useCallback((asset: Asset) => {
+    setSelectedAssets(prev => {
+      // Check if asset already exists in array
+      if (prev.some(a => a.id === asset.id)) {
+        return prev;
+      }
+      return [...prev, asset];
+    });
+  }, []);
+  
+  // Remove asset from selection (for multi-select mode)
+  const removeSelectedAsset = useCallback((assetId: number) => {
+    setSelectedAssets(prev => prev.filter(asset => asset.id !== assetId));
+  }, []);
 
   // Calculate pagination values
   const totalItems = data?.total || 0;
@@ -236,8 +263,12 @@ export const AssetManagerProvider: React.FC<AssetManagerProviderProps> = ({ chil
     isLoading,
     error,
     selectedAsset,
+    selectedAssets,
     setSelectedAsset,
+    addSelectedAsset,
+    removeSelectedAsset,
     selectMode: !!onAssetSelect,
+    multiSelect,
     onAssetSelect,
     deleteAsset,
     updateAssetMetadata,

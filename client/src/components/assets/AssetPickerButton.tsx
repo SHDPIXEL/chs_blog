@@ -5,18 +5,20 @@ import { Asset } from '@shared/schema';
 import { ImageIcon } from 'lucide-react';
 
 interface AssetPickerButtonProps {
-  onSelect: (asset: Asset) => void;
+  onSelect: (asset: Asset | Asset[]) => void;
   children?: React.ReactNode;
   accept?: 'image' | 'document' | 'video' | 'audio' | 'all';
   variant?: ButtonProps['variant'];
   className?: string;
   disabled?: boolean;
+  multiSelect?: boolean;
 }
 
 const AssetPickerButton: React.FC<AssetPickerButtonProps> = ({
   onSelect,
   children,
   accept = 'image',
+  multiSelect = false,
   ...props
 }) => {
   const { openAssetManager } = useAssetManager();
@@ -45,7 +47,7 @@ const AssetPickerButton: React.FC<AssetPickerButtonProps> = ({
       };
     };
     
-    openAssetManager(onSelect, filterCallback);
+    openAssetManager(onSelect, filterCallback, multiSelect);
   };
 
   return (
