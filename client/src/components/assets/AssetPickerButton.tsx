@@ -4,10 +4,13 @@ import { useAssetManager, AssetSearchParams } from '@/context/AssetManagerContex
 import { Asset } from '@shared/schema';
 import { ImageIcon } from 'lucide-react';
 
-interface AssetPickerButtonProps extends Omit<ButtonProps, 'onClick'> {
+interface AssetPickerButtonProps {
   onSelect: (asset: Asset) => void;
   children?: React.ReactNode;
   accept?: 'image' | 'document' | 'video' | 'audio' | 'all';
+  variant?: ButtonProps['variant'];
+  className?: string;
+  disabled?: boolean;
 }
 
 const AssetPickerButton: React.FC<AssetPickerButtonProps> = ({

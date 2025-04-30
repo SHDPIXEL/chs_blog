@@ -177,8 +177,11 @@ export class DatabaseStorage implements IStorage {
       const tagConditions = params.tags.map(tag => 
         sql`${assets.tags} @> ${JSON.stringify([tag])}`
       );
-      // Combine conditions with OR for tags
-      conditions.push(or(...tagConditions));
+      
+      // Combine conditions with OR for tags, make sure we have at least one condition
+      if (tagConditions.length > 0) {
+        conditions.push(or(...tagConditions));
+      }
     }
     
     // Build the query with all conditions using AND

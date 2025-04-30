@@ -278,10 +278,11 @@ const ProfilePage = () => {
                                   }));
                                 }
                               }}
+                              accept="all"
                               variant="outline"
                             >
                               <ImageIcon className="h-4 w-4 mr-2" />
-                              {formData.bannerUrl ? 'Change Banner Image' : 'Select Banner Image'}
+                              {formData.bannerUrl ? 'Change Banner' : 'Select Banner (Image or Video)'}
                             </AssetPickerButton>
                             
                             {formData.bannerUrl && (
