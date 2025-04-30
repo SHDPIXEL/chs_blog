@@ -15,7 +15,7 @@ import {
   type SearchAssets
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, or, desc, sql } from "drizzle-orm";
+import { eq, and, or, desc, sql, type SQL } from "drizzle-orm";
 import * as bcrypt from "bcrypt";
 
 // Interface for storage operations
@@ -151,19 +151,19 @@ export class DatabaseStorage implements IStorage {
   }
   
   async searchAssets(params: SearchAssets, userId: number): Promise<{ assets: Asset[], total: number }> {
-    // Start with base conditions
-    let conditions = [eq(assets.userId, userId)];
+    // Start with base conditions that are always added
+    const baseCondition = eq(assets.userId, userId);
+    let conditions: any[] = [baseCondition];
     
     // Apply text search if query is provided
     if (params.query) {
       const searchTerm = `%${params.query}%`;
-      conditions.push(
-        or(
-          sql`${assets.title} ILIKE ${searchTerm}`,
-          sql`${assets.description} ILIKE ${searchTerm}`,
-          sql`${assets.originalName} ILIKE ${searchTerm}`
-        )
+      const textCondition = or(
+        sql`${assets.title} ILIKE ${searchTerm}`,
+        sql`${assets.description} ILIKE ${searchTerm}`,
+        sql`${assets.originalName} ILIKE ${searchTerm}`
       );
+      conditions.push(textCondition);
     }
     
     // Filter by mimetype
@@ -175,11 +175,11 @@ export class DatabaseStorage implements IStorage {
     // Filter by tags - more complex since tags is a jsonb array
     if (params.tags && params.tags.length > 0) {
       // Create a condition for each tag to check if it exists in the array
-      const tagConditions = params.tags.map(tag => 
+      const tagConditions: any[] = params.tags.map(tag => 
         sql`${assets.tags} @> ${JSON.stringify([tag])}`
       );
       
-      // Combine conditions with OR for tags, make sure we have at least one condition
+      // Combine conditions with OR for tags, only if we have tags
       if (tagConditions.length > 0) {
         conditions.push(or(...tagConditions));
       }

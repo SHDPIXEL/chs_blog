@@ -5,8 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAssetManager, AssetMetadata } from '@/context/AssetManagerContext';
-import AssetGrid from './AssetGrid';
-import AssetDetails from './AssetDetails';
+import { AssetGrid } from '@/components/assets';
+import { AssetDetails } from '@/components/assets';
 import { 
   Upload, Search, X, Tag, Plus, Image, FileText, 
   Video, Music, FileIcon, Filter 
