@@ -1,17 +1,33 @@
-import React, { useState, useRef, ChangeEvent } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { useAssetManager, AssetMetadata } from '@/context/AssetManagerContext';
-import { AssetGrid } from '@/components/assets';
-import { AssetDetails } from '@/components/assets';
-import { 
-  Upload, Search, X, Tag, Plus, Image, FileText, 
-  Video, Music, FileIcon, Filter, CheckCircle
-} from 'lucide-react';
-import { Asset } from '@shared/schema';
+import React, { useState, useRef, ChangeEvent } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { useAssetManager, AssetMetadata } from "@/context/AssetManagerContext";
+import { AssetGrid } from "@/components/assets";
+import { AssetDetails } from "@/components/assets";
+import {
+  Upload,
+  Search,
+  X,
+  Tag,
+  Plus,
+  Image,
+  FileText,
+  Video,
+  Music,
+  FileIcon,
+  Filter,
+  CheckCircle,
+} from "lucide-react";
+import { Asset } from "@shared/schema";
 
 const AssetManager: React.FC = () => {
   const {
@@ -32,17 +48,17 @@ const AssetManager: React.FC = () => {
     onAssetSelect,
   } = useAssetManager();
 
-  const [activeTab, setActiveTab] = useState<string>('browse');
-  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [activeTab, setActiveTab] = useState<string>("browse");
+  const [searchQuery, setSearchQuery] = useState<string>("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploadMetadata, setUploadMetadata] = useState<AssetMetadata>({
-    title: '',
-    description: '',
-    tags: []
+    title: "",
+    description: "",
+    tags: [],
   });
-  const [newTag, setNewTag] = useState<string>('');
-  const [selectedType, setSelectedType] = useState<string>('all');
+  const [newTag, setNewTag] = useState<string>("");
+  const [selectedType, setSelectedType] = useState<string>("all");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Handle file selection
@@ -50,9 +66,9 @@ const AssetManager: React.FC = () => {
     if (event.target.files && event.target.files[0]) {
       const file = event.target.files[0];
       setUploadFile(file);
-      setUploadMetadata(prev => ({ 
-        ...prev, 
-        title: file.name.split('.')[0] 
+      setUploadMetadata((prev) => ({
+        ...prev,
+        title: file.name.split(".")[0],
       }));
     }
   };
@@ -60,36 +76,36 @@ const AssetManager: React.FC = () => {
   // Handle file upload
   const handleUpload = async () => {
     if (!uploadFile) return;
-    
+
     try {
       await uploadAsset(uploadFile, uploadMetadata);
       // Reset form after successful upload
       setUploadFile(null);
-      setUploadMetadata({ title: '', description: '', tags: [] });
-      setActiveTab('browse');
+      setUploadMetadata({ title: "", description: "", tags: [] });
+      setActiveTab("browse");
       if (fileInputRef.current) {
-        fileInputRef.current.value = '';
+        fileInputRef.current.value = "";
       }
     } catch (error) {
-      console.error('Upload failed:', error);
+      console.error("Upload failed:", error);
     }
   };
 
   // Handle adding a new tag
   const handleAddTag = () => {
     if (!newTag.trim()) return;
-    setUploadMetadata(prev => ({
+    setUploadMetadata((prev) => ({
       ...prev,
-      tags: [...(prev.tags || []), newTag.trim()]
+      tags: [...(prev.tags || []), newTag.trim()],
     }));
-    setNewTag('');
+    setNewTag("");
   };
 
   // Handle removing a tag
   const handleRemoveTag = (tag: string) => {
-    setUploadMetadata(prev => ({
+    setUploadMetadata((prev) => ({
       ...prev,
-      tags: prev.tags ? prev.tags.filter(t => t !== tag) : []
+      tags: prev.tags ? prev.tags.filter((t) => t !== tag) : [],
     }));
   };
 
@@ -97,30 +113,29 @@ const AssetManager: React.FC = () => {
   const handleSearch = () => {
     searchAssets({
       query: searchQuery,
-      page: 1
+      page: 1,
     });
   };
 
   // Handle selecting an asset
   const handleSelectAsset = (asset: Asset) => {
-    if (selectMode && !multiSelect && onAssetSelect) {
-      onAssetSelect(asset);
-      closeAssetManager();
-    } else {
-      setSelectedAsset(asset);
-    }
+    // Always set the selected asset for the details panel
+    setSelectedAsset(asset);
+    
+    // In multi-select mode, we don't auto-close or auto-select
+    // Let user explicitly confirm with the Continue button
   };
-  
+
   // Handle toggling asset selection (for multi-select mode)
   const handleToggleAsset = (asset: Asset) => {
     // Check if asset is already selected
-    if (selectedAssets.some(a => a.id === asset.id)) {
+    if (selectedAssets.some((a) => a.id === asset.id)) {
       removeSelectedAsset(asset.id);
     } else {
       addSelectedAsset(asset);
     }
   };
-  
+
   // Handle final selection confirmation (for multi-select mode)
   const handleConfirmSelection = () => {
     if (onAssetSelect && selectedAssets.length > 0) {
@@ -132,11 +147,16 @@ const AssetManager: React.FC = () => {
   // Helper function to get mimetype filter
   const getMimeTypeFilter = (type: string): string => {
     switch (type) {
-      case 'image': return 'image/';
-      case 'document': return 'application/';
-      case 'video': return 'video/';
-      case 'audio': return 'audio/';
-      default: return '';
+      case "image":
+        return "image/";
+      case "document":
+        return "application/";
+      case "video":
+        return "video/";
+      case "audio":
+        return "audio/";
+      default:
+        return "";
     }
   };
 
@@ -150,7 +170,11 @@ const AssetManager: React.FC = () => {
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
+        <Tabs
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="flex-1 flex flex-col"
+        >
           <TabsList className="grid grid-cols-2">
             <TabsTrigger value="browse">Browse Assets</TabsTrigger>
             <TabsTrigger value="upload">Upload New</TabsTrigger>
@@ -163,16 +187,16 @@ const AssetManager: React.FC = () => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="flex-1"
-                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
               />
               <Button onClick={handleSearch} size="icon">
                 <Search className="h-4 w-4" />
               </Button>
             </div>
-            
+
             <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4 min-h-0">
               <div className="col-span-2 overflow-y-auto border rounded-md p-4">
-                <AssetGrid 
+                <AssetGrid
                   assets={assets}
                   isLoading={isLoading}
                   onSelect={handleSelectAsset}
@@ -182,7 +206,7 @@ const AssetManager: React.FC = () => {
                   onToggleSelect={handleToggleAsset}
                 />
               </div>
-              
+
               <div className="col-span-1 border rounded-md p-4">
                 {selectedAsset ? (
                   <AssetDetails asset={selectedAsset} />
@@ -194,34 +218,39 @@ const AssetManager: React.FC = () => {
                 )}
               </div>
             </div>
-            
+
             <div className="mt-4 flex justify-end gap-2">
-              <Button
-                variant="outline"
-                onClick={closeAssetManager}
-              >
+              <Button variant="outline" onClick={closeAssetManager}>
                 Cancel
               </Button>
-              
-              {selectMode && (multiSelect ? (
-                <Button
-                  disabled={selectedAssets.length === 0}
-                  onClick={handleConfirmSelection}
-                  className="bg-primary hover:bg-primary/90"
-                >
-                  <CheckCircle className="mr-2 h-4 w-4" />
-                  Continue with {selectedAssets.length > 0 ? `${selectedAssets.length} Selected` : 'Selection'}
-                </Button>
-              ) : (
-                <Button
-                  disabled={!selectedAsset}
-                  onClick={() => onAssetSelect && selectedAsset && onAssetSelect(selectedAsset)}
-                  className="bg-primary hover:bg-primary/90"
-                >
-                  <CheckCircle className="mr-2 h-4 w-4" />
-                  Select Asset
-                </Button>
-              ))}
+
+              {selectMode &&
+                (multiSelect ? (
+                  <Button
+                    disabled={selectedAssets.length === 0}
+                    onClick={handleConfirmSelection}
+                    className="bg-primary hover:bg-primary/90"
+                  >
+                    <CheckCircle className="mr-2 h-4 w-4" />
+                    Continue with{" "}
+                    {selectedAssets.length > 0
+                      ? `${selectedAssets.length} Selected`
+                      : "Selection"}
+                  </Button>
+                ) : (
+                  <Button
+                    disabled={!selectedAsset}
+                    onClick={() =>
+                      onAssetSelect &&
+                      selectedAsset &&
+                      onAssetSelect(selectedAsset)
+                    }
+                    className="bg-primary hover:bg-primary/90"
+                  >
+                    <CheckCircle className="mr-2 h-4 w-4" />
+                    Select Asset
+                  </Button>
+                ))}
             </div>
           </TabsContent>
 
@@ -229,21 +258,24 @@ const AssetManager: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="border rounded-md p-4">
                 <h3 className="text-lg font-medium mb-4">Upload File</h3>
-                
+
                 {uploadFile ? (
                   <div className="mb-4 p-4 border rounded-md flex items-center justify-between">
                     <div className="flex items-center">
-                      {uploadFile.type.startsWith('image/') ? (
+                      {uploadFile.type.startsWith("image/") ? (
                         <Image className="h-6 w-6 mr-2 text-blue-500" />
-                      ) : uploadFile.type.startsWith('video/') ? (
+                      ) : uploadFile.type.startsWith("video/") ? (
                         <Video className="h-6 w-6 mr-2 text-purple-500" />
-                      ) : uploadFile.type.startsWith('audio/') ? (
+                      ) : uploadFile.type.startsWith("audio/") ? (
                         <Music className="h-6 w-6 mr-2 text-green-500" />
                       ) : (
                         <FileText className="h-6 w-6 mr-2 text-gray-500" />
                       )}
                       <div>
-                        <p className="font-medium text-sm truncate" style={{ maxWidth: '200px' }}>
+                        <p
+                          className="font-medium text-sm truncate"
+                          style={{ maxWidth: "200px" }}
+                        >
                           {uploadFile.name}
                         </p>
                         <p className="text-xs text-gray-500">
@@ -265,7 +297,9 @@ const AssetManager: React.FC = () => {
                     onClick={() => fileInputRef.current?.click()}
                   >
                     <Upload className="h-10 w-10 mx-auto mb-2 text-gray-400" />
-                    <p className="text-gray-500 mb-1">Click to select a file or drag and drop</p>
+                    <p className="text-gray-500 mb-1">
+                      Click to select a file or drag and drop
+                    </p>
                     <p className="text-xs text-gray-400">Max file size: 5MB</p>
                     <input
                       type="file"
@@ -276,48 +310,64 @@ const AssetManager: React.FC = () => {
                     />
                   </div>
                 )}
-                
+
                 <Button
                   className="w-full"
                   disabled={!uploadFile || isUploading}
                   onClick={handleUpload}
                 >
-                  {isUploading ? 'Uploading...' : 'Upload Asset'}
+                  {isUploading ? "Uploading..." : "Upload Asset"}
                 </Button>
               </div>
-              
+
               <div className="border rounded-md p-4">
                 <h3 className="text-lg font-medium mb-4">Asset Details</h3>
-                
+
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium mb-1">Title</label>
+                    <label className="block text-sm font-medium mb-1">
+                      Title
+                    </label>
                     <Input
-                      value={uploadMetadata.title || ''}
-                      onChange={(e) => setUploadMetadata(prev => ({ ...prev, title: e.target.value }))}
+                      value={uploadMetadata.title || ""}
+                      onChange={(e) =>
+                        setUploadMetadata((prev) => ({
+                          ...prev,
+                          title: e.target.value,
+                        }))
+                      }
                       placeholder="Asset title"
                     />
                   </div>
-                  
+
                   <div>
-                    <label className="block text-sm font-medium mb-1">Description</label>
+                    <label className="block text-sm font-medium mb-1">
+                      Description
+                    </label>
                     <textarea
-                      value={uploadMetadata.description || ''}
-                      onChange={(e) => setUploadMetadata(prev => ({ ...prev, description: e.target.value }))}
+                      value={uploadMetadata.description || ""}
+                      onChange={(e) =>
+                        setUploadMetadata((prev) => ({
+                          ...prev,
+                          description: e.target.value,
+                        }))
+                      }
                       placeholder="Brief description of the asset"
                       className="w-full rounded-md border p-2 min-h-[100px] text-sm"
                     />
                   </div>
-                  
+
                   <div>
-                    <label className="block text-sm font-medium mb-1">Tags</label>
+                    <label className="block text-sm font-medium mb-1">
+                      Tags
+                    </label>
                     <div className="flex gap-2 mb-2">
                       <Input
                         value={newTag}
                         onChange={(e) => setNewTag(e.target.value)}
                         placeholder="Add a tag"
                         className="flex-1"
-                        onKeyDown={(e) => e.key === 'Enter' && handleAddTag()}
+                        onKeyDown={(e) => e.key === "Enter" && handleAddTag()}
                       />
                       <Button
                         variant="outline"
@@ -327,13 +377,17 @@ const AssetManager: React.FC = () => {
                         <Plus className="h-4 w-4" />
                       </Button>
                     </div>
-                    
+
                     <div className="flex flex-wrap gap-2">
                       {uploadMetadata.tags?.map((tag) => (
-                        <Badge key={tag} variant="secondary" className="px-3 py-1">
+                        <Badge
+                          key={tag}
+                          variant="secondary"
+                          className="px-3 py-1"
+                        >
                           <Tag className="h-3 w-3 mr-1" />
                           {tag}
-                          <button 
+                          <button
                             className="ml-1"
                             onClick={() => handleRemoveTag(tag)}
                           >
