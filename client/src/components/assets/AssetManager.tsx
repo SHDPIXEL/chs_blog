@@ -128,19 +128,36 @@ const AssetManager: React.FC = () => {
 
   // Handle toggling asset selection (for multi-select mode)
   const handleToggleAsset = (asset: Asset) => {
-    // Check if asset is already selected
-    if (selectedAssets.some((a) => a.id === asset.id)) {
-      removeSelectedAsset(asset.id);
-    } else {
-      addSelectedAsset(asset);
+    // Always update selected asset for detail view
+    setSelectedAsset(asset);
+    
+    // Only toggle in multi-select mode
+    if (multiSelect) {
+      // Check if asset is already selected
+      if (selectedAssets.some((a) => a.id === asset.id)) {
+        removeSelectedAsset(asset.id);
+      } else {
+        addSelectedAsset(asset);
+      }
     }
   };
 
-  // Handle final selection confirmation (for multi-select mode)
+  // Handle final selection confirmation for both modes
   const handleConfirmSelection = () => {
-    if (onAssetSelect && selectedAssets.length > 0) {
-      onAssetSelect(selectedAssets);
-      closeAssetManager();
+    if (onAssetSelect) {
+      if (multiSelect) {
+        // In multi-select mode, pass the array of assets
+        if (selectedAssets.length > 0) {
+          onAssetSelect(selectedAssets);
+          closeAssetManager();
+        }
+      } else {
+        // In single-select mode, just pass the selected asset
+        if (selectedAsset) {
+          onAssetSelect(selectedAsset);
+          closeAssetManager();
+        }
+      }
     }
   };
 
@@ -223,9 +240,10 @@ const AssetManager: React.FC = () => {
               <Button variant="outline" onClick={closeAssetManager}>
                 Cancel
               </Button>
-
-              {selectMode &&
-                (multiSelect ? (
+              
+              {/* Show continue button in selection mode */}
+              {selectMode && (
+                multiSelect ? (
                   <Button
                     disabled={selectedAssets.length === 0}
                     onClick={handleConfirmSelection}
@@ -240,17 +258,14 @@ const AssetManager: React.FC = () => {
                 ) : (
                   <Button
                     disabled={!selectedAsset}
-                    onClick={() =>
-                      onAssetSelect &&
-                      selectedAsset &&
-                      onAssetSelect(selectedAsset)
-                    }
+                    onClick={handleConfirmSelection}
                     className="bg-primary hover:bg-primary/90"
                   >
                     <CheckCircle className="mr-2 h-4 w-4" />
-                    Select Asset
+                    Continue with Selection
                   </Button>
-                ))}
+                )
+              )}
             </div>
           </TabsContent>
 
