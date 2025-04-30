@@ -242,29 +242,29 @@ const AssetManager: React.FC = () => {
               </Button>
               
               {/* Show continue button in selection mode */}
-              {selectMode && (
-                multiSelect ? (
-                  <Button
-                    disabled={selectedAssets.length === 0}
-                    onClick={handleConfirmSelection}
-                    className="bg-primary hover:bg-primary/90"
-                  >
-                    <CheckCircle className="mr-2 h-4 w-4" />
-                    Continue with{" "}
-                    {selectedAssets.length > 0
-                      ? `${selectedAssets.length} Selected`
-                      : "Selection"}
-                  </Button>
-                ) : (
-                  <Button
-                    disabled={!selectedAsset}
-                    onClick={handleConfirmSelection}
-                    className="bg-primary hover:bg-primary/90"
-                  >
-                    <CheckCircle className="mr-2 h-4 w-4" />
-                    Continue with Selection
-                  </Button>
-                )
+              {selectMode && multiSelect && (
+                <Button
+                  disabled={selectedAssets.length === 0}
+                  onClick={handleConfirmSelection}
+                  className="bg-primary hover:bg-primary/90"
+                >
+                  <CheckCircle className="mr-2 h-4 w-4" />
+                  Continue with{" "}
+                  {selectedAssets.length > 0
+                    ? `${selectedAssets.length} Selected`
+                    : "Selection"}
+                </Button>
+              )}
+              
+              {selectMode && !multiSelect && (
+                <Button
+                  disabled={!selectedAsset}
+                  onClick={handleConfirmSelection}
+                  className="bg-primary hover:bg-primary/90"
+                >
+                  <CheckCircle className="mr-2 h-4 w-4" />
+                  Continue with Selection
+                </Button>
               )}
             </div>
           </TabsContent>
