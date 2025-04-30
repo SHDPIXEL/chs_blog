@@ -221,7 +221,15 @@ const ProfilePage = () => {
                             />
                             <AssetPickerButton 
                               onSelect={(asset) => {
-                                if (asset && asset.url) {
+                                if (Array.isArray(asset)) {
+                                  // Just use the first asset if somehow multiple are selected
+                                  if (asset.length > 0 && asset[0].url) {
+                                    setFormData(prev => ({
+                                      ...prev,
+                                      avatarUrl: asset[0].url
+                                    }));
+                                  }
+                                } else if (asset && asset.url) {
                                   setFormData(prev => ({
                                     ...prev,
                                     avatarUrl: asset.url
@@ -271,7 +279,15 @@ const ProfilePage = () => {
                             />
                             <AssetPickerButton 
                               onSelect={(asset) => {
-                                if (asset && asset.url) {
+                                if (Array.isArray(asset)) {
+                                  // Just use the first asset if somehow multiple are selected
+                                  if (asset.length > 0 && asset[0].url) {
+                                    setFormData(prev => ({
+                                      ...prev,
+                                      bannerUrl: asset[0].url
+                                    }));
+                                  }
+                                } else if (asset && asset.url) {
                                   setFormData(prev => ({
                                     ...prev,
                                     bannerUrl: asset.url

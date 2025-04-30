@@ -103,11 +103,29 @@ const AssetManager: React.FC = () => {
 
   // Handle selecting an asset
   const handleSelectAsset = (asset: Asset) => {
-    if (selectMode && onAssetSelect) {
+    if (selectMode && !multiSelect && onAssetSelect) {
       onAssetSelect(asset);
       closeAssetManager();
     } else {
       setSelectedAsset(asset);
+    }
+  };
+  
+  // Handle toggling asset selection (for multi-select mode)
+  const handleToggleAsset = (asset: Asset) => {
+    // Check if asset is already selected
+    if (selectedAssets.some(a => a.id === asset.id)) {
+      removeSelectedAsset(asset.id);
+    } else {
+      addSelectedAsset(asset);
+    }
+  };
+  
+  // Handle final selection confirmation (for multi-select mode)
+  const handleConfirmSelection = () => {
+    if (onAssetSelect && selectedAssets.length > 0) {
+      onAssetSelect(selectedAssets);
+      closeAssetManager();
     }
   };
 
@@ -159,6 +177,9 @@ const AssetManager: React.FC = () => {
                   isLoading={isLoading}
                   onSelect={handleSelectAsset}
                   selectedAsset={selectedAsset}
+                  selectedAssets={selectedAssets}
+                  multiSelect={multiSelect}
+                  onToggleSelect={handleToggleAsset}
                 />
               </div>
               
@@ -182,12 +203,22 @@ const AssetManager: React.FC = () => {
                 >
                   Cancel
                 </Button>
-                <Button
-                  disabled={!selectedAsset}
-                  onClick={() => onAssetSelect && selectedAsset && onAssetSelect(selectedAsset)}
-                >
-                  Select Asset
-                </Button>
+                
+                {multiSelect ? (
+                  <Button
+                    disabled={selectedAssets.length === 0}
+                    onClick={handleConfirmSelection}
+                  >
+                    Select {selectedAssets.length > 0 ? `${selectedAssets.length} Assets` : 'Assets'}
+                  </Button>
+                ) : (
+                  <Button
+                    disabled={!selectedAsset}
+                    onClick={() => onAssetSelect && selectedAsset && onAssetSelect(selectedAsset)}
+                  >
+                    Select Asset
+                  </Button>
+                )}
               </div>
             )}
           </TabsContent>

@@ -73,6 +73,11 @@ const AssetGrid: React.FC<AssetGridProps> = ({
             onClick={() => multiSelect && onToggleSelect ? onToggleSelect(asset) : onSelect(asset)}
           >
             <div className="relative aspect-square w-full overflow-hidden bg-gray-100">
+              {multiSelect && selectedAssets.some(a => a.id === asset.id) && (
+                <div className="absolute top-2 right-2 z-10 bg-primary text-white rounded-full p-1">
+                  <CheckCircle2 className="h-5 w-5" />
+                </div>
+              )}
               {asset.mimetype.startsWith('image/') ? (
                 <img
                   src={asset.url}

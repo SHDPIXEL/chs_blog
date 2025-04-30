@@ -183,7 +183,14 @@ const NewBlogPage: React.FC = () => {
                           <div className="flex-shrink-0">
                             <AssetPickerButton 
                               onSelect={(asset) => {
-                                field.onChange(asset.url);
+                                if (Array.isArray(asset)) {
+                                  // Just use the first asset if somehow multiple are selected
+                                  if (asset.length > 0 && asset[0].url) {
+                                    field.onChange(asset[0].url);
+                                  }
+                                } else if (asset && asset.url) {
+                                  field.onChange(asset.url);
+                                }
                               }}
                               variant="outline"
                             >
