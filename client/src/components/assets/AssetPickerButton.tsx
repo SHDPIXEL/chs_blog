@@ -6,6 +6,7 @@ import { ImageIcon } from 'lucide-react';
 
 interface AssetPickerButtonProps {
   onSelect: (asset: Asset | Asset[]) => void;
+  selectMode?: boolean; // Added selectMode prop
   children?: React.ReactNode;
   accept?: 'image' | 'document' | 'video' | 'audio' | 'all';
   variant?: ButtonProps['variant'];
@@ -16,6 +17,7 @@ interface AssetPickerButtonProps {
 
 const AssetPickerButton: React.FC<AssetPickerButtonProps> = ({
   onSelect,
+  selectMode = false, // Default selectMode to false
   children,
   accept = 'image',
   multiSelect = false,
@@ -38,7 +40,7 @@ const AssetPickerButton: React.FC<AssetPickerButtonProps> = ({
     // Prevent form submission if button is inside a form
     e.preventDefault();
     e.stopPropagation();
-    
+
     // Custom filter function to apply before opening asset manager
     const filterCallback = (searchParams: AssetSearchParams) => {
       return {
@@ -47,7 +49,9 @@ const AssetPickerButton: React.FC<AssetPickerButtonProps> = ({
       };
     };
 
-     openAssetManager(onSelect, filterCallback, multiSelect);
+    openAssetManager(onSelect, filterCallback, multiSelect, selectMode); // Pass selectMode
+
+  };
 
   return (
     <Button onClick={handleClick} {...props}>

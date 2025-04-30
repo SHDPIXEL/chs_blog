@@ -59,6 +59,7 @@ export const AssetManagerProvider: React.FC<AssetManagerProviderProps> = ({ chil
   const [selectedAssets, setSelectedAssets] = useState<Asset[]>([]);
   const [multiSelect, setMultiSelect] = useState(false);
   const [onAssetSelect, setOnAssetSelect] = useState<((assets: Asset | Asset[]) => void) | undefined>(undefined);
+  const [selectMode, setSelectMode] = useState(false);
   const { toast } = useToast();
 
   // Fetch assets query
@@ -182,13 +183,15 @@ export const AssetManagerProvider: React.FC<AssetManagerProviderProps> = ({ chil
   const openAssetManager = useCallback((
     onSelect?: (assets: Asset | Asset[]) => void,
     filterCallback?: (params: AssetSearchParams) => AssetSearchParams,
-    allowMultiple: boolean = false
+    allowMultiple: boolean = false,
+    isSelectMode: boolean = false
   ) => {
     setIsOpen(true);
     setOnAssetSelect(onSelect);
     setSelectedAsset(null);
     setSelectedAssets([]);
     setMultiSelect(allowMultiple);
+    setSelectMode(isSelectMode);
     
     // Apply filter if provided
     if (filterCallback) {
