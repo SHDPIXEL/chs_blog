@@ -261,7 +261,7 @@ const AssetManager: React.FC = () => {
                       ref={fileInputRef}
                       className="hidden"
                       onChange={handleFileChange}
-                      accept="image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                      accept="image/*"
                     />
                   </div>
                 )}

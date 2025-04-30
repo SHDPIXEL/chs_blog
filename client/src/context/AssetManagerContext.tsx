@@ -6,7 +6,10 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 
 interface AssetManagerContextType {
   isOpen: boolean;
-  openAssetManager: (onSelect?: (asset: Asset) => void) => void;
+  openAssetManager: (
+    onSelect?: (asset: Asset) => void,
+    filterCallback?: (params: AssetSearchParams) => AssetSearchParams
+  ) => void;
   closeAssetManager: () => void;
   uploadAsset: (file: File, metadata?: AssetMetadata) => Promise<Asset>;
   isUploading: boolean;
@@ -166,13 +169,23 @@ export const AssetManagerProvider: React.FC<AssetManagerProviderProps> = ({ chil
     },
   });
 
-  // Open asset manager
-  const openAssetManager = useCallback((onSelect?: (asset: Asset) => void) => {
+  // Open asset manager with optional filtering
+  const openAssetManager = useCallback((
+    onSelect?: (asset: Asset) => void,
+    filterCallback?: (params: AssetSearchParams) => AssetSearchParams
+  ) => {
     setIsOpen(true);
     setOnAssetSelect(onSelect);
     setSelectedAsset(null);
+    
+    // Apply filter if provided
+    if (filterCallback) {
+      const filteredParams = filterCallback(searchParams);
+      setSearchParams(filteredParams);
+    }
+    
     refetch();
-  }, [refetch]);
+  }, [refetch, searchParams]);
 
   // Close asset manager
   const closeAssetManager = useCallback(() => {
