@@ -47,7 +47,7 @@ const AssetManager: React.FC = () => {
     multiSelect,
     onAssetSelect,
   } = useAssetManager();
-  
+
   // Debug output
   console.log("multiSelect : " + multiSelect);
   console.log("selectMode : " + selectMode);
@@ -248,25 +248,33 @@ const AssetManager: React.FC = () => {
                 Cancel
               </Button>
 
-              {selectMode && (multiSelect ? (
-                <Button
-                  disabled={selectedAssets.length === 0}
-                  onClick={handleConfirmSelection}
-                  className="bg-primary hover:bg-primary/90"
-                >
-                  <CheckCircle className="mr-2 h-4 w-4" />
-                  Continue with {selectedAssets.length > 0 ? `${selectedAssets.length} Selected` : 'Selection'}
-                </Button>
-              ) : (
-                <Button
-                  disabled={!selectedAsset}
-                  onClick={() => onAssetSelect && selectedAsset && onAssetSelect(selectedAsset)}
-                  className="bg-primary hover:bg-primary/90"
-                >
-                  <CheckCircle className="mr-2 h-4 w-4" />
-                  Select Asset
-                </Button>
-              ))}
+              {selectMode &&
+                (multiSelect ? (
+                  <Button
+                    disabled={selectedAssets.length === 0}
+                    onClick={handleConfirmSelection}
+                    className="bg-primary hover:bg-primary/90"
+                  >
+                    <CheckCircle className="mr-2 h-4 w-4" />
+                    Continue with{" "}
+                    {selectedAssets.length > 0
+                      ? `${selectedAssets.length} Selected`
+                      : "Selection"}
+                  </Button>
+                ) : (
+                  <Button
+                    //disabled={!selectedAsset}
+                    onClick={() =>
+                      onAssetSelect ||
+                      selectedAsset ||
+                      onAssetSelect(selectedAsset)
+                    }
+                    className="bg-primary hover:bg-primary/90"
+                  >
+                    <CheckCircle className="mr-2 h-4 w-4" />
+                    Select Asset
+                  </Button>
+                ))}
             </div>
           </TabsContent>
 

@@ -1,15 +1,21 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
-import { Asset } from '@shared/schema';
-import { useToast } from '@/hooks/use-toast';
-import { apiRequest, queryClient } from '@/lib/queryClient';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  ReactNode,
+} from "react";
+import { Asset } from "@shared/schema";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
 interface AssetManagerContextType {
   isOpen: boolean;
   openAssetManager: (
     onSelect?: (assets: Asset | Asset[]) => void,
     filterCallback?: (params: AssetSearchParams) => AssetSearchParams,
-    allowMultiple?: boolean
+    allowMultiple?: boolean,
   ) => void;
   closeAssetManager: () => void;
   uploadAsset: (file: File, metadata?: AssetMetadata) => Promise<Asset>;
@@ -29,7 +35,10 @@ interface AssetManagerContextType {
   multiSelect: boolean;
   onAssetSelect?: (assets: Asset | Asset[]) => void;
   deleteAsset: (assetId: number) => Promise<void>;
-  updateAssetMetadata: (assetId: number, metadata: AssetMetadata) => Promise<Asset>;
+  updateAssetMetadata: (
+    assetId: number,
+    metadata: AssetMetadata,
+  ) => Promise<Asset>;
 }
 
 interface AssetManagerProviderProps {
@@ -50,86 +59,111 @@ export interface AssetSearchParams {
   limit?: number;
 }
 
-const AssetManagerContext = createContext<AssetManagerContextType | undefined>(undefined);
+const AssetManagerContext = createContext<AssetManagerContextType | undefined>(
+  undefined,
+);
 
-export const AssetManagerProvider: React.FC<AssetManagerProviderProps> = ({ children }) => {
+export const AssetManagerProvider: React.FC<AssetManagerProviderProps> = ({
+  children,
+}) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [searchParams, setSearchParams] = useState<AssetSearchParams>({ page: 1, limit: 20 });
+  const [searchParams, setSearchParams] = useState<AssetSearchParams>({
+    page: 1,
+    limit: 20,
+  });
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
   const [selectedAssets, setSelectedAssets] = useState<Asset[]>([]);
   const [multiSelect, setMultiSelect] = useState(false);
-  const [onAssetSelect, setOnAssetSelect] = useState<((assets: Asset | Asset[]) => void) | undefined>(undefined);
+  const [onAssetSelect, setOnAssetSelect] = useState<
+    ((assets: Asset | Asset[]) => void) | undefined
+  >(undefined);
   const [selectMode, setSelectMode] = useState(false);
   const { toast } = useToast();
 
   // Fetch assets query
-  const {
-    data,
-    isLoading,
-    error,
-    refetch
-  } = useQuery<{ assets: Asset[], total: number }, Error>({
-    queryKey: ['/api/assets/search', searchParams],
+  const { data, isLoading, error, refetch } = useQuery<
+    { assets: Asset[]; total: number },
+    Error
+  >({
+    queryKey: ["/api/assets/search", searchParams],
     queryFn: async () => {
       // Build query string
       const queryParams = new URLSearchParams();
-      if (searchParams.query) queryParams.set('query', searchParams.query);
-      if (searchParams.tags && searchParams.tags.length > 0) queryParams.set('tags', searchParams.tags.join(','));
-      if (searchParams.mimetype) queryParams.set('mimetype', searchParams.mimetype);
-      if (searchParams.page) queryParams.set('page', searchParams.page.toString());
-      if (searchParams.limit) queryParams.set('limit', searchParams.limit.toString());
-      
-      console.log('Fetching assets with params:', Object.fromEntries(queryParams.entries()));
-      
-      const response = await apiRequest('GET', `/api/assets/search?${queryParams.toString()}`);
+      if (searchParams.query) queryParams.set("query", searchParams.query);
+      if (searchParams.tags && searchParams.tags.length > 0)
+        queryParams.set("tags", searchParams.tags.join(","));
+      if (searchParams.mimetype)
+        queryParams.set("mimetype", searchParams.mimetype);
+      if (searchParams.page)
+        queryParams.set("page", searchParams.page.toString());
+      if (searchParams.limit)
+        queryParams.set("limit", searchParams.limit.toString());
+
+      console.log(
+        "Fetching assets with params:",
+        Object.fromEntries(queryParams.entries()),
+      );
+
+      const response = await apiRequest(
+        "GET",
+        `/api/assets/search?${queryParams.toString()}`,
+      );
       return response.json();
     },
     // Only fetch when modal is open
-    enabled: isOpen
+    enabled: isOpen,
   });
 
   // Upload asset mutation
   const uploadMutation = useMutation({
-    mutationFn: async ({ file, metadata }: { file: File, metadata?: AssetMetadata }) => {
+    mutationFn: async ({
+      file,
+      metadata,
+    }: {
+      file: File;
+      metadata?: AssetMetadata;
+    }) => {
       const formData = new FormData();
-      formData.append('file', file);
-      
-      if (metadata?.title) formData.append('title', metadata.title);
-      if (metadata?.description) formData.append('description', metadata.description);
-      if (metadata?.tags) formData.append('tags', JSON.stringify(metadata.tags));
-      
+      formData.append("file", file);
+
+      if (metadata?.title) formData.append("title", metadata.title);
+      if (metadata?.description)
+        formData.append("description", metadata.description);
+      if (metadata?.tags)
+        formData.append("tags", JSON.stringify(metadata.tags));
+
       // Use token from the correct localStorage key
-      const token = localStorage.getItem('blogcms_token');
-      
-      const response = await fetch('/api/assets', {
-        method: 'POST',
+      const token = localStorage.getItem("blogcms_token");
+
+      const response = await fetch("/api/assets", {
+        method: "POST",
         body: formData,
-        credentials: 'include',
+        credentials: "include",
         headers: {
           // Don't set Content-Type header for FormData
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
       });
-      
+
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || 'Failed to upload asset');
+        throw new Error(error.message || "Failed to upload asset");
       }
-      
+
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/assets/search'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/assets/search"] });
       toast({
-        title: 'Asset uploaded',
-        description: 'Your file was uploaded successfully',
+        title: "Asset uploaded",
+        description: "Your file was uploaded successfully",
       });
     },
     onError: (error: Error) => {
       toast({
-        title: 'Upload failed',
+        title: "Upload failed",
         description: error.message,
-        variant: 'destructive',
+        variant: "destructive",
       });
     },
   });
@@ -137,71 +171,84 @@ export const AssetManagerProvider: React.FC<AssetManagerProviderProps> = ({ chil
   // Delete asset mutation
   const deleteMutation = useMutation({
     mutationFn: async (assetId: number) => {
-      await apiRequest('DELETE', `/api/assets/${assetId}`);
+      await apiRequest("DELETE", `/api/assets/${assetId}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/assets/search'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/assets/search"] });
       toast({
-        title: 'Asset deleted',
-        description: 'The asset was deleted successfully',
+        title: "Asset deleted",
+        description: "The asset was deleted successfully",
       });
       setSelectedAsset(null);
     },
     onError: (error: Error) => {
       toast({
-        title: 'Delete failed',
+        title: "Delete failed",
         description: error.message,
-        variant: 'destructive',
+        variant: "destructive",
       });
     },
   });
 
   // Update asset metadata mutation
   const updateMetadataMutation = useMutation({
-    mutationFn: async ({ assetId, metadata }: { assetId: number, metadata: AssetMetadata }) => {
-      const response = await apiRequest('PATCH', `/api/assets/${assetId}`, metadata);
+    mutationFn: async ({
+      assetId,
+      metadata,
+    }: {
+      assetId: number;
+      metadata: AssetMetadata;
+    }) => {
+      const response = await apiRequest(
+        "PATCH",
+        `/api/assets/${assetId}`,
+        metadata,
+      );
       return response.json();
     },
     onSuccess: (updatedAsset) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/assets/search'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/assets/search"] });
       toast({
-        title: 'Asset updated',
-        description: 'The asset metadata was updated successfully',
+        title: "Asset updated",
+        description: "The asset metadata was updated successfully",
       });
       setSelectedAsset(updatedAsset);
     },
     onError: (error: Error) => {
       toast({
-        title: 'Update failed',
+        title: "Update failed",
         description: error.message,
-        variant: 'destructive',
+        variant: "destructive",
       });
     },
   });
 
   // Open asset manager with optional filtering
-  const openAssetManager = useCallback((
-    onSelect?: (assets: Asset | Asset[]) => void,
-    filterCallback?: (params: AssetSearchParams) => AssetSearchParams,
-    allowMultiple: boolean = false,
-    isSelectMode: boolean = false
-  ) => {
-    setIsOpen(true);
-    setOnAssetSelect(onSelect);
-    setSelectedAsset(null);
-    setSelectedAssets([]);
-    setMultiSelect(allowMultiple);
-    setSelectMode(isSelectMode);
-    
-    // Apply filter if provided
-    if (filterCallback) {
-      const filteredParams = filterCallback(searchParams);
-      setSearchParams(filteredParams);
-      // Don't call refetch here - the useEffect with searchParams dependency will trigger it
-    } else {
-      refetch(); // Only refetch if no filter was applied to prevent double fetch
-    }
-  }, [refetch, searchParams]);
+  const openAssetManager = useCallback(
+    (
+      onSelect?: (assets: Asset | Asset[]) => void,
+      filterCallback?: (params: AssetSearchParams) => AssetSearchParams,
+      allowMultiple: boolean = false,
+      isSelectMode: boolean = false,
+    ) => {
+      setIsOpen(true);
+      setOnAssetSelect(onSelect);
+      setSelectedAsset(null);
+      setSelectedAssets([]);
+      setMultiSelect(allowMultiple);
+      setSelectMode(isSelectMode);
+
+      // Apply filter if provided
+      if (filterCallback) {
+        const filteredParams = filterCallback(searchParams);
+        setSearchParams(filteredParams);
+        // Don't call refetch here - the useEffect with searchParams dependency will trigger it
+      } else {
+        refetch(); // Only refetch if no filter was applied to prevent double fetch
+      }
+    },
+    [refetch, searchParams],
+  );
 
   // Close asset manager
   const closeAssetManager = useCallback(() => {
@@ -213,39 +260,48 @@ export const AssetManagerProvider: React.FC<AssetManagerProviderProps> = ({ chil
   }, []);
 
   // Upload asset
-  const uploadAsset = useCallback(async (file: File, metadata?: AssetMetadata) => {
-    return uploadMutation.mutateAsync({ file, metadata });
-  }, [uploadMutation]);
+  const uploadAsset = useCallback(
+    async (file: File, metadata?: AssetMetadata) => {
+      return uploadMutation.mutateAsync({ file, metadata });
+    },
+    [uploadMutation],
+  );
 
   // Search assets
   const searchAssets = useCallback((params: AssetSearchParams) => {
-    setSearchParams(prev => ({ ...prev, ...params }));
+    setSearchParams((prev) => ({ ...prev, ...params }));
   }, []);
 
   // Delete asset
-  const deleteAsset = useCallback(async (assetId: number) => {
-    await deleteMutation.mutateAsync(assetId);
-  }, [deleteMutation]);
+  const deleteAsset = useCallback(
+    async (assetId: number) => {
+      await deleteMutation.mutateAsync(assetId);
+    },
+    [deleteMutation],
+  );
 
   // Update asset metadata
-  const updateAssetMetadata = useCallback(async (assetId: number, metadata: AssetMetadata) => {
-    return updateMetadataMutation.mutateAsync({ assetId, metadata });
-  }, [updateMetadataMutation]);
-  
+  const updateAssetMetadata = useCallback(
+    async (assetId: number, metadata: AssetMetadata) => {
+      return updateMetadataMutation.mutateAsync({ assetId, metadata });
+    },
+    [updateMetadataMutation],
+  );
+
   // Add asset to selection (for multi-select mode)
   const addSelectedAsset = useCallback((asset: Asset) => {
-    setSelectedAssets(prev => {
+    setSelectedAssets((prev) => {
       // Check if asset already exists in array
-      if (prev.some(a => a.id === asset.id)) {
+      if (prev.some((a) => a.id === asset.id)) {
         return prev;
       }
       return [...prev, asset];
     });
   }, []);
-  
+
   // Remove asset from selection (for multi-select mode)
   const removeSelectedAsset = useCallback((assetId: number) => {
-    setSelectedAssets(prev => prev.filter(asset => asset.id !== assetId));
+    setSelectedAssets((prev) => prev.filter((asset) => asset.id !== assetId));
   }, []);
 
   // Calculate pagination values
@@ -271,7 +327,7 @@ export const AssetManagerProvider: React.FC<AssetManagerProviderProps> = ({ chil
     setSelectedAsset,
     addSelectedAsset,
     removeSelectedAsset,
-    selectMode: !!onAssetSelect,
+    selectMode, //selectMode: !!onAssetSelect,
     multiSelect,
     onAssetSelect,
     deleteAsset,
@@ -288,7 +344,9 @@ export const AssetManagerProvider: React.FC<AssetManagerProviderProps> = ({ chil
 export const useAssetManager = (): AssetManagerContextType => {
   const context = useContext(AssetManagerContext);
   if (context === undefined) {
-    throw new Error('useAssetManager must be used within an AssetManagerProvider');
+    throw new Error(
+      "useAssetManager must be used within an AssetManagerProvider",
+    );
   }
   return context;
 };
