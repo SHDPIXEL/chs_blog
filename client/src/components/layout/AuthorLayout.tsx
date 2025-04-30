@@ -23,7 +23,7 @@ const AuthorLayout: React.FC<AuthorLayoutProps> = ({ children }) => {
   // Redirect if not authenticated as author
   React.useEffect(() => {
     if (!isAuthenticated) {
-      setLocation('/login');
+      setLocation('/auth/login');
     } else if (user && user.role !== 'author') {
       setLocation('/admin/dashboard');
     }

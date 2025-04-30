@@ -6,7 +6,10 @@ import jwt from "jsonwebtoken";
 import { 
   loginUserSchema, 
   insertUserSchema, 
+  updateUserProfileSchema,
+  updateArticleSchema,
   UserRole,
+  ArticleStatus,
   insertArticleSchema
 } from "@shared/schema";
 import { z } from "zod";
@@ -162,6 +165,93 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Author profile
+  app.get("/api/author/profile", authenticateToken, requireAuthor, async (req: AuthRequest, res) => {
+    try {
+      if (!req.user?.id) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      
+      const user = await storage.getUser(req.user.id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Return user without password
+      const { password, ...userWithoutPassword } = user;
+      return res.json(userWithoutPassword);
+    } catch (error) {
+      return res.status(500).json({ message: "Server error" });
+    }
+  });
+  
+  // Update author profile
+  app.patch("/api/author/profile", authenticateToken, requireAuthor, async (req: AuthRequest, res) => {
+    try {
+      if (!req.user?.id) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      
+      const validatedData = updateUserProfileSchema.parse(req.body);
+      const updatedUser = await storage.updateUserProfile(req.user.id, validatedData);
+      
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Return user without password
+      const { password, ...userWithoutPassword } = updatedUser;
+      return res.json(userWithoutPassword);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Validation error", 
+          errors: error.errors 
+        });
+      }
+      return res.status(500).json({ message: "Server error" });
+    }
+  });
+  
+  // Get author's articles by status
+  app.get("/api/author/articles/:status", authenticateToken, requireAuthor, async (req: AuthRequest, res) => {
+    try {
+      if (!req.user?.id) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      
+      const { status } = req.params;
+      
+      // Validate status
+      if (!Object.values(ArticleStatus).includes(status as any)) {
+        return res.status(400).json({ message: "Invalid status parameter" });
+      }
+      
+      const articles = await storage.getArticlesByStatus(
+        req.user.id, 
+        status as any
+      );
+      
+      return res.json(articles);
+    } catch (error) {
+      return res.status(500).json({ message: "Server error" });
+    }
+  });
+  
+  // Get all author's articles
+  app.get("/api/author/articles", authenticateToken, requireAuthor, async (req: AuthRequest, res) => {
+    try {
+      if (!req.user?.id) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      
+      const articles = await storage.getArticlesByAuthor(req.user.id);
+      return res.json(articles);
+    } catch (error) {
+      return res.status(500).json({ message: "Server error" });
+    }
+  });
+
   // Create article
   app.post("/api/articles", authenticateToken, requireAuth, async (req: AuthRequest, res) => {
     try {
@@ -183,6 +273,117 @@ export async function registerRoutes(app: Express): Promise<Server> {
           errors: error.errors 
         });
       }
+      return res.status(500).json({ message: "Server error" });
+    }
+  });
+  
+  // Update article
+  app.patch("/api/articles/:id", authenticateToken, requireAuth, async (req: AuthRequest, res) => {
+    try {
+      if (!req.user?.id) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      
+      const articleId = parseInt(req.params.id);
+      if (isNaN(articleId)) {
+        return res.status(400).json({ message: "Invalid article ID" });
+      }
+      
+      // Check if article exists and belongs to the author
+      const article = await storage.getArticle(articleId);
+      
+      if (!article) {
+        return res.status(404).json({ message: "Article not found" });
+      }
+      
+      if (article.authorId !== req.user.id && req.user.role !== UserRole.ADMIN) {
+        return res.status(403).json({ message: "You don't have permission to update this article" });
+      }
+      
+      const validatedData = updateArticleSchema.parse(req.body);
+      const updatedArticle = await storage.updateArticle(articleId, validatedData);
+      
+      return res.json(updatedArticle);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Validation error", 
+          errors: error.errors 
+        });
+      }
+      return res.status(500).json({ message: "Server error" });
+    }
+  });
+  
+  // Update article status
+  app.patch("/api/articles/:id/status", authenticateToken, requireAuth, async (req: AuthRequest, res) => {
+    try {
+      if (!req.user?.id) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      
+      const articleId = parseInt(req.params.id);
+      if (isNaN(articleId)) {
+        return res.status(400).json({ message: "Invalid article ID" });
+      }
+      
+      const { status } = req.body;
+      
+      // Validate status
+      if (!Object.values(ArticleStatus).includes(status)) {
+        return res.status(400).json({ message: "Invalid status" });
+      }
+      
+      // Check if article exists and belongs to the author
+      const article = await storage.getArticle(articleId);
+      
+      if (!article) {
+        return res.status(404).json({ message: "Article not found" });
+      }
+      
+      if (article.authorId !== req.user.id && req.user.role !== UserRole.ADMIN) {
+        return res.status(403).json({ message: "You don't have permission to update this article" });
+      }
+      
+      const updatedArticle = await storage.updateArticleStatus(articleId, status);
+      
+      return res.json(updatedArticle);
+    } catch (error) {
+      return res.status(500).json({ message: "Server error" });
+    }
+  });
+  
+  // Delete article
+  app.delete("/api/articles/:id", authenticateToken, requireAuth, async (req: AuthRequest, res) => {
+    try {
+      if (!req.user?.id) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      
+      const articleId = parseInt(req.params.id);
+      if (isNaN(articleId)) {
+        return res.status(400).json({ message: "Invalid article ID" });
+      }
+      
+      // Check if article exists and belongs to the author
+      const article = await storage.getArticle(articleId);
+      
+      if (!article) {
+        return res.status(404).json({ message: "Article not found" });
+      }
+      
+      if (article.authorId !== req.user.id && req.user.role !== UserRole.ADMIN) {
+        return res.status(403).json({ message: "You don't have permission to delete this article" });
+      }
+      
+      const success = await storage.deleteArticle(articleId);
+      
+      if (!success) {
+        return res.status(500).json({ message: "Failed to delete article" });
+      }
+      
+      return res.status(204).send();
+    } catch (error) {
       return res.status(500).json({ message: "Server error" });
     }
   });

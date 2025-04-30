@@ -42,9 +42,8 @@ const Sidebar: React.FC<SidebarProps> = ({ role }) => {
 
   const authorNavItems: NavItem[] = [
     { icon: <LayoutDashboard className="h-5 w-5" />, label: 'Dashboard', href: '/author/dashboard' },
-    { icon: <FileText className="h-5 w-5" />, label: 'My Articles', href: '/author/articles' },
-    { icon: <FileSpreadsheet className="h-5 w-5" />, label: 'Drafts', href: '/author/drafts' },
-    { icon: <MessageSquare className="h-5 w-5" />, label: 'Comments', href: '/author/comments' },
+    { icon: <FileText className="h-5 w-5" />, label: 'My Blogs', href: '/author/blogs' },
+    { icon: <FileEdit className="h-5 w-5" />, label: 'Add Blog', href: '/author/blogs/new' },
     { icon: <User className="h-5 w-5" />, label: 'Profile', href: '/author/profile' },
   ];
 

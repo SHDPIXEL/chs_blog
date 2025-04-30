@@ -74,6 +74,15 @@ export class DatabaseStorage implements IStorage {
   async getArticlesByAuthor(authorId: number): Promise<Article[]> {
     return await db.select().from(articles).where(eq(articles.authorId, authorId));
   }
+  
+  async getArticlesByStatus(authorId: number, status: ArticleStatusType): Promise<Article[]> {
+    return await db.select()
+      .from(articles)
+      .where(and(
+        eq(articles.authorId, authorId),
+        eq(articles.status, status)
+      ));
+  }
 
   async getPublishedArticles(): Promise<Article[]> {
     return await db.select().from(articles).where(eq(articles.published, true));
@@ -84,11 +93,25 @@ export class DatabaseStorage implements IStorage {
     return article;
   }
 
-  async updateArticle(id: number, updateData: Partial<InsertArticle>): Promise<Article | undefined> {
+  async updateArticle(id: number, updateData: Partial<UpdateArticle>): Promise<Article | undefined> {
     const [article] = await db.update(articles)
       .set({
         ...updateData,
         updatedAt: new Date()
+      })
+      .where(eq(articles.id, id))
+      .returning();
+    
+    return article;
+  }
+  
+  async updateArticleStatus(id: number, status: ArticleStatusType): Promise<Article | undefined> {
+    const [article] = await db.update(articles)
+      .set({
+        status,
+        updatedAt: new Date(),
+        // If status is published, also set published flag to true
+        ...(status === 'published' ? { published: true } : {})
       })
       .where(eq(articles.id, id))
       .returning();
