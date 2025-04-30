@@ -244,31 +244,25 @@ const AssetManager: React.FC = () => {
                 Cancel
               </Button>
 
-              {/* Show continue button in selection mode */}
-              {selectMode && multiSelect && (
+              {selectMode && (multiSelect ? (
                 <Button
                   disabled={selectedAssets.length === 0}
                   onClick={handleConfirmSelection}
                   className="bg-primary hover:bg-primary/90"
                 >
                   <CheckCircle className="mr-2 h-4 w-4" />
-                  Continue with{" "}
-                  {selectedAssets.length > 0
-                    ? `${selectedAssets.length} Selected`
-                    : "Selection"}
+                  Continue with {selectedAssets.length > 0 ? `${selectedAssets.length} Selected` : 'Selection'}
                 </Button>
-              )}
-
-              {selectMode && !multiSelect && (
+              ) : (
                 <Button
                   disabled={!selectedAsset}
-                  onClick={handleConfirmSelection}
+                  onClick={() => onAssetSelect && selectedAsset && onAssetSelect(selectedAsset)}
                   className="bg-primary hover:bg-primary/90"
                 >
                   <CheckCircle className="mr-2 h-4 w-4" />
-                  Continue with Selection
+                  Select Asset
                 </Button>
-              )}
+              ))}
             </div>
           </TabsContent>
 
