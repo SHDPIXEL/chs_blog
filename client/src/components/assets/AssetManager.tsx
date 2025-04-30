@@ -93,8 +93,6 @@ const AssetManager: React.FC = () => {
   const handleSearch = () => {
     searchAssets({
       query: searchQuery,
-      tags: selectedTags.length > 0 ? selectedTags : undefined,
-      mimetype: selectedType !== 'all' ? getMimeTypeFilter(selectedType) : undefined,
       page: 1
     });
   };
@@ -137,41 +135,17 @@ const AssetManager: React.FC = () => {
           </TabsList>
 
           <TabsContent value="browse" className="flex-1 flex flex-col">
-            <div className="flex flex-col md:flex-row gap-4 mb-4">
-              <div className="flex-1 flex gap-2">
-                <Input
-                  placeholder="Search assets..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="flex-1"
-                />
-                <Button onClick={handleSearch} size="icon">
-                  <Search className="h-4 w-4" />
-                </Button>
-              </div>
-              
-              <div className="flex gap-2">
-                <select
-                  className="border rounded px-2 py-1 text-sm"
-                  value={selectedType}
-                  onChange={(e) => setSelectedType(e.target.value)}
-                >
-                  <option value="all">All Types</option>
-                  <option value="image">Images</option>
-                  <option value="document">Documents</option>
-                  <option value="video">Videos</option>
-                  <option value="audio">Audio</option>
-                </select>
-                
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleSearch}
-                >
-                  <Filter className="h-4 w-4 mr-1" />
-                  Filter
-                </Button>
-              </div>
+            <div className="flex gap-2 mb-4">
+              <Input
+                placeholder="Search assets..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="flex-1"
+                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              />
+              <Button onClick={handleSearch} size="icon">
+                <Search className="h-4 w-4" />
+              </Button>
             </div>
             
             <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4 min-h-0">
@@ -261,7 +235,7 @@ const AssetManager: React.FC = () => {
                       ref={fileInputRef}
                       className="hidden"
                       onChange={handleFileChange}
-                      accept="image/*"
+                      accept="image/*,video/*"
                     />
                   </div>
                 )}

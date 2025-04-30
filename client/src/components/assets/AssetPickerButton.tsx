@@ -29,7 +29,11 @@ const AssetPickerButton: React.FC<AssetPickerButtonProps> = ({
     }
   }, [accept]);
 
-  const handleClick = () => {
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    // Prevent form submission if button is inside a form
+    e.preventDefault();
+    e.stopPropagation();
+    
     // Custom filter function to apply before opening asset manager
     const filterCallback = (searchParams: AssetSearchParams) => {
       return {

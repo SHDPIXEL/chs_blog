@@ -228,6 +228,7 @@ const ProfilePage = () => {
                                   }));
                                 }
                               }}
+                              accept="image"
                               variant="outline"
                             >
                               <CameraIcon className="h-4 w-4 mr-2" />
