@@ -85,13 +85,16 @@ export const AssetManagerProvider: React.FC<AssetManagerProviderProps> = ({ chil
       if (metadata?.description) formData.append('description', metadata.description);
       if (metadata?.tags) formData.append('tags', JSON.stringify(metadata.tags));
       
+      // Use token from the correct localStorage key
+      const token = localStorage.getItem('blogcms_token');
+      
       const response = await fetch('/api/assets', {
         method: 'POST',
         body: formData,
         credentials: 'include',
         headers: {
           // Don't set Content-Type header for FormData
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${token}`,
         },
       });
       
