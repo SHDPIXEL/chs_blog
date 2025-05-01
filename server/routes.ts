@@ -886,6 +886,234 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Serve static files from uploads directory
   app.use('/uploads', express.static(uploadsFolder));
 
+  // Admin routes
+  // Dashboard stats
+  app.get("/api/admin/dashboard", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      if (!req.user?.id) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      
+      // Get user count
+      const users = await storage.getUsers();
+      const totalUsers = users.length;
+      
+      // Get post count
+      const articles = await storage.getPublishedArticles();
+      const totalPosts = articles.length;
+      
+      // Sample data for dashboard - in a real app, these would be calculated from the database
+      const dashboardData = {
+        totalUsers,
+        totalPosts,
+        totalViews: 1245, // Sample data
+        postsThisMonth: 12, // Sample data
+        popularCategories: [
+          { name: "Technology", count: 8 },
+          { name: "Business", count: 6 },
+          { name: "Design", count: 4 },
+          { name: "Marketing", count: 3 }
+        ],
+        recentActivity: [
+          { id: 1, action: "Published new article", user: "Sarah Johnson", timestamp: new Date().toISOString() },
+          { id: 2, action: "Updated profile", user: "John Smith", timestamp: new Date(Date.now() - 3600000).toISOString() },
+          { id: 3, action: "Created new category", user: "Admin User", timestamp: new Date(Date.now() - 86400000).toISOString() }
+        ],
+        postsByStatus: [
+          { status: "Published", count: 15 },
+          { status: "Draft", count: 8 },
+          { status: "Review", count: 3 }
+        ],
+        viewsOverTime: Array.from({ length: 14 }, (_, i) => {
+          const date = new Date();
+          date.setDate(date.getDate() - (13 - i));
+          return {
+            date: date.toISOString().split('T')[0],
+            views: Math.floor(Math.random() * 100) + 50
+          };
+        })
+      };
+      
+      return res.json(dashboardData);
+    } catch (error) {
+      return res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  // Get all authors with extended info
+  app.get("/api/admin/authors", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      if (!req.user?.id) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      
+      // Get all authors
+      const users = await storage.getUsers(UserRole.AUTHOR);
+      
+      // Add extended info (sample data)
+      const authorsWithExtendedInfo = users.map(user => {
+        return {
+          ...user,
+          postCount: Math.floor(Math.random() * 10) + 1, // Sample data
+          activeStatus: true // Sample data
+        };
+      });
+      
+      return res.json(authorsWithExtendedInfo);
+    } catch (error) {
+      return res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  // Update author status (active/inactive)
+  app.patch("/api/admin/authors/:id/status", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      if (!req.user?.id) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      
+      const authorId = parseInt(req.params.id);
+      if (isNaN(authorId)) {
+        return res.status(400).json({ message: "Invalid author ID" });
+      }
+      
+      const { active } = req.body;
+      if (typeof active !== 'boolean') {
+        return res.status(400).json({ message: "Active status must be a boolean" });
+      }
+      
+      // For now just return success - in a real app this would update a status field in the database
+      return res.json({ success: true, id: authorId, active });
+    } catch (error) {
+      return res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  // Update author permissions
+  app.patch("/api/admin/authors/:id/permissions", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      if (!req.user?.id) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      
+      const authorId = parseInt(req.params.id);
+      if (isNaN(authorId)) {
+        return res.status(400).json({ message: "Invalid author ID" });
+      }
+      
+      const { canPublish } = req.body;
+      if (typeof canPublish !== 'boolean') {
+        return res.status(400).json({ message: "Publishing rights must be a boolean" });
+      }
+      
+      // Update user publishing rights
+      const updatedUser = await storage.updateUserPublishingRights(authorId, canPublish);
+      
+      if (!updatedUser) {
+        return res.status(404).json({ message: "Author not found" });
+      }
+      
+      return res.json(updatedUser);
+    } catch (error) {
+      return res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  // Get all blog posts with extended info
+  app.get("/api/admin/articles", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      if (!req.user?.id) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      
+      // Get all articles
+      const articles = await storage.searchArticles({});
+      
+      // Prepare extended article info
+      const extendedArticles = await Promise.all(articles.articles.map(async article => {
+        // Get author info
+        const author = await storage.getUser(article.authorId);
+        
+        // Get categories
+        const categories = await storage.getArticleCategories(article.id);
+        
+        return {
+          ...article,
+          author: author?.name || "Unknown Author",
+          categories: categories.map(cat => cat.name),
+          viewCount: Math.floor(Math.random() * 1000) + 50, // Sample data
+          featured: Math.random() > 0.5 // Sample data
+        };
+      }));
+      
+      return res.json(extendedArticles);
+    } catch (error) {
+      return res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  // Bulk update article status
+  app.patch("/api/admin/articles/bulk/status", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      if (!req.user?.id) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      
+      const { ids, status } = req.body;
+      
+      if (!Array.isArray(ids) || ids.length === 0) {
+        return res.status(400).json({ message: "Invalid or empty article IDs" });
+      }
+      
+      if (!Object.values(ArticleStatus).includes(status)) {
+        return res.status(400).json({ message: "Invalid status" });
+      }
+      
+      // Update each article's status
+      const results = await Promise.all(
+        ids.map(async (id) => {
+          try {
+            const article = await storage.updateArticleStatus(id, status);
+            return { id, success: !!article };
+          } catch (error) {
+            return { id, success: false };
+          }
+        })
+      );
+      
+      return res.json({ success: true, results });
+    } catch (error) {
+      return res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  // Bulk update article featured status
+  app.patch("/api/admin/articles/bulk/featured", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      if (!req.user?.id) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      
+      const { ids, featured } = req.body;
+      
+      if (!Array.isArray(ids) || ids.length === 0) {
+        return res.status(400).json({ message: "Invalid or empty article IDs" });
+      }
+      
+      if (typeof featured !== 'boolean') {
+        return res.status(400).json({ message: "Featured must be a boolean" });
+      }
+      
+      // For now just return success - in a real app this would update each article
+      return res.json({ 
+        success: true, 
+        results: ids.map(id => ({ id, success: true }))
+      });
+    } catch (error) {
+      return res.status(500).json({ message: "Server error" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
