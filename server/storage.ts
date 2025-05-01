@@ -241,8 +241,8 @@ export class DatabaseStorage implements IStorage {
       .set({
         status,
         updatedAt: new Date(),
-        // If status is published, also set published flag to true
-        ...(status === 'published' ? { published: true } : {})
+        // Set published flag based on status
+        published: status === 'published'
       })
       .where(eq(articles.id, id))
       .returning();
