@@ -1,0 +1,444 @@
+import React, { useCallback, useState } from 'react';
+import { useEditor, EditorContent, BubbleMenu } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Image from '@tiptap/extension-image';
+import Link from '@tiptap/extension-link';
+import Underline from '@tiptap/extension-underline';
+import Placeholder from '@tiptap/extension-placeholder';
+import TextAlign from '@tiptap/extension-text-align';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import {
+  Bold,
+  Italic,
+  Underline as UnderlineIcon,
+  List,
+  ListOrdered,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  Link as LinkIcon,
+  Image as ImageIcon,
+  X,
+  MoveHorizontal,
+  Minus,
+  Heading1,
+  Heading2,
+  Quote,
+  Code,
+} from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Input } from '@/components/ui/input';
+import { AssetPickerButton } from '@/components/assets';
+import { Asset } from '@shared/schema';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
+interface RichTextEditorProps {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  className?: string;
+  readOnly?: boolean;
+}
+
+const RichTextEditor: React.FC<RichTextEditorProps> = ({
+  value,
+  onChange,
+  placeholder = 'Start writing...',
+  className,
+  readOnly = false,
+}) => {
+  const [linkUrl, setLinkUrl] = useState<string>('');
+  const [showImagePopover, setShowImagePopover] = useState<boolean>(false);
+  const [imageUrl, setImageUrl] = useState<string>('');
+
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      Image,
+      Link.configure({
+        openOnClick: false,
+      }),
+      Underline,
+      Placeholder.configure({
+        placeholder,
+      }),
+      TextAlign.configure({
+        types: ['heading', 'paragraph'],
+      }),
+    ],
+    content: value,
+    editable: !readOnly,
+    onUpdate: ({ editor }) => {
+      onChange(editor.getHTML());
+    },
+  });
+
+  const setLink = useCallback(() => {
+    if (!editor) return;
+    
+    if (linkUrl === '') {
+      editor.chain().focus().extendMarkRange('link').unsetLink().run();
+      return;
+    }
+
+    // Add https:// if it doesn't exist
+    const url = linkUrl.startsWith('http') ? linkUrl : `https://${linkUrl}`;
+    
+    // Update link
+    editor
+      .chain()
+      .focus()
+      .extendMarkRange('link')
+      .setLink({ href: url })
+      .run();
+  }, [editor, linkUrl]);
+
+  const addImage = useCallback((url: string) => {
+    if (!editor || !url) return;
+    
+    editor
+      .chain()
+      .focus()
+      .setImage({ src: url })
+      .run();
+      
+    setImageUrl('');
+    setShowImagePopover(false);
+  }, [editor]);
+
+  if (!editor) {
+    return null;
+  }
+
+  return (
+    <div className={cn("border rounded-md overflow-hidden", className)}>
+      {!readOnly && (
+        <div className="flex flex-wrap items-center gap-1 p-2 border-b bg-muted/50">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => editor.chain().focus().toggleBold().run()}
+            className={cn(editor.isActive('bold') ? 'bg-muted' : '')}
+          >
+            <Bold className="h-4 w-4" />
+          </Button>
+          
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => editor.chain().focus().toggleItalic().run()}
+            className={cn(editor.isActive('italic') ? 'bg-muted' : '')}
+          >
+            <Italic className="h-4 w-4" />
+          </Button>
+          
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => editor.chain().focus().toggleUnderline().run()}
+            className={cn(editor.isActive('underline') ? 'bg-muted' : '')}
+          >
+            <UnderlineIcon className="h-4 w-4" />
+          </Button>
+          
+          <div className="w-px h-6 bg-border mx-1"></div>
+          
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+            className={cn(editor.isActive('heading', { level: 1 }) ? 'bg-muted' : '')}
+          >
+            <Heading1 className="h-4 w-4" />
+          </Button>
+          
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+            className={cn(editor.isActive('heading', { level: 2 }) ? 'bg-muted' : '')}
+          >
+            <Heading2 className="h-4 w-4" />
+          </Button>
+          
+          <div className="w-px h-6 bg-border mx-1"></div>
+          
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => editor.chain().focus().toggleBulletList().run()}
+            className={cn(editor.isActive('bulletList') ? 'bg-muted' : '')}
+          >
+            <List className="h-4 w-4" />
+          </Button>
+          
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => editor.chain().focus().toggleOrderedList().run()}
+            className={cn(editor.isActive('orderedList') ? 'bg-muted' : '')}
+          >
+            <ListOrdered className="h-4 w-4" />
+          </Button>
+          
+          <div className="w-px h-6 bg-border mx-1"></div>
+          
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => editor.chain().focus().setTextAlign('left').run()}
+            className={cn(editor.isActive({ textAlign: 'left' }) ? 'bg-muted' : '')}
+          >
+            <AlignLeft className="h-4 w-4" />
+          </Button>
+          
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => editor.chain().focus().setTextAlign('center').run()}
+            className={cn(editor.isActive({ textAlign: 'center' }) ? 'bg-muted' : '')}
+          >
+            <AlignCenter className="h-4 w-4" />
+          </Button>
+          
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => editor.chain().focus().setTextAlign('right').run()}
+            className={cn(editor.isActive({ textAlign: 'right' }) ? 'bg-muted' : '')}
+          >
+            <AlignRight className="h-4 w-4" />
+          </Button>
+          
+          <div className="w-px h-6 bg-border mx-1"></div>
+          
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => editor.chain().focus().toggleBlockquote().run()}
+            className={cn(editor.isActive('blockquote') ? 'bg-muted' : '')}
+          >
+            <Quote className="h-4 w-4" />
+          </Button>
+          
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+            className={cn(editor.isActive('codeBlock') ? 'bg-muted' : '')}
+          >
+            <Code className="h-4 w-4" />
+          </Button>
+          
+          <div className="w-px h-6 bg-border mx-1"></div>
+          
+          <Popover open={showImagePopover} onOpenChange={setShowImagePopover}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowImagePopover(true)}
+              >
+                <ImageIcon className="h-4 w-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80">
+              <div className="space-y-2">
+                <h4 className="font-medium">Insert Image</h4>
+                <Tabs defaultValue="library" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="library">Media Library</TabsTrigger>
+                    <TabsTrigger value="url">Image URL</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="library" className="space-y-4">
+                    <AssetPickerButton
+                      accept="image"
+                      onSelect={(asset) => {
+                        if (Array.isArray(asset)) {
+                          // Just use the first asset if multiple are selected
+                          if (asset.length > 0) {
+                            addImage(asset[0].url);
+                          }
+                        } else {
+                          addImage(asset.url);
+                        }
+                      }}
+                      variant="outline"
+                      className="w-full"
+                    >
+                      <ImageIcon className="mr-2 h-4 w-4" /> Choose from Library
+                    </AssetPickerButton>
+                  </TabsContent>
+                  <TabsContent value="url" className="space-y-4">
+                    <div className="flex items-center space-x-2">
+                      <Input
+                        placeholder="Enter image URL..."
+                        value={imageUrl}
+                        onChange={(e) => setImageUrl(e.target.value)}
+                      />
+                      <Button
+                        onClick={() => addImage(imageUrl)}
+                        disabled={!imageUrl}
+                        size="sm"
+                      >
+                        Add
+                      </Button>
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </div>
+            </PopoverContent>
+          </Popover>
+          
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className={cn(editor.isActive('link') ? 'bg-muted' : '')}
+              >
+                <LinkIcon className="h-4 w-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80">
+              <div className="flex flex-col gap-2">
+                <h4 className="font-medium">Insert Link</h4>
+                <Input
+                  placeholder="Enter URL..."
+                  value={linkUrl}
+                  onChange={(e) => setLinkUrl(e.target.value)}
+                />
+                <div className="flex justify-between">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setLinkUrl('');
+                      editor.chain().focus().extendMarkRange('link').unsetLink().run();
+                    }}
+                    disabled={!editor.isActive('link')}
+                  >
+                    <X className="h-4 w-4 mr-2" /> Remove Link
+                  </Button>
+                  <Button 
+                    size="sm"
+                    onClick={setLink}
+                  >
+                    {editor.isActive('link') ? 'Update Link' : 'Add Link'}
+                  </Button>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+          
+          <div className="w-px h-6 bg-border mx-1"></div>
+          
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => editor.chain().focus().setHorizontalRule().run()}
+          >
+            <Minus className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
+
+      {editor && (
+        <BubbleMenu
+          editor={editor}
+          tippyOptions={{ duration: 150 }}
+          shouldShow={({ editor, view }) => {
+            // Show the bubble menu only if there's text selected
+            return !editor.isActive('code') && !editor.isActive('codeBlock') && view.state.selection.content().size > 0;
+          }}
+        >
+          <div className="flex items-center rounded-lg bg-background border shadow-lg overflow-hidden">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => editor.chain().focus().toggleBold().run()}
+              className={cn(editor.isActive('bold') ? 'bg-muted' : '')}
+            >
+              <Bold className="h-4 w-4" />
+            </Button>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => editor.chain().focus().toggleItalic().run()}
+              className={cn(editor.isActive('italic') ? 'bg-muted' : '')}
+            >
+              <Italic className="h-4 w-4" />
+            </Button>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => editor.chain().focus().toggleUnderline().run()}
+              className={cn(editor.isActive('underline') ? 'bg-muted' : '')}
+            >
+              <UnderlineIcon className="h-4 w-4" />
+            </Button>
+            
+            <div className="w-px h-6 bg-border"></div>
+            
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={cn(editor.isActive('link') ? 'bg-muted' : '')}
+                >
+                  <LinkIcon className="h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-72">
+                <div className="flex flex-col gap-2">
+                  <h4 className="font-medium">Insert Link</h4>
+                  <Input
+                    placeholder="Enter URL..."
+                    value={linkUrl}
+                    onChange={(e) => setLinkUrl(e.target.value)}
+                  />
+                  <div className="flex justify-between">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setLinkUrl('');
+                        editor.chain().focus().extendMarkRange('link').unsetLink().run();
+                      }}
+                      disabled={!editor.isActive('link')}
+                    >
+                      <X className="h-4 w-4 mr-2" /> Remove
+                    </Button>
+                    <Button 
+                      size="sm"
+                      onClick={setLink}
+                    >
+                      {editor.isActive('link') ? 'Update' : 'Add'}
+                    </Button>
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
+        </BubbleMenu>
+      )}
+      
+      <EditorContent 
+        editor={editor} 
+        className={cn(
+          "prose max-w-none p-4 focus:outline-none min-h-[300px]",
+          "prose-headings:font-bold prose-h1:text-3xl prose-h2:text-2xl prose-h3:text-xl",
+          "prose-p:my-2 prose-a:text-primary prose-blockquote:border-l-4 prose-blockquote:border-primary/30 prose-blockquote:pl-4 prose-blockquote:py-0.5 prose-blockquote:italic",
+          "prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:rounded-md prose-code:before:content-none prose-code:after:content-none",
+          "prose-img:rounded-md prose-img:mx-auto"
+        )}
+      />
+    </div>
+  );
+};
+
+export { RichTextEditor };

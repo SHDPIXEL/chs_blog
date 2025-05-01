@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useLocation } from 'wouter';
 import AuthorLayout from '@/components/layout/AuthorLayout';
 import { useMutation } from '@tanstack/react-query';
@@ -14,9 +14,10 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Save, Eye } from 'lucide-react';
-import { ArticleStatus } from '@shared/schema';
+import { ArrowLeft, Save, Eye, ImagePlus } from 'lucide-react';
+import { ArticleStatus, Asset } from '@shared/schema';
 import { AssetPickerButton } from '@/components/assets';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
 
 // Define form schema using zod
 const blogFormSchema = z.object({
@@ -24,7 +25,7 @@ const blogFormSchema = z.object({
   content: z.string().min(50, 'Content must be at least 50 characters'),
   excerpt: z.string().max(200, 'Excerpt cannot exceed 200 characters').optional(),
   status: z.enum([ArticleStatus.DRAFT, ArticleStatus.REVIEW, ArticleStatus.PUBLISHED]),
-  featuredImage: z.string().url('Please enter a valid image URL').optional().or(z.literal('')),
+  featuredImage: z.string().optional().or(z.literal('')),
 });
 
 type BlogFormValues = z.infer<typeof blogFormSchema>;
@@ -32,6 +33,7 @@ type BlogFormValues = z.infer<typeof blogFormSchema>;
 const NewBlogPage: React.FC = () => {
   const [, navigate] = useLocation();
   const { toast } = useToast();
+  const [featuredImagePreview, setFeaturedImagePreview] = useState<string | null>(null);
   
   // Set up form with default values
   const form = useForm<BlogFormValues>({
@@ -74,6 +76,15 @@ const NewBlogPage: React.FC = () => {
   // Form submission handler
   const onSubmit = (data: BlogFormValues) => {
     createBlogMutation.mutate(data);
+  };
+
+  // Handle asset selection for featured image
+  const handleAssetSelect = (asset: Asset | Asset[]) => {
+    const selectedAsset = Array.isArray(asset) ? asset[0] : asset;
+    if (selectedAsset && selectedAsset.url) {
+      form.setValue('featuredImage', selectedAsset.url);
+      setFeaturedImagePreview(selectedAsset.url);
+    }
   };
   
   return (
@@ -119,7 +130,62 @@ const NewBlogPage: React.FC = () => {
                     )}
                   />
                   
-                  {/* Content field */}
+                  {/* Featured image field */}
+                  <FormField
+                    control={form.control}
+                    name="featuredImage"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Featured Image</FormLabel>
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div className="flex flex-col items-center justify-center border-2 border-dashed border-border rounded-lg p-4 h-40 relative">
+                            {featuredImagePreview || field.value ? (
+                              <>
+                                <img 
+                                  src={featuredImagePreview || field.value} 
+                                  alt="Featured image preview" 
+                                  className="w-full h-full object-contain"
+                                />
+                                <Button 
+                                  type="button"
+                                  size="sm"
+                                  variant="secondary"
+                                  className="absolute bottom-2 right-2 opacity-80 hover:opacity-100"
+                                  onClick={() => {
+                                    field.onChange('');
+                                    setFeaturedImagePreview(null);
+                                  }}
+                                >
+                                  Remove
+                                </Button>
+                              </>
+                            ) : (
+                              <div className="flex flex-col items-center justify-center text-muted-foreground h-full">
+                                <ImagePlus className="h-12 w-12 mb-2 opacity-50" />
+                                <p className="text-sm text-center">No image selected</p>
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex flex-col justify-center">
+                            <AssetPickerButton 
+                              onSelect={handleAssetSelect}
+                              accept="image"
+                              variant="outline"
+                              className="w-full"
+                            >
+                              Choose Featured Image
+                            </AssetPickerButton>
+                            <FormDescription className="mt-2">
+                              Select a high-quality image that represents the content of your blog post
+                            </FormDescription>
+                          </div>
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  {/* Content field with Rich Text Editor */}
                   <FormField
                     control={form.control}
                     name="content"
@@ -127,14 +193,15 @@ const NewBlogPage: React.FC = () => {
                       <FormItem>
                         <FormLabel>Content</FormLabel>
                         <FormControl>
-                          <Textarea 
-                            placeholder="Write your blog content here..." 
-                            className="min-h-[300px] font-mono"
-                            {...field} 
+                          <RichTextEditor
+                            value={field.value}
+                            onChange={field.onChange}
+                            placeholder="Write your blog content here..."
+                            className="min-h-[400px]"
                           />
                         </FormControl>
                         <FormDescription>
-                          Supports Markdown formatting for rich content
+                          Use the toolbar to format your content, add links and images
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -164,57 +231,6 @@ const NewBlogPage: React.FC = () => {
                     )}
                   />
                   
-                  {/* Featured image field */}
-                  <FormField
-                    control={form.control}
-                    name="featuredImage"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Featured Image</FormLabel>
-                        <div className="flex items-start space-x-2">
-                          <div className="flex-1">
-                            <FormControl>
-                              <Input 
-                                placeholder="https://example.com/your-image.jpg" 
-                                {...field} 
-                              />
-                            </FormControl>
-                          </div>
-                          <div className="flex-shrink-0">
-                            <AssetPickerButton 
-                              onSelect={(asset) => {
-                                if (Array.isArray(asset)) {
-                                  // Just use the first asset if somehow multiple are selected
-                                  if (asset.length > 0 && asset[0].url) {
-                                    field.onChange(asset[0].url);
-                                  }
-                                } else if (asset && asset.url) {
-                                  field.onChange(asset.url);
-                                }
-                              }}
-                              variant="outline"
-                            >
-                              Browse Assets
-                            </AssetPickerButton>
-                          </div>
-                        </div>
-                        {field.value && (
-                          <div className="mt-2 border rounded-md overflow-hidden w-full max-w-xs">
-                            <img 
-                              src={field.value} 
-                              alt="Featured image preview" 
-                              className="w-full h-auto max-h-40 object-cover"
-                            />
-                          </div>
-                        )}
-                        <FormDescription>
-                          A URL to an image that represents your blog post
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
                   {/* Status field */}
                   <FormField
                     control={form.control}
@@ -238,9 +254,11 @@ const NewBlogPage: React.FC = () => {
                           </SelectContent>
                         </Select>
                         <FormDescription>
-                          Draft: Save as work in progress<br />
-                          Review: Submit for editorial review<br />
-                          Publish: Make this blog post public
+                          <ul className="list-disc pl-5 space-y-1 mt-1">
+                            <li><span className="font-medium">Draft:</span> Save as work in progress</li>
+                            <li><span className="font-medium">Review:</span> Submit for editorial review</li>
+                            <li><span className="font-medium">Publish:</span> Make this blog post public</li>
+                          </ul>
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
