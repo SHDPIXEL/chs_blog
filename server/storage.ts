@@ -220,7 +220,20 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createArticle(insertArticle: InsertArticle): Promise<Article> {
-    const [article] = await db.insert(articles).values(insertArticle).returning();
+    // Create a copy of insertArticle data with potential modifications
+    const articleData = { ...insertArticle };
+    
+    // Generate slug from title if not provided
+    if (!articleData.slug && articleData.title) {
+      articleData.slug = this.generateSlug(articleData.title);
+    }
+    
+    // Set publishedAt timestamp if article is published
+    if (articleData.published) {
+      articleData.publishedAt = new Date();
+    }
+    
+    const [article] = await db.insert(articles).values(articleData).returning();
     return article;
   }
 
@@ -258,13 +271,21 @@ export class DatabaseStorage implements IStorage {
   }
   
   async updateArticleStatus(id: number, status: ArticleStatusType): Promise<Article | undefined> {
+    // Default update fields
+    const updateFields: any = {
+      status,
+      updatedAt: new Date(),
+      // Set published flag based on status
+      published: status === 'published'
+    };
+    
+    // If we're publishing the article, also set publishedAt to now
+    if (status === 'published') {
+      updateFields.publishedAt = new Date();
+    }
+    
     const [article] = await db.update(articles)
-      .set({
-        status,
-        updatedAt: new Date(),
-        // Set published flag based on status
-        published: status === 'published'
-      })
+      .set(updateFields)
       .where(eq(articles.id, id))
       .returning();
     
