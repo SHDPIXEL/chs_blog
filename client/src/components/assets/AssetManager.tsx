@@ -146,24 +146,9 @@ const AssetManager: React.FC = () => {
 
   // Handle final selection confirmation for both modes
   const handleConfirmSelection = () => {
-    console.log("handleConfirmSelection");
-    console.log("onAssetSelect : " + onAssetSelect);
-    console.log("selectedAsset : " + selectedAsset);
-    if (onAssetSelect) {
-      if (multiSelect) {
-        // In multi-select mode, pass the array of assets
-        if (selectedAssets.length > 0) {
-          onAssetSelect(selectedAssets);
-          closeAssetManager();
-        }
-      } else {
-        // In single-select mode, just pass the selected asset
-        if (selectedAsset) {
-          onAssetSelect(selectedAsset);
-          closeAssetManager();
-        }
-      }
-    }
+    // Just close the asset manager - the closeAssetManager function in context
+    // will handle calling onAssetSelect with the appropriate selection
+    closeAssetManager();
   };
 
   // Helper function to get mimetype filter
