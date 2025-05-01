@@ -407,6 +407,6 @@ export type SearchAssets = z.infer<typeof searchAssetsSchema>;
 export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 export type UpdateNotification = z.infer<typeof updateNotificationSchema>;
-export type Comment = typeof comments.$inferSelect;
+export type Comment = typeof comments.$inferSelect & { replyCount?: number };  // Add optional replyCount
 export type InsertComment = z.infer<typeof insertCommentSchema>;
 export type UpdateComment = z.infer<typeof updateCommentSchema>;

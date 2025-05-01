@@ -139,14 +139,20 @@ export function CommentComponent({ comment, articleId, isReply = false }: Commen
               Reply
             </Button>
             
-            {!isReply && (
+            {/* Always show the Reply button, but only show Show Replies if we check and have replies */}
+            {(comment.replyCount > 0 || replies.length > 0) && (
               <Button 
                 variant="ghost" 
                 size="sm"
                 onClick={loadReplies}
                 disabled={isLoadingReplies}
               >
-                {isLoadingReplies ? 'Loading...' : showReplies ? 'Hide Replies' : 'Show Replies'}
+                {isLoadingReplies 
+                  ? 'Loading...' 
+                  : showReplies 
+                    ? `Hide Replies (${replies.length})` 
+                    : `Show Replies (${comment.replyCount || replies.length})`
+                }
               </Button>
             )}
           </div>

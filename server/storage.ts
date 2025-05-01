@@ -726,9 +726,9 @@ export class DatabaseStorage implements IStorage {
   }
   
   // Comment methods
-  async getArticleComments(articleId: number): Promise<Comment[]> {
+  async getArticleComments(articleId: number): Promise<(Comment & { replyCount: number })[]> {
     // Get all top-level comments (no parent) for the article, ordered by creation time
-    return await db.select()
+    const topLevelComments = await db.select()
       .from(comments)
       .where(
         and(
@@ -737,14 +737,50 @@ export class DatabaseStorage implements IStorage {
         )
       )
       .orderBy(asc(comments.createdAt));
+    
+    // For each comment, count its replies
+    const enhancedComments = await Promise.all(
+      topLevelComments.map(async (comment) => {
+        const replyCount = await db
+          .select({ count: sql<number>`count(*)` })
+          .from(comments)
+          .where(eq(comments.parentId, comment.id))
+          .then(result => result[0]?.count || 0);
+        
+        return {
+          ...comment,
+          replyCount
+        };
+      })
+    );
+    
+    return enhancedComments;
   }
   
-  async getCommentReplies(commentId: number): Promise<Comment[]> {
+  async getCommentReplies(commentId: number): Promise<(Comment & { replyCount: number })[]> {
     // Get all replies to a comment, ordered by creation time
-    return await db.select()
+    const replies = await db.select()
       .from(comments)
       .where(eq(comments.parentId, commentId))
       .orderBy(asc(comments.createdAt));
+    
+    // For each reply, count its own replies (for nested replies)
+    const enhancedReplies = await Promise.all(
+      replies.map(async (reply) => {
+        const replyCount = await db
+          .select({ count: sql<number>`count(*)` })
+          .from(comments)
+          .where(eq(comments.parentId, reply.id))
+          .then(result => result[0]?.count || 0);
+        
+        return {
+          ...reply,
+          replyCount
+        };
+      })
+    );
+    
+    return enhancedReplies;
   }
   
   async getComment(id: number): Promise<Comment | undefined> {
