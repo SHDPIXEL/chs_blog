@@ -75,9 +75,8 @@ export const AssetManagerProvider: React.FC<AssetManagerProviderProps> = ({
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
   const [selectedAssets, setSelectedAssets] = useState<Asset[]>([]);
   const [multiSelect, setMultiSelect] = useState(false);
-  const [onAssetSelect, setOnAssetSelect] = useState<
-    ((assets: Asset | Asset[]) => void) | undefined
-  >(undefined);
+  const [onAssetSelect, setOnAssetSelect] =
+    useState<(assets: Asset | Asset[]) => void>();
   const [selectMode, setSelectMode] = useState(false);
   const { toast } = useToast();
 
@@ -232,8 +231,9 @@ export const AssetManagerProvider: React.FC<AssetManagerProviderProps> = ({
       allowMultiple: boolean = false,
       isSelectMode: boolean = false,
     ) => {
+      console.log("Opening asset manager with onSelect:", onSelect);
       setIsOpen(true);
-      setOnAssetSelect(onSelect);
+      setOnAssetSelect(() => onSelect); // Store the callback function directly
       setSelectedAsset(null);
       setSelectedAssets([]);
       setMultiSelect(allowMultiple);
@@ -267,14 +267,14 @@ export const AssetManagerProvider: React.FC<AssetManagerProviderProps> = ({
     console.log("selectedAsset:", selectedAsset);
     console.log("multiSelect:", multiSelect);
     console.log("selectedAssets:", selectedAssets);
-    
+
     // Save the callback and selected assets before clearing state
     const callback = onAssetSelect;
     const assetToSelect = multiSelect ? selectedAssets : selectedAsset;
-    
+
     // First close the manager (but we'll handle the callback separately)
     setIsOpen(false);
-    
+
     // Only invoke the callback after we've captured it
     if (callback) {
       if (multiSelect) {
@@ -285,7 +285,7 @@ export const AssetManagerProvider: React.FC<AssetManagerProviderProps> = ({
         callback(selectedAsset);
       }
     }
-    
+
     // Now we can safely clear the state
     setOnAssetSelect(undefined);
     setSelectedAsset(null);
