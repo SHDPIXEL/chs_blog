@@ -477,7 +477,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status,
         reviewRemarks: remarks || null,
         reviewedBy: req.user.id,
-        reviewedAt: new Date().toISOString()
+        reviewedAt: new Date()
       });
       
       // Create a notification for the author
