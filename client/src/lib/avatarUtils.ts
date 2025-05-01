@@ -1,68 +1,65 @@
-// Function to generate initials from a name
+/**
+ * Extracts initials from a name
+ * Examples:
+ * - "Sarah Johnson" → "SJ"
+ * - "Priya Sharma" → "PS"
+ * - "John" → "J"
+ */
 export function getInitials(name: string): string {
-  if (!name) return '??';
+  if (!name || typeof name !== 'string') return 'A';
   
-  // Split the name by spaces
-  const parts = name.trim().split(/\s+/);
-  
-  if (parts.length === 1) {
-    // For single names, return the first two characters if available, otherwise just the first
-    return parts[0].substring(0, Math.min(2, parts[0].length)).toUpperCase();
-  } else {
-    // For multiple names, take the first character of the first and last parts
-    const firstInitial = parts[0].charAt(0);
-    const lastInitial = parts[parts.length - 1].charAt(0);
-    return (firstInitial + lastInitial).toUpperCase();
-  }
+  return name
+    .split(' ')
+    .map(part => part[0])
+    .join('')
+    .toUpperCase()
+    .substring(0, 2);  // Limit to 2 characters
 }
 
-// Function to generate a consistent color based on a name
+/**
+ * Generates a deterministic color based on the name
+ */
 export function getAvatarColor(name: string): string {
-  // Array of vibrant colors for avatars
+  // List of pleasant background colors for avatars
   const colors = [
-    '#FF5630', // Coral Red
-    '#00B8D9', // Cerulean Blue
-    '#36B37E', // Green
-    '#6554C0', // Purple
-    '#FFAB00', // Amber
-    '#FF7452', // Orange
-    '#0065FF', // Blue
-    '#8777D9', // Light Purple
-    '#00875A', // Deep Green
-    '#DE350B', // Red
-    '#00A3BF', // Teal
-    '#5243AA', // Deep Purple
-    '#FF8B00', // Dark Orange
-    '#008DA6', // Dark Cyan
-    '#FFC400', // Yellow
+    '#F87171', // red
+    '#FB923C', // orange
+    '#FBBF24', // amber
+    '#A3E635', // lime
+    '#34D399', // emerald
+    '#22D3EE', // cyan
+    '#60A5FA', // blue
+    '#A78BFA', // violet
+    '#F472B6', // pink
   ];
   
-  // Create a hash from the name string
+  // Create a simple hash from the name for deterministic color selection
   let hash = 0;
   for (let i = 0; i < name.length; i++) {
     hash = name.charCodeAt(i) + ((hash << 5) - hash);
   }
   
-  // Convert hash to an index within the colors array
-  const index = Math.abs(hash % colors.length);
-  
+  // Use the hash to pick a color
+  const index = Math.abs(hash) % colors.length;
   return colors[index];
 }
 
-// Function to create an SVG data URL for an avatar with initials
+/**
+ * Generates an SVG data URL with initials for use as avatar background
+ */
 export function createInitialsAvatar(name: string): string {
   const initials = getInitials(name);
-  const bgColor = getAvatarColor(name);
+  const color = getAvatarColor(name);
   
-  // Create SVG content
-  const svgContent = `
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40">
-      <rect width="40" height="40" fill="${bgColor}" />
+  // Create an SVG with the initials and background color
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+      <rect width="100" height="100" fill="${color}" />
       <text 
-        x="20" 
-        y="20" 
+        x="50" 
+        y="50" 
         font-family="Arial, sans-serif" 
-        font-size="16" 
+        font-size="40" 
         font-weight="bold" 
         fill="white" 
         text-anchor="middle" 
@@ -73,6 +70,6 @@ export function createInitialsAvatar(name: string): string {
     </svg>
   `;
   
-  // Convert to a data URL
-  return `data:image/svg+xml;base64,${btoa(svgContent)}`;
+  // Convert the SVG to a data URL
+  return `data:image/svg+xml;base64,${btoa(svg)}`;
 }

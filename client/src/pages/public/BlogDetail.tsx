@@ -6,10 +6,11 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, MessageSquare, ThumbsUp, Share2, Bookmark, ChevronDown, ChevronUp, MoreHorizontal } from 'lucide-react';
+import { ArrowLeft, MessageSquare, ThumbsUp, Share2, Bookmark } from 'lucide-react';
 import PublicLayout from '@/components/layout/PublicLayout';
+import { CommentsList } from '@/components/comments/CommentsList';
+import { getInitials } from '@/lib/avatarUtils';
 
 // Demo images for placeholder
 const demoImages = [
@@ -19,28 +20,9 @@ const demoImages = [
   '/uploads/e51dde8b-a72e-4c15-b668-d0e6d9aae7ec.png',
 ];
 
-// Mock comment type for demo
-interface Comment {
-  id: number;
-  text: string;
-  author: {
-    name: string;
-    avatarUrl?: string;
-  };
-  date: string;
-  likes: number;
-  replies?: Comment[];
-}
-
 const BlogDetail: React.FC = () => {
   const [, params] = useRoute('/blogs/:id');
-  const articleId = params?.id;
-  
-  // State for comment form
-  const [commentText, setCommentText] = useState('');
-  const [expandedComments, setExpandedComments] = useState<number[]>([]);
-  const [replyingTo, setReplyingTo] = useState<number | null>(null);
-  const [replyText, setReplyText] = useState('');
+  const articleId = params?.id ? parseInt(params.id) : 0;
 
   // Fetch article details
   const { data: article, isLoading, error } = useQuery({
@@ -57,65 +39,6 @@ const BlogDetail: React.FC = () => {
     }
   });
 
-  // Mock comments for demo
-  const comments: Comment[] = [
-    {
-      id: 1,
-      text: "This is a fascinating exploration of Indian ethical traditions. I particularly appreciated the analysis of how dharma differs from Western deontological approaches.",
-      author: { name: "Sarah Johnson" },
-      date: "2 days ago",
-      likes: 12,
-      replies: [
-        {
-          id: 101,
-          text: "I agree! The contextual nature of dharma offers a more flexible ethical framework than Kantian universalism.",
-          author: { name: "David Chen" },
-          date: "1 day ago",
-          likes: 4,
-          replies: [
-            {
-              id: 1001,
-              text: "That's a great point. The situational ethics in Indian philosophy feels more practical for real-world dilemmas.",
-              author: { name: "Aisha Patel" },
-              date: "1 day ago",
-              likes: 2
-            }
-          ]
-        },
-        {
-          id: 102,
-          text: "Could you recommend any accessible introductory texts on Indian ethics for someone coming from a Western philosophical background?",
-          author: { name: "Michael Thompson" },
-          date: "1 day ago",
-          likes: 3
-        }
-      ]
-    },
-    {
-      id: 2,
-      text: "I would have liked to see more discussion of how these ethical frameworks operate in contemporary Indian society. Has there been research on this?",
-      author: { name: "Priya Sharma" },
-      date: "3 days ago",
-      likes: 8,
-      replies: [
-        {
-          id: 201,
-          text: "There's actually fascinating work being done on this by scholars like Chakravarthi Ram-Prasad and Arindam Chakrabarti. They examine how traditional ethical concepts are being applied to modern issues like environmental ethics and bioethics.",
-          author: { name: "James Wilson" },
-          date: "2 days ago",
-          likes: 6
-        }
-      ]
-    },
-    {
-      id: 3,
-      text: "The section on Buddhist ethics was particularly illuminating. I hadn't considered how the psychological dimension of Buddhist moral thought could contribute to contemporary discussions in moral psychology.",
-      author: { name: "Emily Rodriguez" },
-      date: "4 days ago",
-      likes: 15
-    }
-  ];
-
   function formatDate(dateString: string) {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
@@ -124,144 +47,6 @@ const BlogDetail: React.FC = () => {
       day: 'numeric'
     });
   }
-
-  function getInitials(name: string) {
-    return name
-      .split(' ')
-      .map(n => n[0])
-      .join('')
-      .toUpperCase();
-  }
-
-  const toggleExpandComment = (commentId: number) => {
-    setExpandedComments(prev => 
-      prev.includes(commentId) 
-        ? prev.filter(id => id !== commentId)
-        : [...prev, commentId]
-    );
-  };
-
-  const toggleReplyForm = (commentId: number | null) => {
-    if (replyingTo === commentId) {
-      setReplyingTo(null);
-      setReplyText('');
-    } else {
-      setReplyingTo(commentId);
-      setReplyText('');
-    }
-  };
-
-  const handleSubmitComment = (e: React.FormEvent) => {
-    e.preventDefault();
-    // This would normally send to a server
-    console.log('New comment:', commentText);
-    setCommentText('');
-    // Show success message or update UI accordingly
-  };
-
-  const handleSubmitReply = (e: React.FormEvent, parentId: number) => {
-    e.preventDefault();
-    // This would normally send to a server
-    console.log(`New reply to comment ${parentId}:`, replyText);
-    setReplyingTo(null);
-    setReplyText('');
-    // Show success message or update UI accordingly
-  };
-
-  // Recursive component for comments and their replies
-  const CommentComponent = ({ comment, level = 0 }: { comment: Comment, level?: number }) => {
-    const isExpanded = expandedComments.includes(comment.id);
-    const hasReplies = comment.replies && comment.replies.length > 0;
-    
-    return (
-      <div className={`${level > 0 ? 'ml-8 mt-4 border-l-2 border-gray-200 pl-4' : 'mt-6'}`}>
-        <div className="flex gap-4">
-          <Avatar className="h-10 w-10">
-            <AvatarImage src={comment.author.avatarUrl} alt={comment.author.name} />
-            <AvatarFallback>{getInitials(comment.author.name)}</AvatarFallback>
-          </Avatar>
-          <div className="flex-1">
-            <div className="flex justify-between">
-              <div>
-                <h4 className="font-semibold">{comment.author.name}</h4>
-                <p className="text-sm text-gray-500">{comment.date}</p>
-              </div>
-              <Button variant="ghost" size="icon">
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </div>
-            <p className="mt-2 text-gray-700">{comment.text}</p>
-            <div className="mt-2 flex items-center gap-4">
-              <Button variant="ghost" size="sm" className="flex items-center gap-1">
-                <ThumbsUp className="h-4 w-4" />
-                <span>{comment.likes}</span>
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="flex items-center gap-1"
-                onClick={() => toggleReplyForm(comment.id)}
-              >
-                <MessageSquare className="h-4 w-4" />
-                <span>Reply</span>
-              </Button>
-            </div>
-            
-            {/* Reply form */}
-            {replyingTo === comment.id && (
-              <form onSubmit={(e) => handleSubmitReply(e, comment.id)} className="mt-3">
-                <Textarea
-                  placeholder="Write a reply..."
-                  value={replyText}
-                  onChange={(e) => setReplyText(e.target.value)}
-                  className="min-h-[80px]"
-                />
-                <div className="mt-2 flex justify-end gap-2">
-                  <Button type="button" variant="outline" onClick={() => toggleReplyForm(null)}>
-                    Cancel
-                  </Button>
-                  <Button type="submit" disabled={!replyText.trim()}>
-                    Reply
-                  </Button>
-                </div>
-              </form>
-            )}
-            
-            {/* Show/hide replies button */}
-            {hasReplies && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="mt-2 flex items-center gap-1 text-primary"
-                onClick={() => toggleExpandComment(comment.id)}
-              >
-                {isExpanded ? (
-                  <>
-                    <ChevronUp className="h-4 w-4" />
-                    <span>Hide replies ({comment.replies!.length})</span>
-                  </>
-                ) : (
-                  <>
-                    <ChevronDown className="h-4 w-4" />
-                    <span>Show replies ({comment.replies!.length})</span>
-                  </>
-                )}
-              </Button>
-            )}
-            
-            {/* Replies */}
-            {isExpanded && hasReplies && (
-              <div className="mt-2">
-                {comment.replies!.map(reply => (
-                  <CommentComponent key={reply.id} comment={reply} level={level + 1} />
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  };
 
   // If loading or error
   if (isLoading) {
@@ -423,31 +208,7 @@ const BlogDetail: React.FC = () => {
           
           {/* Comments section */}
           <div id="comments-section" className="mt-16">
-            <h2 className="text-2xl font-bold mb-6">Comments</h2>
-            
-            {/* Comment form */}
-            <form onSubmit={handleSubmitComment}>
-              <Textarea
-                placeholder="Write your comment..."
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-                className="min-h-[120px]"
-              />
-              <div className="mt-3 flex justify-end">
-                <Button type="submit" className="bg-rose-600 hover:bg-rose-700" disabled={!commentText.trim()}>
-                  Post Comment
-                </Button>
-              </div>
-            </form>
-            
-            <Separator className="my-8" />
-            
-            {/* Comments */}
-            <div>
-              {comments.map(comment => (
-                <CommentComponent key={comment.id} comment={comment} />
-              ))}
-            </div>
+            <CommentsList articleId={articleId} />
           </div>
         </div>
       </div>
