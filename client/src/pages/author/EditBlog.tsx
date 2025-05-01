@@ -34,9 +34,15 @@ const blogFormSchema = z.object({
   featuredImage: z.string().optional().or(z.literal('')),
   
   // SEO Fields
+  slug: z.string().optional(),
   metaTitle: z.string().max(70, 'Meta title should be at most 70 characters').optional(),
   metaDescription: z.string().max(160, 'Meta description should be at most 160 characters').optional(),
+  canonicalUrl: z.string().url('Must be a valid URL').optional().or(z.literal('')),
   keywords: z.array(z.string()).default([]),
+  
+  // Publishing schedule
+  useScheduling: z.boolean().default(false),
+  scheduledPublishAt: z.string().optional(),
   
   // Relationships
   categoryIds: z.array(z.number()).default([]),
@@ -104,9 +110,13 @@ const EditBlogPage: React.FC = () => {
       excerpt: '',
       status: ArticleStatus.DRAFT,
       featuredImage: '',
+      slug: '',
       metaTitle: '',
       metaDescription: '',
+      canonicalUrl: '',
       keywords: [],
+      useScheduling: false,
+      scheduledPublishAt: '',
       categoryIds: [],
       customTags: [],
       coAuthorIds: [],
@@ -136,6 +146,16 @@ const EditBlogPage: React.FC = () => {
         setFeaturedImagePreview(articleData.featuredImage);
       }
       
+      // Determine if article has scheduled publishing
+      const hasScheduledPublishing = !!articleData.scheduledPublishAt;
+      
+      // Format scheduledPublishAt for the datetime-local input if it exists
+      let scheduledPublishAt = '';
+      if (articleData.scheduledPublishAt) {
+        const date = new Date(articleData.scheduledPublishAt);
+        scheduledPublishAt = date.toISOString().slice(0, 16); // Format as YYYY-MM-DDThh:mm
+      }
+      
       // Reset form with article data
       form.reset({
         title: articleData.title,
@@ -143,9 +163,13 @@ const EditBlogPage: React.FC = () => {
         excerpt: articleData.excerpt || '',
         status: articleData.status,
         featuredImage: articleData.featuredImage || '',
+        slug: articleData.slug || '',
         metaTitle: articleData.metaTitle || '',
         metaDescription: articleData.metaDescription || '',
+        canonicalUrl: articleData.canonicalUrl || '',
         keywords,
+        useScheduling: hasScheduledPublishing,
+        scheduledPublishAt,
         categoryIds,
         customTags,
         coAuthorIds,
