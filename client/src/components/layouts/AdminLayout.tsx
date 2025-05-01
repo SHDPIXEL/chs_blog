@@ -247,10 +247,10 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={handleLogout}
-                    disabled={isLoading}
+                    disabled={logoutMutation.isPending}
                   >
                     <LogOut className="mr-2 h-4 w-4" />
-                    {isLoading ? 'Logging out...' : 'Logout'}
+                    {logoutMutation.isPending ? 'Logging out...' : 'Logout'}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
