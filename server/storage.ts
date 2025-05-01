@@ -228,9 +228,22 @@ export class DatabaseStorage implements IStorage {
     // Create a copy of updateData
     const dataToUpdate = { ...updateData };
     
-    // Convert reviewedAt string to Date if it exists
+    // Convert date string fields to Date objects if they exist
     if (dataToUpdate.reviewedAt) {
       dataToUpdate.reviewedAt = new Date(dataToUpdate.reviewedAt);
+    }
+    
+    if (dataToUpdate.scheduledPublishAt) {
+      dataToUpdate.scheduledPublishAt = new Date(dataToUpdate.scheduledPublishAt);
+    }
+    
+    if (dataToUpdate.publishedAt) {
+      dataToUpdate.publishedAt = new Date(dataToUpdate.publishedAt);
+    }
+    
+    // Generate slug from title if title is updated and slug isn't provided
+    if (dataToUpdate.title && !dataToUpdate.slug) {
+      dataToUpdate.slug = this.generateSlug(dataToUpdate.title);
     }
     
     const [article] = await db.update(articles)

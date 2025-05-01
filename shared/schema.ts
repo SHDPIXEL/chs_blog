@@ -82,6 +82,7 @@ export const tags = pgTable("tags", {
 export const articles = pgTable("articles", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
+  slug: text("slug").notNull(),
   content: text("content").notNull(),
   excerpt: text("excerpt"),
   authorId: integer("author_id").references(() => users.id).notNull(),
@@ -95,6 +96,10 @@ export const articles = pgTable("articles", {
   metaTitle: text("meta_title"),
   metaDescription: text("meta_description"),
   keywords: jsonb("keywords").default([]),
+  canonicalUrl: text("canonical_url"),
+  
+  // Scheduling
+  scheduledPublishAt: timestamp("scheduled_publish_at"),
   
   // Statistics
   viewCount: integer("view_count").default(0).notNull(),
@@ -106,6 +111,7 @@ export const articles = pgTable("articles", {
   
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  publishedAt: timestamp("published_at"),
 });
 
 // Article-Category relation (many-to-many)
@@ -192,6 +198,7 @@ export const insertArticleSchema = createInsertSchema(articles).omit({
 // Define article update schema
 export const updateArticleSchema = z.object({
   title: z.string().min(5).optional(),
+  slug: z.string().min(5).optional(),
   content: z.string().min(10).optional(),
   excerpt: z.string().optional(),
   status: z.enum([ArticleStatus.DRAFT, ArticleStatus.REVIEW, ArticleStatus.PUBLISHED]).optional(),
@@ -199,6 +206,13 @@ export const updateArticleSchema = z.object({
   viewCount: z.number().int().nonnegative().optional(),
   // Accept any string for featuredImage, including relative paths
   featuredImage: z.string().optional().nullable(),
+  // SEO fields
+  metaTitle: z.string().optional(),
+  metaDescription: z.string().max(160, "Meta description should be at most 160 characters").optional(),
+  canonicalUrl: z.string().optional().nullable(),
+  // Scheduling
+  scheduledPublishAt: z.union([z.string(), z.date(), z.null()]).optional(),
+  publishedAt: z.union([z.string(), z.date(), z.null()]).optional(),
   // Review fields
   reviewRemarks: z.string().optional().nullable(),
   reviewedBy: z.number().optional().nullable(),
@@ -354,6 +368,8 @@ export const extendedArticleSchema = insertArticleSchema.extend({
   keywords: z.array(z.string()).optional(),
   metaTitle: z.string().optional(),
   metaDescription: z.string().max(160, "Meta description should be at most 160 characters").optional(),
+  canonicalUrl: z.string().optional(),
+  scheduledPublishAt: z.union([z.string(), z.date(), z.null()]).optional(),
 });
 
 export const updateExtendedArticleSchema = updateArticleSchema.extend({
@@ -363,6 +379,8 @@ export const updateExtendedArticleSchema = updateArticleSchema.extend({
   keywords: z.array(z.string()).optional(),
   metaTitle: z.string().optional(),
   metaDescription: z.string().max(160, "Meta description should be at most 160 characters").optional(),
+  canonicalUrl: z.string().optional(),
+  scheduledPublishAt: z.union([z.string(), z.date(), z.null()]).optional(),
 });
 
 // Notification schemas
