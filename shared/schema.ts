@@ -75,8 +75,10 @@ export const insertUserSchema = createInsertSchema(users).omit({
 export const updateUserProfileSchema = z.object({
   name: z.string().min(2).optional(),
   bio: z.string().optional(),
-  avatarUrl: z.union([z.string().url(), z.string().max(0), z.null()]).optional(),
-  bannerUrl: z.union([z.string().url(), z.string().max(0), z.null()]).optional(),
+  // Accept any string for avatarUrl, including relative paths like "/uploads/image.png"
+  avatarUrl: z.union([z.string(), z.string().max(0), z.null()]).optional(),
+  // Accept any string for bannerUrl, including relative paths
+  bannerUrl: z.union([z.string(), z.string().max(0), z.null()]).optional(),
   socialLinks: z.string().optional().nullable(),
 });
 
@@ -100,7 +102,8 @@ export const updateArticleSchema = z.object({
   excerpt: z.string().optional(),
   status: z.enum([ArticleStatus.DRAFT, ArticleStatus.REVIEW, ArticleStatus.PUBLISHED]).optional(),
   published: z.boolean().optional(),
-  featuredImage: z.string().url().optional().nullable(),
+  // Accept any string for featuredImage, including relative paths
+  featuredImage: z.string().optional().nullable(),
 });
 
 // Define asset schemas
