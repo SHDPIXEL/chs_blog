@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
+import { useLocation } from 'wouter';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import {
   Card,
@@ -103,6 +104,7 @@ const DEFAULT_FILTERS: BlogFilters = {
 
 const BlogManagement: React.FC = () => {
   const { toast } = useToast();
+  const [, navigate] = useLocation();
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState<BlogFilters>(DEFAULT_FILTERS);
   const [selectedBlogs, setSelectedBlogs] = useState<number[]>([]);
@@ -354,7 +356,7 @@ const BlogManagement: React.FC = () => {
         <div className="flex flex-col">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-3xl font-bold">Blog Management</h1>
-            <Button>
+            <Button onClick={() => navigate('/admin/blogs/new')}>
               <FileText className="mr-2 h-4 w-4" />
               Create New Blog
             </Button>
