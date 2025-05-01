@@ -8,6 +8,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from '@/components/ui/card';
 import {
   Table,
@@ -25,28 +26,51 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import {
   MoreHorizontal,
-  Pencil,
-  Eye,
-  UserCog,
-  Ban,
-  FileText,
   Search,
-  Check,
-  X,
-  Plus,
+  UserCog,
+  FileText,
+  UserCheck,
+  UserX,
   UserPlus,
+  UserMinus,
+  Pencil,
+  Key,
 } from 'lucide-react';
-import { User, UserRole } from '@shared/schema';
+import { User } from '@/types/auth';
 
 interface ExtendedUser extends User {
   postCount: number;
@@ -56,11 +80,13 @@ interface ExtendedUser extends User {
 const AuthorManagement: React.FC = () => {
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedUser, setSelectedUser] = useState<ExtendedUser | null>(null);
-  const [editModalOpen, setEditModalOpen] = useState(false);
-  const [permissionsModalOpen, setPermissionsModalOpen] = useState(false);
+  const [permissionDialogOpen, setPermissionDialogOpen] = useState(false);
+  const [selectedAuthor, setSelectedAuthor] = useState<ExtendedUser | null>(null);
+  const [canPublish, setCanPublish] = useState(false);
+  const [roleFilter, setRoleFilter] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
 
-  // Fetch authors with extended info (post count, status)
+  // Fetch authors
   const { data: authors, isLoading } = useQuery<ExtendedUser[]>({
     queryKey: ['/api/admin/authors'],
     queryFn: async () => {
@@ -69,12 +95,10 @@ const AuthorManagement: React.FC = () => {
     }
   });
 
-  // Toggle author status (active/inactive)
-  const toggleStatusMutation = useMutation({
-    mutationFn: async ({ userId, active }: { userId: number; active: boolean }) => {
-      const res = await apiRequest('PATCH', `/api/admin/authors/${userId}/status`, {
-        active
-      });
+  // Update author status
+  const statusMutation = useMutation({
+    mutationFn: async ({ id, active }: { id: number; active: boolean }) => {
+      const res = await apiRequest('PATCH', `/api/admin/authors/${id}/status`, { active });
       return res.json();
     },
     onSuccess: () => {
@@ -82,6 +106,7 @@ const AuthorManagement: React.FC = () => {
       toast({
         title: 'Status updated',
         description: 'Author status has been updated successfully',
+        variant: 'default',
       });
     },
     onError: (error: Error) => {
@@ -93,20 +118,19 @@ const AuthorManagement: React.FC = () => {
     }
   });
 
-  // Update author publishing rights
-  const updatePermissionsMutation = useMutation({
-    mutationFn: async ({ userId, canPublish }: { userId: number; canPublish: boolean }) => {
-      const res = await apiRequest('PATCH', `/api/admin/authors/${userId}/permissions`, {
-        canPublish
-      });
+  // Update publishing permissions
+  const permissionsMutation = useMutation({
+    mutationFn: async ({ id, canPublish }: { id: number; canPublish: boolean }) => {
+      const res = await apiRequest('PATCH', `/api/admin/authors/${id}/permissions`, { canPublish });
       return res.json();
     },
     onSuccess: () => {
+      setPermissionDialogOpen(false);
       queryClient.invalidateQueries({ queryKey: ['/api/admin/authors'] });
-      setPermissionsModalOpen(false);
       toast({
         title: 'Permissions updated',
-        description: 'Author permissions have been updated successfully',
+        description: 'Author publishing rights have been updated',
+        variant: 'default',
       });
     },
     onError: (error: Error) => {
@@ -118,23 +142,56 @@ const AuthorManagement: React.FC = () => {
     }
   });
 
-  // Filter authors based on search query
-  const filteredAuthors = authors?.filter(author => 
-    author.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    author.email.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const handleToggleStatus = (userId: number, currentStatus: boolean) => {
-    toggleStatusMutation.mutate({ userId, active: !currentStatus });
+  // Handle permissions dialog open
+  const handleOpenPermissionsDialog = (author: ExtendedUser) => {
+    setSelectedAuthor(author);
+    setCanPublish(author.canPublish || false);
+    setPermissionDialogOpen(true);
   };
 
+  // Handle permissions update
   const handleUpdatePermissions = () => {
-    if (selectedUser) {
-      updatePermissionsMutation.mutate({
-        userId: selectedUser.id,
-        canPublish: !selectedUser.canPublish
+    if (selectedAuthor) {
+      permissionsMutation.mutate({
+        id: selectedAuthor.id,
+        canPublish,
       });
     }
+  };
+
+  // Handle status toggle
+  const handleToggleStatus = (author: ExtendedUser) => {
+    statusMutation.mutate({
+      id: author.id,
+      active: !author.activeStatus,
+    });
+  };
+
+  // Filter authors based on search query and filters
+  const filteredAuthors = authors?.filter(author => {
+    // Text search filter
+    const matchesSearch = !searchQuery || 
+      author.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      author.email.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    // Role filter
+    const matchesRole = !roleFilter || author.role === roleFilter;
+    
+    // Status filter
+    const matchesStatus = 
+      !statusFilter || 
+      (statusFilter === 'active' && author.activeStatus) ||
+      (statusFilter === 'inactive' && !author.activeStatus);
+    
+    return matchesSearch && matchesRole && matchesStatus;
+  });
+
+  const getUserInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase();
   };
 
   if (isLoading) {
@@ -161,160 +218,200 @@ const AuthorManagement: React.FC = () => {
             </Button>
           </div>
 
-          <Card className="mb-6">
+          <Card>
             <CardHeader>
-              <CardTitle>Authors</CardTitle>
+              <CardTitle>All Authors</CardTitle>
               <CardDescription>
-                Manage authors, their permissions, and status.
+                Manage authors, their permissions, and publications.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center mb-4">
-                <Search className="mr-2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search authors by name or email..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="max-w-sm"
-                />
-              </div>
+              <div className="flex flex-col space-y-4">
+                {/* Search and filter UI */}
+                <div className="flex flex-col sm:flex-row justify-between gap-4">
+                  <div className="flex items-center flex-1">
+                    <Search className="mr-2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search authors..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="max-w-sm"
+                    />
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Select
+                      value={roleFilter || ''}
+                      onValueChange={(value) => setRoleFilter(value || null)}
+                    >
+                      <SelectTrigger className="w-[130px]">
+                        <SelectValue placeholder="Filter Role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">All Roles</SelectItem>
+                        <SelectItem value="admin">Admin</SelectItem>
+                        <SelectItem value="author">Author</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select
+                      value={statusFilter || ''}
+                      onValueChange={(value) => setStatusFilter(value || null)}
+                    >
+                      <SelectTrigger className="w-[130px]">
+                        <SelectValue placeholder="Filter Status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">All Status</SelectItem>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="inactive">Inactive</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
 
-              <div className="border rounded-md">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Role</TableHead>
-                      <TableHead>Post Count</TableHead>
-                      <TableHead>Join Date</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredAuthors?.map((author) => (
-                      <TableRow key={author.id}>
-                        <TableCell>
-                          <div className="flex items-center">
-                            <Avatar className="h-8 w-8 mr-2">
-                              <AvatarImage src={author.avatarUrl || ''} />
-                              <AvatarFallback>{author.name[0]}</AvatarFallback>
-                            </Avatar>
-                            <span className="font-medium">{author.name}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>{author.email}</TableCell>
-                        <TableCell>
-                          <Badge variant={author.role === UserRole.ADMIN ? "default" : "secondary"}>
-                            {author.role}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{author.postCount}</TableCell>
-                        <TableCell>
-                          {new Date(author.createdAt).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={author.activeStatus ? "success" : "destructive"}>
-                            {author.activeStatus ? 'Active' : 'Inactive'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" className="h-8 w-8 p-0">
-                                <span className="sr-only">Open menu</span>
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                onClick={() => {
-                                  setSelectedUser(author);
-                                  setEditModalOpen(true);
-                                }}
-                              >
-                                <Pencil className="mr-2 h-4 w-4" /> Edit Details
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => {
-                                  setSelectedUser(author);
-                                  setPermissionsModalOpen(true);
-                                }}
-                              >
-                                <UserCog className="mr-2 h-4 w-4" /> Manage Permissions
-                              </DropdownMenuItem>
-                              <DropdownMenuItem>
-                                <FileText className="mr-2 h-4 w-4" /> View Posts
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                onClick={() => handleToggleStatus(author.id, author.activeStatus)}
-                              >
-                                {author.activeStatus ? (
-                                  <>
-                                    <Ban className="mr-2 h-4 w-4 text-destructive" /> Disable Account
-                                  </>
-                                ) : (
-                                  <>
-                                    <Check className="mr-2 h-4 w-4 text-green-500" /> Enable Account
-                                  </>
-                                )}
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {filteredAuthors?.length === 0 && (
+                {/* Authors table */}
+                <div className="border rounded-md">
+                  <Table>
+                    <TableHeader>
                       <TableRow>
-                        <TableCell colSpan={7} className="h-24 text-center">
-                          No authors found.
-                        </TableCell>
+                        <TableHead className="w-[250px]">Author</TableHead>
+                        <TableHead>Role</TableHead>
+                        <TableHead>Posts</TableHead>
+                        <TableHead>Join Date</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Publishing Rights</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredAuthors?.map((author) => (
+                        <TableRow key={author.id}>
+                          <TableCell className="flex items-center space-x-3">
+                            <Avatar>
+                              <AvatarImage
+                                src={author.avatarUrl || ''}
+                                alt={author.name}
+                              />
+                              <AvatarFallback>{getUserInitials(author.name)}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <div className="font-medium">{author.name}</div>
+                              <div className="text-xs text-muted-foreground">{author.email}</div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={author.role === 'admin' ? 'default' : 'outline'}
+                            >
+                              {author.role === 'admin' ? 'Admin' : 'Author'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{author.postCount}</TableCell>
+                          <TableCell>{new Date(author.createdAt).toLocaleDateString()}</TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={author.activeStatus ? 'default' : 'secondary'}
+                              className={author.activeStatus ? 'bg-green-500' : ''}
+                            >
+                              {author.activeStatus ? 'Active' : 'Inactive'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={author.canPublish ? 'default' : 'outline'}
+                              className={author.canPublish ? 'bg-blue-500' : ''}
+                            >
+                              {author.canPublish ? 'Can publish' : 'Requires approval'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" className="h-8 w-8 p-0">
+                                  <span className="sr-only">Open menu</span>
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem>
+                                  <Pencil className="mr-2 h-4 w-4" /> Edit Profile
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleOpenPermissionsDialog(author)}>
+                                  <Key className="mr-2 h-4 w-4" /> Manage Permissions
+                                </DropdownMenuItem>
+                                <DropdownMenuItem>
+                                  <FileText className="mr-2 h-4 w-4" /> View Posts
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => handleToggleStatus(author)}>
+                                  {author.activeStatus ? (
+                                    <>
+                                      <UserX className="mr-2 h-4 w-4" /> Disable Account
+                                    </>
+                                  ) : (
+                                    <>
+                                      <UserCheck className="mr-2 h-4 w-4" /> Enable Account
+                                    </>
+                                  )}
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                      {(!filteredAuthors || filteredAuthors.length === 0) && (
+                        <TableRow>
+                          <TableCell colSpan={7} className="h-24 text-center">
+                            No authors found.
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
               </div>
             </CardContent>
           </Card>
         </div>
       </div>
 
-      {/* Permissions Dialog */}
-      <Dialog open={permissionsModalOpen} onOpenChange={setPermissionsModalOpen}>
+      {/* Publishing Permissions Dialog */}
+      <Dialog open={permissionDialogOpen} onOpenChange={setPermissionDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Manage Author Permissions</DialogTitle>
+            <DialogTitle>Manage Publishing Rights</DialogTitle>
             <DialogDescription>
-              Update publishing rights for {selectedUser?.name}
+              Set whether {selectedAuthor?.name} can publish posts directly or requires approval.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <div className="flex items-center justify-between">
-              <div>
-                <Label htmlFor="publish-rights" className="text-base">
-                  Publishing Rights
-                </Label>
+              <div className="space-y-0.5">
+                <Label htmlFor="canPublish">Allow Direct Publishing</Label>
                 <p className="text-sm text-muted-foreground">
-                  Allow author to publish content without approval
+                  When enabled, this author can publish posts without admin approval.
                 </p>
               </div>
               <Switch
-                id="publish-rights"
-                checked={selectedUser?.canPublish || false}
-                onCheckedChange={() => {}}
+                id="canPublish"
+                checked={canPublish}
+                onCheckedChange={setCanPublish}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setPermissionsModalOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setPermissionDialogOpen(false)}
+            >
               Cancel
             </Button>
-            <Button onClick={handleUpdatePermissions}>
-              Save Changes
+            <Button
+              onClick={handleUpdatePermissions}
+              disabled={permissionsMutation.isPending}
+            >
+              {permissionsMutation.isPending ? 'Saving...' : 'Save Changes'}
             </Button>
           </DialogFooter>
         </DialogContent>
