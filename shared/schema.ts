@@ -19,6 +19,16 @@ export const ArticleStatus = {
 export type UserRoleType = typeof UserRole[keyof typeof UserRole];
 export type ArticleStatusType = typeof ArticleStatus[keyof typeof ArticleStatus];
 
+// Define notification types
+export const NotificationType = {
+  ARTICLE_APPROVED: "article_approved",
+  ARTICLE_REJECTED: "article_rejected",
+  ARTICLE_PUBLISHED: "article_published",
+  COMMENT_RECEIVED: "comment_received",
+} as const;
+
+export type NotificationTypeValue = typeof NotificationType[keyof typeof NotificationType];
+
 // Users table
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -122,6 +132,18 @@ export const articleCoAuthors = pgTable("article_co_authors", {
   pk: primaryKey({ columns: [t.articleId, t.userId] }),
 }));
 
+// Notifications table
+export const notifications = pgTable("notifications", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  type: text("type").notNull(),
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  articleId: integer("article_id").references(() => articles.id),
+  read: boolean("read").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Define user insert schema
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -193,6 +215,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   articles: many(articles, { relationName: "userArticles" }),
   coAuthoredArticles: many(articleCoAuthors, { relationName: "userCoAuthoredArticles" }),
   assets: many(assets, { relationName: "userAssets" }),
+  notifications: many(notifications, { relationName: "userNotifications" }),
 }));
 
 export const articlesRelations = relations(articles, ({ one, many }) => ({
@@ -204,6 +227,7 @@ export const articlesRelations = relations(articles, ({ one, many }) => ({
   categories: many(articleCategories, { relationName: "articleCategoriesRelation" }),
   tags: many(articleTags, { relationName: "articleTagsRelation" }),
   coAuthors: many(articleCoAuthors, { relationName: "articleCoAuthorsRelation" }),
+  notifications: many(notifications, { relationName: "articleNotifications" }),
 }));
 
 export const categoriesRelations = relations(categories, ({ many }) => ({
@@ -261,6 +285,19 @@ export const assetsRelations = relations(assets, ({ one }) => ({
   }),
 }));
 
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  user: one(users, {
+    fields: [notifications.userId],
+    references: [users.id],
+    relationName: "userNotifications",
+  }),
+  article: one(articles, {
+    fields: [notifications.articleId],
+    references: [articles.id],
+    relationName: "articleNotifications",
+  }),
+}));
+
 // Define category and tag schemas
 export const insertCategorySchema = createInsertSchema(categories).omit({
   id: true,
@@ -297,6 +334,16 @@ export const updateExtendedArticleSchema = updateArticleSchema.extend({
   metaDescription: z.string().max(160, "Meta description should be at most 160 characters").optional(),
 });
 
+// Notification schemas
+export const insertNotificationSchema = createInsertSchema(notifications).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const updateNotificationSchema = z.object({
+  read: z.boolean().optional(),
+});
+
 // Type definitions based on schema
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -316,3 +363,6 @@ export type Asset = typeof assets.$inferSelect;
 export type InsertAsset = z.infer<typeof insertAssetSchema>;
 export type UpdateAsset = z.infer<typeof updateAssetSchema>;
 export type SearchAssets = z.infer<typeof searchAssetsSchema>;
+export type Notification = typeof notifications.$inferSelect;
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+export type UpdateNotification = z.infer<typeof updateNotificationSchema>;
