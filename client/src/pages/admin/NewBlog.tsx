@@ -52,6 +52,8 @@ import {
 const adminArticleSchema = extendedArticleSchema.extend({
   // Admin can only set to draft or published, not review
   status: z.enum([ArticleStatus.DRAFT, ArticleStatus.PUBLISHED]).default(ArticleStatus.DRAFT),
+  // Custom tags field for dynamic tag entry
+  customTags: z.array(z.string()).default([]),
 });
 
 const NewBlog: React.FC = () => {
@@ -101,6 +103,7 @@ const NewBlog: React.FC = () => {
       keywords: [],
       metaTitle: '',
       metaDescription: '',
+      customTags: [],
     },
   });
 
