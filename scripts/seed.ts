@@ -3,7 +3,7 @@ import { users, UserRole, articles, ArticleStatus, categories, tags, articleCate
 import * as bcrypt from "bcrypt";
 import { eq, SQL, sql } from "drizzle-orm";
 
-async function seed() {
+export async function seed() {
   console.log("Starting to seed database...");
 
   // Check if users already exist
