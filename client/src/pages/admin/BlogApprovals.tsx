@@ -147,6 +147,16 @@ const BlogApprovals: React.FC = () => {
   const handleReviewSubmit = () => {
     if (!selectedBlogId || !approvalAction) return;
 
+    // For rejections, remarks are required
+    if (approvalAction === 'reject' && !reviewRemarks.trim()) {
+      toast({
+        title: 'Feedback required',
+        description: 'Please provide feedback to the author explaining why the blog was rejected.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     if (approvalAction === 'approve') {
       approveBlogMutation.mutate({ blogId: selectedBlogId, remarks: reviewRemarks });
     } else {
@@ -312,15 +322,28 @@ const BlogApprovals: React.FC = () => {
           <div className="py-4">
             <label htmlFor="remarks" className="text-sm font-medium flex items-center mb-2">
               <MessageSquare className="mr-2 h-4 w-4" />
-              Feedback to author
+              Feedback to author {approvalAction === 'reject' && <span className="text-red-500 ml-1">*</span>}
             </label>
             <Textarea
               id="remarks"
-              placeholder="Enter your feedback or remarks for the author..."
+              placeholder={approvalAction === 'approve' 
+                ? "Optional: Enter any feedback or comments for the author..."
+                : "Required: Please explain why this blog is being rejected..."}
               value={reviewRemarks}
               onChange={(e) => setReviewRemarks(e.target.value)}
               rows={5}
+              className={approvalAction === 'reject' ? 'border-red-200 focus-visible:ring-red-500' : ''}
             />
+            {approvalAction === 'reject' && (
+              <p className="text-xs text-red-500 mt-1">
+                * Feedback is required when rejecting a blog to help the author understand what needs improvement.
+              </p>
+            )}
+            {approvalAction === 'approve' && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Feedback is optional when approving a blog. You can provide constructive comments if desired.
+              </p>
+            )}
           </div>
 
           <DialogFooter>
