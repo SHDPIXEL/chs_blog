@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense } from "react";
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -40,21 +40,9 @@ function Router() {
       <Route path="/auth/register" component={Register} />
       <Route path="/blog/:id" component={ViewBlog} />
       
-      <Route path="/blogs" component={() => (
-        <Suspense fallback={<div className="flex items-center justify-center h-screen">Loading...</div>}>
-          <Blogs />
-        </Suspense>
-      )} />
-      <Route path="/blogs/:id" component={() => (
-        <Suspense fallback={<div className="flex items-center justify-center h-screen">Loading...</div>}>
-          <BlogDetail />
-        </Suspense>
-      )} />
-      <Route path="/test-blog" component={() => (
-        <Suspense fallback={<div className="flex items-center justify-center h-screen">Loading...</div>}>
-          <TestPage />
-        </Suspense>
-      )} />
+      <Route path="/blogs" component={Blogs} />
+      <Route path="/blogs/:id" component={BlogDetail} />
+      <Route path="/test-blog" component={TestPage} />
 
       {/* Protected admin routes */}
 
