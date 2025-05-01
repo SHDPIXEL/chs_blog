@@ -38,7 +38,7 @@ const blogFormSchema = z.object({
   
   // Relationships
   categoryIds: z.array(z.number()).default([]),
-  tagIds: z.array(z.number()).default([]),
+  customTags: z.array(z.string()).default([]),
   coAuthorIds: z.array(z.number()).default([]),
 });
 
@@ -90,7 +90,7 @@ const NewBlogPage: React.FC = () => {
       metaDescription: '',
       keywords: [],
       categoryIds: [],
-      tagIds: [],
+      customTags: [],
       coAuthorIds: [],
     },
   });
@@ -115,10 +115,17 @@ const NewBlogPage: React.FC = () => {
   // Submit mutation
   const createBlogMutation = useMutation({
     mutationFn: async (data: BlogFormValues) => {
-      const res = await apiRequest('POST', '/api/articles', {
+      // Transfer custom tags to the tags field for the API
+      const formattedData = {
         ...data,
+        tags: data.customTags, // Send as plain string array for the server to process
         published: data.status === ArticleStatus.PUBLISHED,
-      });
+      };
+      
+      // Remove customTags as it's not in the API schema
+      delete (formattedData as any).customTags;
+      
+      const res = await apiRequest('POST', '/api/articles', formattedData);
       return await res.json();
     },
     onSuccess: (data) => {
@@ -183,7 +190,13 @@ const NewBlogPage: React.FC = () => {
                       <Search className="w-4 h-4 mr-2" />
                       SEO
                     </TabsTrigger>
-                    <TabsTrigger value="categories">
+                    <TabsTrigger 
+                      value="categories"
+                      onClick={() => {
+                        // Refresh categories list when switching to this tab
+                        queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
+                      }}
+                    >
                       <Tags className="w-4 h-4 mr-2" />
                       Categories & Tags
                     </TabsTrigger>
@@ -507,42 +520,72 @@ const NewBlogPage: React.FC = () => {
                       )}
                     />
                     
-                    {/* Tags field */}
+                    {/* Custom Tags field - Author can add their own tags */}
                     <FormField
                       control={form.control}
-                      name="tagIds"
+                      name="customTags"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Tags</FormLabel>
-                          <div className="border rounded-md p-4 space-y-2 max-h-60 overflow-y-auto">
-                            {tags.length ===
- 0 ? (
-                              <p className="text-sm text-muted-foreground">No tags available</p>
-                            ) : (
-                              tags.map((tag) => (
-                                <div key={tag.id} className="flex items-center space-x-2">
-                                  <Checkbox
-                                    id={`tag-${tag.id}`}
-                                    checked={field.value.includes(tag.id)}
-                                    onCheckedChange={(checked) => {
-                                      const updatedTags = checked
-                                        ? [...field.value, tag.id]
-                                        : field.value.filter((id) => id !== tag.id);
-                                      field.onChange(updatedTags);
+                          <div className="space-y-4">
+                            <div className="flex flex-wrap gap-2 mb-2 min-h-8">
+                              {field.value && field.value.map((tag, index) => (
+                                <Badge key={index} variant="secondary" className="px-2 py-1">
+                                  {tag}
+                                  <button
+                                    type="button"
+                                    className="ml-2 text-muted-foreground hover:text-foreground"
+                                    onClick={() => {
+                                      const newTags = [...field.value];
+                                      newTags.splice(index, 1);
+                                      field.onChange(newTags);
                                     }}
-                                  />
-                                  <label
-                                    htmlFor={`tag-${tag.id}`}
-                                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                                   >
-                                    {tag.name}
-                                  </label>
-                                </div>
-                              ))
-                            )}
+                                    ×
+                                  </button>
+                                </Badge>
+                              ))}
+                              {(!field.value || field.value.length === 0) && (
+                                <span className="text-sm text-muted-foreground">No tags added yet</span>
+                              )}
+                            </div>
+                            <div className="flex gap-2">
+                              <Input
+                                placeholder="Enter a tag"
+                                value={keywordInput}
+                                onChange={(e) => setKeywordInput(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    if (keywordInput.trim()) {
+                                      const currentTags = field.value || [];
+                                      if (!currentTags.includes(keywordInput.trim())) {
+                                        field.onChange([...currentTags, keywordInput.trim()]);
+                                      }
+                                      setKeywordInput('');
+                                    }
+                                  }
+                                }}
+                              />
+                              <Button 
+                                type="button" 
+                                variant="secondary" 
+                                onClick={() => {
+                                  if (keywordInput.trim()) {
+                                    const currentTags = field.value || [];
+                                    if (!currentTags.includes(keywordInput.trim())) {
+                                      field.onChange([...currentTags, keywordInput.trim()]);
+                                    }
+                                    setKeywordInput('');
+                                  }
+                                }}
+                              >
+                                Add
+                              </Button>
+                            </div>
                           </div>
                           <FormDescription>
-                            Select one or more tags to categorize your blog post
+                            Add your own tags to categorize your blog post. Press Enter or click Add after each tag.
                           </FormDescription>
                           <FormMessage />
                         </FormItem>

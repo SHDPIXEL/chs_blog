@@ -271,13 +271,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Check if extended data is present (categories, tags, etc.)
-      if (req.body.categoryIds || req.body.tagIds || req.body.coAuthorIds || 
+      if (req.body.categoryIds || req.body.tags || req.body.coAuthorIds || 
           req.body.keywords || req.body.metaTitle || req.body.metaDescription) {
+        
+        // Handle custom tags - create new tags if needed
+        let tagIds: number[] = [];
+        if (req.body.tags && Array.isArray(req.body.tags)) {
+          // For each tag in the array, either find existing or create new
+          const tagPromises = req.body.tags.map(async (tagName: string) => {
+            // Try to find existing tag by name
+            let tag = await storage.getTagBySlug(
+              tagName.toLowerCase().replace(/\s+/g, '-')
+            );
+            
+            // If tag doesn't exist, create it
+            if (!tag) {
+              tag = await storage.createTag({
+                name: tagName,
+                slug: tagName.toLowerCase().replace(/\s+/g, '-')
+              });
+            }
+            
+            return tag.id;
+          });
+          
+          // Wait for all tag creation/fetching to complete
+          tagIds = await Promise.all(tagPromises);
+        }
+        
         // Use extended schema and create method
         const validatedData = extendedArticleSchema.parse({
           ...req.body,
-          authorId: req.user.id
+          authorId: req.user.id,
+          tagIds // Replace tags array with tag IDs
         });
+        
+        // Remove tags property which isn't in the schema
+        delete (validatedData as any).tags;
         
         const article = await storage.createExtendedArticle(validatedData);
         return res.status(201).json(article);
@@ -326,8 +356,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Check if extended data is present (categories, tags, etc.)
-      if (req.body.categoryIds || req.body.tagIds || req.body.coAuthorIds || 
+      if (req.body.categoryIds || req.body.tags || req.body.tagIds || req.body.coAuthorIds || 
           req.body.keywords || req.body.metaTitle || req.body.metaDescription) {
+        
+        // Handle custom tags - create new tags if needed
+        if (req.body.tags && Array.isArray(req.body.tags)) {
+          // For each tag in the array, either find existing or create new
+          const tagPromises = req.body.tags.map(async (tagName: string) => {
+            // Try to find existing tag by name
+            let tag = await storage.getTagBySlug(
+              tagName.toLowerCase().replace(/\s+/g, '-')
+            );
+            
+            // If tag doesn't exist, create it
+            if (!tag) {
+              tag = await storage.createTag({
+                name: tagName,
+                slug: tagName.toLowerCase().replace(/\s+/g, '-')
+              });
+            }
+            
+            return tag.id;
+          });
+          
+          // Wait for all tag creation/fetching to complete
+          req.body.tagIds = await Promise.all(tagPromises);
+          
+          // Remove tags property which isn't in the schema
+          delete req.body.tags;
+        }
+        
         // Use extended schema and update method
         const validatedData = updateExtendedArticleSchema.parse(req.body);
         const updatedArticle = await storage.updateExtendedArticle(articleId, validatedData);
