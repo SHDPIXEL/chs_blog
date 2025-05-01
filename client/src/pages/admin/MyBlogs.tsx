@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useLocation } from 'wouter';
-import AdminLayout from '@/components/layouts/AdminLayout';
+import { useAuth } from '@/hooks/use-auth';
+import AdminLayout from '@/components/layout/AdminLayout';
 import {
   Card,
   CardContent,
@@ -25,12 +26,10 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  DropdownMenuCheckboxItem,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
 import { 
   Select, 
   SelectContent, 
@@ -46,8 +45,6 @@ import {
   DialogHeader, 
   DialogTitle 
 } from '@/components/ui/dialog';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import {
@@ -57,14 +54,13 @@ import {
   Trash2,
   FileText,
   Search,
-  Calendar as CalendarIcon,
   Filter,
-  Star,
   CheckCircle2,
   XCircle,
-  SlidersHorizontal,
+  Star,
+  Plus,
 } from 'lucide-react';
-import { Article, ArticleStatus, Category } from '@shared/schema';
+import { Article, ArticleStatus } from '@shared/schema';
 
 interface ExtendedArticle extends Article {
   author: string;
@@ -74,71 +70,25 @@ interface ExtendedArticle extends Article {
   featured: boolean;
 }
 
-interface BlogFilters {
-  status: string | null;
-  author: number | null;
-  category: number | null;
-  dateRange: {
-    from: Date | null;
-    to: Date | null;
-  };
-  viewCountRange: {
-    min: number | null;
-    max: number | null;
-  };
-}
-
-const DEFAULT_FILTERS: BlogFilters = {
-  status: null,
-  author: null,
-  category: null,
-  dateRange: {
-    from: null,
-    to: null,
-  },
-  viewCountRange: {
-    min: null,
-    max: null,
-  },
-};
-
-const BlogManagement: React.FC = () => {
+const AdminMyBlogs: React.FC = () => {
   const { toast } = useToast();
   const [, navigate] = useLocation();
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
-  const [filters, setFilters] = useState<BlogFilters>(DEFAULT_FILTERS);
-  const [selectedBlogs, setSelectedBlogs] = useState<number[]>([]);
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [blogToDelete, setBlogToDelete] = useState<number | null>(null);
-  const [bulkActionDialogOpen, setBulkActionDialogOpen] = useState(false);
-  const [bulkAction, setBulkAction] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<string>("all");
   
-  // Fetch blog posts with extended info
+  // Fetch only admin's blogs
   const { data: blogs, isLoading } = useQuery<ExtendedArticle[]>({
-    queryKey: ['/api/admin/articles'],
+    queryKey: ['/api/admin/articles', 'my'],
     queryFn: async () => {
+      if (!user) return [];
       const res = await apiRequest('GET', '/api/admin/articles');
-      return res.json();
-    }
-  });
-
-  // Fetch authors for filter
-  const { data: authors } = useQuery({
-    queryKey: ['/api/users/authors'],
-    queryFn: async () => {
-      const res = await apiRequest('GET', '/api/users/authors');
-      return res.json();
-    }
-  });
-
-  // Fetch categories for filter
-  const { data: categories } = useQuery<Category[]>({
-    queryKey: ['/api/categories'],
-    queryFn: async () => {
-      const res = await apiRequest('GET', '/api/categories');
-      return res.json();
-    }
+      const allBlogs = await res.json();
+      return allBlogs.filter((blog: ExtendedArticle) => blog.authorId === user.id);
+    },
+    enabled: !!user,
   });
 
   // Delete blog post
@@ -189,34 +139,6 @@ const BlogManagement: React.FC = () => {
     }
   });
 
-  // Bulk update status
-  const bulkUpdateStatusMutation = useMutation({
-    mutationFn: async ({ blogIds, status }: { blogIds: number[]; status: string }) => {
-      const res = await apiRequest('PATCH', '/api/admin/articles/bulk/status', {
-        ids: blogIds,
-        status
-      });
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/articles'] });
-      setBulkActionDialogOpen(false);
-      setBulkAction(null);
-      setSelectedBlogs([]);
-      toast({
-        title: 'Bulk update successful',
-        description: 'Selected blog posts have been updated',
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: 'Bulk update failed',
-        description: error.message,
-        variant: 'destructive',
-      });
-    }
-  });
-
   // Toggle featured status
   const toggleFeaturedMutation = useMutation({
     mutationFn: async ({ blogId, featured }: { blogId: number; featured: boolean }) => {
@@ -241,34 +163,6 @@ const BlogManagement: React.FC = () => {
     }
   });
 
-  // Bulk toggle featured status
-  const bulkToggleFeaturedMutation = useMutation({
-    mutationFn: async ({ blogIds, featured }: { blogIds: number[]; featured: boolean }) => {
-      const res = await apiRequest('PATCH', '/api/admin/articles/bulk/featured', {
-        ids: blogIds,
-        featured
-      });
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/articles'] });
-      setBulkActionDialogOpen(false);
-      setBulkAction(null);
-      setSelectedBlogs([]);
-      toast({
-        title: 'Bulk update successful',
-        description: 'Featured status of selected blog posts has been updated',
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: 'Bulk update failed',
-        description: error.message,
-        variant: 'destructive',
-      });
-    }
-  });
-
   // Filter blogs
   const filteredBlogs = blogs?.filter(blog => {
     // Text search filter
@@ -285,58 +179,6 @@ const BlogManagement: React.FC = () => {
     
     return matchesSearch && matchesStatus;
   });
-
-  // Select/deselect all blogs
-  const handleSelectAll = (checked: boolean) => {
-    if (checked && filteredBlogs) {
-      setSelectedBlogs(filteredBlogs.map(blog => blog.id));
-    } else {
-      setSelectedBlogs([]);
-    }
-  };
-
-  // Toggle selection of a single blog
-  const handleToggleSelect = (blogId: number) => {
-    setSelectedBlogs(prev => 
-      prev.includes(blogId)
-        ? prev.filter(id => id !== blogId)
-        : [...prev, blogId]
-    );
-  };
-
-  // Handle bulk actions
-  const executeBulkAction = () => {
-    if (!bulkAction || selectedBlogs.length === 0) return;
-
-    switch (bulkAction) {
-      case 'publish':
-        bulkUpdateStatusMutation.mutate({ 
-          blogIds: selectedBlogs, 
-          status: ArticleStatus.PUBLISHED 
-        });
-        break;
-      case 'draft':
-        bulkUpdateStatusMutation.mutate({ 
-          blogIds: selectedBlogs, 
-          status: ArticleStatus.DRAFT 
-        });
-        break;
-      case 'feature':
-        bulkToggleFeaturedMutation.mutate({ 
-          blogIds: selectedBlogs, 
-          featured: true 
-        });
-        break;
-      case 'unfeature':
-        bulkToggleFeaturedMutation.mutate({ 
-          blogIds: selectedBlogs, 
-          featured: false 
-        });
-        break;
-      default:
-        break;
-    }
-  };
 
   if (isLoading) {
     return (
@@ -355,18 +197,18 @@ const BlogManagement: React.FC = () => {
       <div className="p-6">
         <div className="flex flex-col">
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold">Blog Management</h1>
+            <h1 className="text-3xl font-bold">My Blogs</h1>
             <Button onClick={() => navigate('/admin/blogs/new')}>
-              <FileText className="mr-2 h-4 w-4" />
+              <Plus className="mr-2 h-4 w-4" />
               Create New Blog
             </Button>
           </div>
 
           <Card className="mb-6">
             <CardHeader>
-              <CardTitle>All Blog Posts</CardTitle>
+              <CardTitle>My Blog Posts</CardTitle>
               <CardDescription>
-                Manage, filter, and bulk update blog posts.
+                Manage and edit your own blog posts as an admin.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -403,95 +245,15 @@ const BlogManagement: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Bulk actions */}
-                {selectedBlogs.length > 0 && (
-                  <div className="flex items-center justify-between bg-muted p-2 rounded-md">
-                    <div className="text-sm">
-                      <span className="font-medium">{selectedBlogs.length}</span> blogs selected
-                    </div>
-                    <div className="flex space-x-2">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="outline" size="sm">
-                            <SlidersHorizontal className="mr-2 h-4 w-4" />
-                            Bulk Actions
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Choose action</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setBulkAction('publish');
-                              setBulkActionDialogOpen(true);
-                            }}
-                          >
-                            <CheckCircle2 className="mr-2 h-4 w-4 text-green-500" />
-                            Publish
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setBulkAction('draft');
-                              setBulkActionDialogOpen(true);
-                            }}
-                          >
-                            <FileText className="mr-2 h-4 w-4" />
-                            Move to Draft
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setBulkAction('feature');
-                              setBulkActionDialogOpen(true);
-                            }}
-                          >
-                            <Star className="mr-2 h-4 w-4 text-yellow-500" />
-                            Feature
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setBulkAction('unfeature');
-                              setBulkActionDialogOpen(true);
-                            }}
-                          >
-                            <Star className="mr-2 h-4 w-4" />
-                            Unfeature
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => setSelectedBlogs([])}
-                      >
-                        Clear Selection
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
                 {/* Blog posts table */}
                 <div className="border rounded-md">
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="w-12">
-                          <Checkbox 
-                            checked={
-                              filteredBlogs && 
-                              filteredBlogs.length > 0 && 
-                              selectedBlogs.length === filteredBlogs.length
-                            }
-                            onCheckedChange={handleSelectAll}
-                            aria-label="Select all blogs"
-                          />
-                        </TableHead>
                         <TableHead>Title</TableHead>
-                        <TableHead>Author</TableHead>
-                        <TableHead>Category</TableHead>
                         <TableHead>Status</TableHead>
-                        <TableHead>Views</TableHead>
-                        <TableHead>Date</TableHead>
+                        <TableHead>Created</TableHead>
+                        <TableHead>Updated</TableHead>
                         <TableHead>Featured</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
@@ -500,43 +262,45 @@ const BlogManagement: React.FC = () => {
                       {filteredBlogs?.map((blog) => (
                         <TableRow key={blog.id}>
                           <TableCell>
-                            <Checkbox 
-                              checked={selectedBlogs.includes(blog.id)}
-                              onCheckedChange={() => handleToggleSelect(blog.id)}
-                              aria-label={`Select ${blog.title}`}
-                            />
-                          </TableCell>
-                          <TableCell className="font-medium">{blog.title}</TableCell>
-                          <TableCell>{blog.author}</TableCell>
-                          <TableCell>
-                            {blog.categories.length > 0 
-                              ? blog.categories.join(', ')
-                              : <span className="text-muted-foreground italic">Uncategorized</span>
-                            }
+                            <div className="flex flex-col">
+                              <span className="font-medium">{blog.title}</span>
+                              <span className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                                {blog.excerpt || 'No excerpt available'}
+                              </span>
+                            </div>
                           </TableCell>
                           <TableCell>
                             {blog.published ? (
-                              <Badge>Published</Badge>
+                              <Badge className="bg-green-100 text-green-800 border-green-300">
+                                Published
+                              </Badge>
                             ) : blog.status === ArticleStatus.REVIEW ? (
-                              <Badge variant="outline">In Review</Badge>
+                              <Badge className="bg-yellow-100 text-yellow-800 border-yellow-300">
+                                In Review
+                              </Badge>
                             ) : (
-                              <Badge variant="secondary">Draft</Badge>
+                              <Badge variant="outline">Draft</Badge>
                             )}
                           </TableCell>
-                          <TableCell>{blog.viewCount}</TableCell>
-                          <TableCell>{new Date(blog.createdAt).toLocaleDateString()}</TableCell>
+                          <TableCell>
+                            {format(new Date(blog.createdAt), 'MMM d, yyyy')}
+                          </TableCell>
+                          <TableCell>
+                            {format(new Date(blog.updatedAt), 'MMM d, yyyy')}
+                          </TableCell>
                           <TableCell>
                             {blog.featured ? (
-                              <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                              <Badge className="bg-blue-100 text-blue-800 border-blue-300">
+                                Featured
+                              </Badge>
                             ) : (
-                              <Star className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-muted-foreground">—</span>
                             )}
                           </TableCell>
                           <TableCell className="text-right">
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" className="h-8 w-8 p-0">
-                                  <span className="sr-only">Open menu</span>
+                                <Button variant="ghost" size="icon">
                                   <MoreHorizontal className="h-4 w-4" />
                                 </Button>
                               </DropdownMenuTrigger>
@@ -599,8 +363,8 @@ const BlogManagement: React.FC = () => {
                       ))}
                       {(!filteredBlogs || filteredBlogs.length === 0) && (
                         <TableRow>
-                          <TableCell colSpan={9} className="h-24 text-center">
-                            No blog posts found.
+                          <TableCell colSpan={6} className="h-24 text-center">
+                            No blog posts found. Create a new blog to get started.
                           </TableCell>
                         </TableRow>
                       )}
@@ -636,34 +400,8 @@ const BlogManagement: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Bulk Action Confirmation Dialog */}
-      <Dialog open={bulkActionDialogOpen} onOpenChange={setBulkActionDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirm Bulk Action</DialogTitle>
-            <DialogDescription>
-              {bulkAction === 'publish' && 'Publish all selected blog posts?'}
-              {bulkAction === 'draft' && 'Move all selected blog posts to draft?'}
-              {bulkAction === 'feature' && 'Feature all selected blog posts?'}
-              {bulkAction === 'unfeature' && 'Unfeature all selected blog posts?'}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setBulkActionDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={executeBulkAction}
-              disabled={bulkUpdateStatusMutation.isPending || bulkToggleFeaturedMutation.isPending}
-            >
-              Confirm
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </AdminLayout>
   );
 };
 
-export default BlogManagement;
+export default AdminMyBlogs;

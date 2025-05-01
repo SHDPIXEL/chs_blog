@@ -54,6 +54,12 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       current: location === '/admin/blogs',
     },
     {
+      name: 'My Blogs',
+      href: '/admin/my-blogs',
+      icon: FileText,
+      current: location === '/admin/my-blogs',
+    },
+    {
       name: 'Blog Approvals',
       href: '/admin/blog-approvals',
       icon: ChevronRight,
