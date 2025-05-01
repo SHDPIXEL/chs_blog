@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useLocation } from 'wouter';
 import Sidebar from './Sidebar';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/hooks/use-auth';
 import { 
   Menu, 
   Search, 
@@ -18,19 +18,23 @@ interface AdminLayoutProps {
 const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [location, setLocation] = useLocation();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isLoading } = useAuth();
 
   // Redirect if not authenticated as admin
   React.useEffect(() => {
-    if (!isAuthenticated) {
-      setLocation('/login');
+    if (!isLoading && !user) {
+      setLocation('/auth');
     } else if (user && user.role !== 'admin') {
       setLocation('/author/dashboard');
     }
-  }, [isAuthenticated, user, setLocation]);
+  }, [isLoading, user, setLocation]);
 
   // If not authenticated or not admin, don't render the layout
-  if (!isAuthenticated || (user && user.role !== 'admin')) {
+  if (isLoading) {
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+  }
+  
+  if (!user || user.role !== 'admin') {
     return null;
   }
 

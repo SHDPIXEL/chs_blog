@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useLocation } from 'wouter';
 import Sidebar from './Sidebar';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/hooks/use-auth';
 import { 
   Menu, 
   Search, 
@@ -18,19 +18,23 @@ interface AuthorLayoutProps {
 const AuthorLayout: React.FC<AuthorLayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [location, setLocation] = useLocation();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isLoading } = useAuth();
 
   // Redirect if not authenticated as author
   React.useEffect(() => {
-    if (!isAuthenticated) {
-      setLocation('/auth/login');
+    if (!isLoading && !user) {
+      setLocation('/auth');
     } else if (user && user.role !== 'author') {
       setLocation('/admin/dashboard');
     }
-  }, [isAuthenticated, user, setLocation]);
+  }, [isLoading, user, setLocation]);
 
   // If not authenticated or not author, don't render the layout
-  if (!isAuthenticated || (user && user.role !== 'author')) {
+  if (isLoading) {
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+  }
+  
+  if (!user || user.role !== 'author') {
     return null;
   }
 

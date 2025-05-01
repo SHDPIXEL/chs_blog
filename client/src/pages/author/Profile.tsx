@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import AuthorLayout from "@/components/layout/AuthorLayout";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/hooks/use-auth";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
