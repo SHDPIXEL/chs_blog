@@ -87,6 +87,15 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  // Helper function to generate slug from string
+  private generateSlug(text: string): string {
+    return text
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, '') // Remove special characters
+      .replace(/\s+/g, '-') // Replace spaces with -
+      .replace(/--+/g, '-') // Replace multiple - with single -
+      .trim(); // Trim whitespace
+  }
   // User methods
   async getUser(id: number): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
@@ -95,6 +104,22 @@ export class DatabaseStorage implements IStorage {
 
   async getUserByEmail(email: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
+  }
+
+  async getUsers(role?: string): Promise<User[]> {
+    if (role) {
+      return db.select().from(users).where(sql`${users.role} = ${role}`);
+    }
+    return db.select().from(users);
+  }
+
+  async updateUserPublishingRights(id: number, canPublish: boolean): Promise<User | undefined> {
+    const [user] = await db.update(users)
+      .set({ canPublish })
+      .where(eq(users.id, id))
+      .returning();
+    
     return user;
   }
 
@@ -274,6 +299,378 @@ export class DatabaseStorage implements IStorage {
       .returning({ id: assets.id });
     
     return result.length > 0;
+  }
+
+  // Category methods
+  async getAllCategories(): Promise<Category[]> {
+    return db.select().from(categories).orderBy(asc(categories.name));
+  }
+
+  async getCategory(id: number): Promise<Category | undefined> {
+    const [category] = await db.select().from(categories).where(eq(categories.id, id));
+    return category;
+  }
+
+  async getCategoryBySlug(slug: string): Promise<Category | undefined> {
+    const [category] = await db.select().from(categories).where(eq(categories.slug, slug));
+    return category;
+  }
+
+  async createCategory(categoryData: InsertCategory): Promise<Category> {
+    // Generate slug if not provided
+    if (!categoryData.slug) {
+      categoryData = {
+        ...categoryData,
+        slug: this.generateSlug(categoryData.name),
+      };
+    }
+
+    const [category] = await db.insert(categories).values(categoryData).returning();
+    return category;
+  }
+
+  async updateCategory(id: number, categoryData: UpdateCategory): Promise<Category | undefined> {
+    // If name is updated but not slug, regenerate slug
+    if (categoryData.name && !categoryData.slug) {
+      categoryData = {
+        ...categoryData,
+        slug: this.generateSlug(categoryData.name),
+      };
+    }
+
+    const [category] = await db.update(categories)
+      .set(categoryData)
+      .where(eq(categories.id, id))
+      .returning();
+    
+    return category;
+  }
+
+  async deleteCategory(id: number): Promise<boolean> {
+    // First delete all article-category relations for this category
+    await db.delete(articleCategories)
+      .where(eq(articleCategories.categoryId, id));
+    
+    // Then delete the category
+    const result = await db.delete(categories)
+      .where(eq(categories.id, id))
+      .returning({ id: categories.id });
+    
+    return result.length > 0;
+  }
+
+  // Tag methods
+  async getAllTags(): Promise<Tag[]> {
+    return db.select().from(tags).orderBy(asc(tags.name));
+  }
+
+  async getTag(id: number): Promise<Tag | undefined> {
+    const [tag] = await db.select().from(tags).where(eq(tags.id, id));
+    return tag;
+  }
+
+  async getTagBySlug(slug: string): Promise<Tag | undefined> {
+    const [tag] = await db.select().from(tags).where(eq(tags.slug, slug));
+    return tag;
+  }
+
+  async createTag(tagData: InsertTag): Promise<Tag> {
+    // Generate slug if not provided
+    if (!tagData.slug) {
+      tagData = {
+        ...tagData,
+        slug: this.generateSlug(tagData.name),
+      };
+    }
+
+    const [tag] = await db.insert(tags).values(tagData).returning();
+    return tag;
+  }
+
+  async deleteTag(id: number): Promise<boolean> {
+    // First delete all article-tag relations for this tag
+    await db.delete(articleTags)
+      .where(eq(articleTags.tagId, id));
+    
+    // Then delete the tag
+    const result = await db.delete(tags)
+      .where(eq(tags.id, id))
+      .returning({ id: tags.id });
+    
+    return result.length > 0;
+  }
+
+  // Article relation methods
+  async getArticleCategories(articleId: number): Promise<Category[]> {
+    const articleCategoryRows = await db.select({
+      categoryId: articleCategories.categoryId
+    })
+    .from(articleCategories)
+    .where(eq(articleCategories.articleId, articleId));
+    
+    if (articleCategoryRows.length === 0) {
+      return [];
+    }
+    
+    const categoryIds = articleCategoryRows.map(row => row.categoryId);
+    return db.select()
+      .from(categories)
+      .where(inArray(categories.id, categoryIds));
+  }
+
+  async getArticleTags(articleId: number): Promise<Tag[]> {
+    const articleTagRows = await db.select({
+      tagId: articleTags.tagId
+    })
+    .from(articleTags)
+    .where(eq(articleTags.articleId, articleId));
+    
+    if (articleTagRows.length === 0) {
+      return [];
+    }
+    
+    const tagIds = articleTagRows.map(row => row.tagId);
+    return db.select()
+      .from(tags)
+      .where(inArray(tags.id, tagIds));
+  }
+
+  async getArticleCoAuthors(articleId: number): Promise<User[]> {
+    const articleCoAuthorRows = await db.select({
+      userId: articleCoAuthors.userId
+    })
+    .from(articleCoAuthors)
+    .where(eq(articleCoAuthors.articleId, articleId));
+    
+    if (articleCoAuthorRows.length === 0) {
+      return [];
+    }
+    
+    const userIds = articleCoAuthorRows.map(row => row.userId);
+    return db.select()
+      .from(users)
+      .where(inArray(users.id, userIds));
+  }
+
+  async getArticleWithRelations(id: number): Promise<{
+    article: Article;
+    categories: Category[];
+    tags: Tag[];
+    coAuthors: User[];
+  } | undefined> {
+    const article = await this.getArticle(id);
+    if (!article) {
+      return undefined;
+    }
+
+    const [categories, tags, coAuthors] = await Promise.all([
+      this.getArticleCategories(id),
+      this.getArticleTags(id),
+      this.getArticleCoAuthors(id)
+    ]);
+
+    return {
+      article,
+      categories,
+      tags,
+      coAuthors
+    };
+  }
+
+  async createExtendedArticle(extendedArticle: ExtendedInsertArticle): Promise<Article> {
+    // Extract relation data
+    const { categoryIds, tagIds, coAuthorIds, ...articleData } = extendedArticle;
+    
+    // Create the article
+    const article = await this.createArticle(articleData);
+    
+    // Add categories if provided
+    if (categoryIds && categoryIds.length > 0) {
+      await Promise.all(
+        categoryIds.map(categoryId => 
+          db.insert(articleCategories).values({
+            articleId: article.id,
+            categoryId,
+          })
+        )
+      );
+    }
+    
+    // Add tags if provided
+    if (tagIds && tagIds.length > 0) {
+      await Promise.all(
+        tagIds.map(tagId => 
+          db.insert(articleTags).values({
+            articleId: article.id,
+            tagId,
+          })
+        )
+      );
+    }
+    
+    // Add co-authors if provided
+    if (coAuthorIds && coAuthorIds.length > 0) {
+      await Promise.all(
+        coAuthorIds.map(userId => 
+          db.insert(articleCoAuthors).values({
+            articleId: article.id,
+            userId,
+          })
+        )
+      );
+    }
+    
+    return article;
+  }
+
+  async updateExtendedArticle(id: number, extendedArticle: Partial<ExtendedUpdateArticle>): Promise<Article | undefined> {
+    // Extract relation data
+    const { categoryIds, tagIds, coAuthorIds, ...articleData } = extendedArticle;
+    
+    // Update the article basic data
+    const article = await this.updateArticle(id, articleData);
+    if (!article) {
+      return undefined;
+    }
+    
+    // Update categories if provided
+    if (categoryIds) {
+      // Delete existing relationships
+      await db.delete(articleCategories).where(eq(articleCategories.articleId, id));
+      
+      // Add new ones
+      if (categoryIds.length > 0) {
+        await Promise.all(
+          categoryIds.map(categoryId => 
+            db.insert(articleCategories).values({
+              articleId: id,
+              categoryId,
+            })
+          )
+        );
+      }
+    }
+    
+    // Update tags if provided
+    if (tagIds) {
+      // Delete existing relationships
+      await db.delete(articleTags).where(eq(articleTags.articleId, id));
+      
+      // Add new ones
+      if (tagIds.length > 0) {
+        await Promise.all(
+          tagIds.map(tagId => 
+            db.insert(articleTags).values({
+              articleId: id,
+              tagId,
+            })
+          )
+        );
+      }
+    }
+    
+    // Update co-authors if provided
+    if (coAuthorIds) {
+      // Delete existing relationships
+      await db.delete(articleCoAuthors).where(eq(articleCoAuthors.articleId, id));
+      
+      // Add new ones
+      if (coAuthorIds.length > 0) {
+        await Promise.all(
+          coAuthorIds.map(userId => 
+            db.insert(articleCoAuthors).values({
+              articleId: id,
+              userId,
+            })
+          )
+        );
+      }
+    }
+    
+    return article;
+  }
+
+  async searchArticles(filters: any): Promise<{ articles: Article[], total: number }> {
+    // Start with base conditions
+    let conditions: any[] = [];
+    
+    // Filter by author
+    if (filters.authorId) {
+      conditions.push(eq(articles.authorId, filters.authorId));
+    }
+    
+    // Filter by status
+    if (filters.status) {
+      conditions.push(eq(articles.status, filters.status));
+    }
+    
+    // Filter by published status
+    if (filters.published !== undefined) {
+      conditions.push(eq(articles.published, filters.published));
+    }
+    
+    // Filter by search term (title, content, excerpt)
+    if (filters.search) {
+      const searchTerm = `%${filters.search}%`;
+      const searchCondition = or(
+        sql`${articles.title} ILIKE ${searchTerm}`,
+        sql`${articles.content} ILIKE ${searchTerm}`,
+        sql`${articles.excerpt} ILIKE ${searchTerm}`
+      );
+      conditions.push(searchCondition);
+    }
+
+    // Build the query with all conditions
+    let baseQuery = db.select().from(articles);
+    if (conditions.length > 0) {
+      baseQuery = baseQuery.where(and(...conditions));
+    }
+    
+    // Count total matching records
+    const countQuery = db.select({ count: sql<number>`count(*)` }).from(articles);
+    if (conditions.length > 0) {
+      countQuery.where(and(...conditions));
+    }
+    const totalCount = await countQuery;
+    const total = totalCount[0]?.count || 0;
+    
+    // Apply pagination
+    const page = filters.page || 1;
+    const limit = filters.limit || 20;
+    const offset = (page - 1) * limit;
+    
+    // Apply sorting
+    let orderByField = desc(articles.createdAt); // Default sorting
+    if (filters.orderBy) {
+      switch (filters.orderBy) {
+        case 'title':
+          orderByField = asc(articles.title);
+          break;
+        case 'title-desc':
+          orderByField = desc(articles.title);
+          break;
+        case 'newest':
+          orderByField = desc(articles.createdAt);
+          break;
+        case 'oldest':
+          orderByField = asc(articles.createdAt);
+          break;
+        case 'views':
+          orderByField = desc(articles.viewCount);
+          break;
+      }
+    }
+    
+    // Get paginated results with ordering
+    const results = await baseQuery
+      .orderBy(orderByField)
+      .limit(limit)
+      .offset(offset);
+    
+    return {
+      articles: results,
+      total: Number(total),
+    };
   }
 }
 
