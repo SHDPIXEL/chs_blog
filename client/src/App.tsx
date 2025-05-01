@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/context/AuthContext";
 import { AssetManagerProvider } from "@/context/AssetManagerContext";
-import { AssetManager } from "@/components/assets";
+import AssetManager from "@/components/assets/AssetManager";
 import { ProtectedRoute } from "@/lib/protected-route";
 
 // Pages

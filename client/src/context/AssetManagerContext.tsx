@@ -263,7 +263,7 @@ export const AssetManagerProvider: React.FC<AssetManagerProviderProps> = ({
     //  setSelectedAsset(null);
     //  setSelectedAssets([]);
     setMultiSelect(false);
-  }, []);
+  }, [onAssetSelect, selectedAsset, setIsOpen, setMultiSelect]);
 
   // Upload asset
   const uploadAsset = useCallback(
