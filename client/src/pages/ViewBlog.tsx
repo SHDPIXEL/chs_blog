@@ -33,8 +33,8 @@ const ViewBlog: React.FC<ViewBlogProps> = () => {
         const res = await apiRequest('GET', `/api/articles/${articleId}/full`);
         return res.json();
       } catch (error) {
-        // If article is not published or not found, handle gracefully
-        if (error instanceof Error && error.message.includes('403')) {
+        // If article is not found or user is not authorized, handle gracefully
+        if (error instanceof Error && (error.message.includes('403') || error.message.includes('401'))) {
           // Navigate to home if unauthorized
           navigate('/');
         }
@@ -138,6 +138,13 @@ const ViewBlog: React.FC<ViewBlogProps> = () => {
               <UserIcon className="h-4 w-4 mr-1" />
               <span>By {coAuthors.find(author => author.id === article.authorId)?.name || 'Unknown Author'}</span>
             </div>
+            
+            {/* Status badge */}
+            <Badge variant={article.status === 'published' ? 'default' : 
+                   article.status === 'review' ? 'outline' : 'secondary'}>
+              {article.status === 'published' ? 'Published' : 
+               article.status === 'review' ? 'In Review' : 'Draft'}
+            </Badge>
             
             {coAuthors.length > 0 && (
               <div className="flex items-center">

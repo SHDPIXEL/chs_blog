@@ -4,6 +4,7 @@ import AuthorLayout from '@/components/layout/AuthorLayout';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/context/AuthContext';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -50,9 +51,13 @@ const EditBlogPage: React.FC = () => {
   const params = useParams<{ id: string }>();
   const articleId = parseInt(params.id);
   const { toast } = useToast();
+  const { user } = useAuth();
   const [featuredImagePreview, setFeaturedImagePreview] = useState<string | null>(null);
   const [keywordInput, setKeywordInput] = useState<string>('');
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  
+  // Check if user has publishing rights
+  const canPublish = user?.canPublish || user?.role === 'admin';
   
   // Fetch the article data
   const { data: article, isLoading: isArticleLoading, error: articleError } = useQuery<any>({
@@ -223,6 +228,16 @@ const EditBlogPage: React.FC = () => {
   
   // Form submission handler
   const onSubmit = (data: BlogFormValues) => {
+    // Check if trying to publish without permissions
+    if (data.status === ArticleStatus.PUBLISHED && !canPublish) {
+      // If trying to publish without permissions, set to review instead
+      data.status = ArticleStatus.REVIEW;
+      toast({
+        title: 'Blog submitted for review',
+        description: 'You do not have publishing rights. Your blog has been submitted for admin review.',
+      });
+    }
+    
     updateBlogMutation.mutate(data);
   };
 
@@ -475,14 +490,20 @@ const EditBlogPage: React.FC = () => {
                             <SelectContent>
                               <SelectItem value={ArticleStatus.DRAFT}>Draft</SelectItem>
                               <SelectItem value={ArticleStatus.REVIEW}>Submit for Review</SelectItem>
-                              <SelectItem value={ArticleStatus.PUBLISHED}>Publish</SelectItem>
+                              {canPublish && (
+                                <SelectItem value={ArticleStatus.PUBLISHED}>Publish</SelectItem>
+                              )}
                             </SelectContent>
                           </Select>
                           <FormDescription>
                             <ul className="list-disc pl-5 space-y-1 mt-1">
                               <li><span className="font-medium">Draft:</span> Save as work in progress</li>
                               <li><span className="font-medium">Review:</span> Submit for editorial review</li>
-                              <li><span className="font-medium">Publish:</span> Make this blog post public</li>
+                              {canPublish ? (
+                                <li><span className="font-medium">Publish:</span> Make this blog post public</li>
+                              ) : (
+                                <li><span className="font-medium text-muted-foreground">Publish:</span> <span className="text-muted-foreground">Requires admin approval</span></li>
+                              )}
                             </ul>
                           </FormDescription>
                           <FormMessage />

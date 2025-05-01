@@ -202,13 +202,15 @@ const BlogItem: React.FC<BlogItemProps> = ({ article }) => {
             <Button variant="outline" size="sm">
               <Trash2 className="mr-1 h-4 w-4" /> Delete
             </Button>
-            {article.status === 'published' && (
-              <Button variant="default" size="sm" asChild>
-                <Link href={`/blog/${article.id}`}>
-                  <Eye className="mr-1 h-4 w-4" /> View
-                </Link>
-              </Button>
-            )}
+            <Button 
+              variant={article.status === 'published' ? 'default' : 'outline'} 
+              size="sm" 
+              asChild
+            >
+              <Link href={`/blog/${article.id}`}>
+                <Eye className="mr-1 h-4 w-4" /> View
+              </Link>
+            </Button>
           </div>
         </div>
       </div>
