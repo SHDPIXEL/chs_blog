@@ -33,6 +33,7 @@ const AssetManager: React.FC = () => {
   const {
     isOpen,
     closeAssetManager,
+    handleConfirmSelection,
     uploadAsset,
     isUploading,
     searchAssets,
@@ -119,9 +120,8 @@ const AssetManager: React.FC = () => {
 
   // Handle selecting an asset
   const handleSelectAsset = (asset: Asset) => {
-    // Always set the selected asset for the details panel
     console.log("handleSelectAsset");
-    console.log("asset : " , asset);
+    console.log("asset : ", asset);
     setSelectedAsset(asset);
 
     // In multi-select mode, we don't auto-close or auto-select
@@ -144,12 +144,7 @@ const AssetManager: React.FC = () => {
     }
   };
 
-  // Handle final selection confirmation for both modes
-  const handleConfirmSelection = () => {
-    // Just close the asset manager - the closeAssetManager function in context
-    // will handle calling onAssetSelect with the appropriate selection
-    closeAssetManager();
-  };
+  // Handle final selection confirmation for both modes is now in the context
 
   // Helper function to get mimetype filter
   const getMimeTypeFilter = (type: string): string => {

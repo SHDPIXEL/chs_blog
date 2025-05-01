@@ -18,6 +18,7 @@ interface AssetManagerContextType {
     allowMultiple?: boolean,
   ) => void;
   closeAssetManager: () => void;
+  handleConfirmSelection: () => void; // New function to handle selection confirmation
   uploadAsset: (file: File, metadata?: AssetMetadata) => Promise<Asset>;
   isUploading: boolean;
   searchAssets: (params: AssetSearchParams) => void;
@@ -223,7 +224,6 @@ export const AssetManagerProvider: React.FC<AssetManagerProviderProps> = ({
     },
   });
 
-
   // Open asset manager with optional filtering
   const openAssetManager = useCallback(
     (
@@ -233,9 +233,7 @@ export const AssetManagerProvider: React.FC<AssetManagerProviderProps> = ({
       isSelectMode: boolean = false,
     ) => {
       setIsOpen(true);
-      setOnAssetSelect(
-        onSelect
-      );
+      setOnAssetSelect(onSelect);
       setSelectedAsset(null);
       setSelectedAssets([]);
       setMultiSelect(allowMultiple);
@@ -253,18 +251,40 @@ export const AssetManagerProvider: React.FC<AssetManagerProviderProps> = ({
     [refetch, searchParams],
   );
 
-  // Close asset manager
+  // Close asset manager without selection
   const closeAssetManager = useCallback(() => {
     setIsOpen(false);
-    console.log("closing");
-    console.log("onAssetSelect : " + onAssetSelect);
-    console.log("selectedAsset : " + selectedAsset);
-    if (onAssetSelect) onAssetSelect(selectedAsset ?? []);
-    //  setOnAssetSelect(undefined);
-    //  setSelectedAsset(null);
-    //  setSelectedAssets([]);
+    setOnAssetSelect(undefined);
+    setSelectedAsset(null);
+    setSelectedAssets([]);
     setMultiSelect(false);
   }, []);
+
+  // Handle confirmation of asset selection
+  const handleConfirmSelection = useCallback(() => {
+    console.log("Confirming selection");
+    console.log("onAssetSelect:", onAssetSelect);
+    console.log("selectedAsset:", selectedAsset);
+    console.log("multiSelect:", multiSelect);
+    console.log("selectedAssets:", selectedAssets);
+    
+    if (onAssetSelect) {
+      if (multiSelect) {
+        // For multi-select, pass the array of selected assets
+        onAssetSelect(selectedAssets);
+      } else {
+        // For single select, pass the selected asset
+        onAssetSelect(selectedAsset!);
+      }
+    }
+    
+    // Close the asset manager after selection is handled
+    setIsOpen(false);
+    setOnAssetSelect(undefined);
+    setSelectedAsset(null);
+    setSelectedAssets([]);
+    setMultiSelect(false);
+  }, [onAssetSelect, selectedAsset, selectedAssets, multiSelect]);
 
   // Upload asset
   const uploadAsset = useCallback(
@@ -321,6 +341,7 @@ export const AssetManagerProvider: React.FC<AssetManagerProviderProps> = ({
     isOpen,
     openAssetManager,
     closeAssetManager,
+    handleConfirmSelection,
     uploadAsset,
     isUploading: uploadMutation.isPending,
     searchAssets,
