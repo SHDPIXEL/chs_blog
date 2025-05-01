@@ -44,62 +44,15 @@ const BlogDetail: React.FC = () => {
 
   // Fetch article details
   const { data: article, isLoading, error } = useQuery({
-    queryKey: [`/api/articles/${articleId}/full`],
+    queryKey: [`/api/articles/${articleId}/public`],
     queryFn: async () => {
       try {
-        const res = await fetch(`/api/articles/${articleId}/full`);
+        const res = await fetch(`/api/articles/${articleId}/public`);
         if (!res.ok) throw new Error('Failed to fetch article');
         return await res.json();
       } catch (error) {
         console.error('Error fetching article:', error);
-        // Return demo article data
-        return {
-          article: {
-            id: parseInt(articleId || '1'),
-            title: 'The Evolution of Ethics in Indian Philosophy',
-            content: `
-              <h2>Introduction</h2>
-              <p>Indian ethical thought represents one of the world's oldest and most sophisticated moral traditions. From the early Vedic period (c. 1500–500 BCE) through the classical era of Hindu, Buddhist, and Jain philosophy, and into the contemporary landscape, ethical frameworks in India have undergone profound transformations while maintaining certain core principles.</p>
-              
-              <p>This article explores this rich evolution, examining how Indian ethical traditions have addressed fundamental questions about duty, virtue, moral reasoning, and the good life. We will consider both the historical development of these traditions and their continued relevance in modern ethical discourse.</p>
-              
-              <h2>Vedic Ethics: Cosmic Order and Ritual Duty</h2>
-              <p>The earliest stratum of Indian ethical thought emerges from the Vedas, particularly the Rig Veda (c. 1500-1200 BCE). Here, ethical thinking centered around the concept of ṛta—cosmic order or truth. Human ethical action was conceived primarily as alignment with this divine order through proper ritual action.</p>
-              
-              <p>As the tradition developed through the Brāhmaṇas and early Upaniṣads, the concept of dharma (duty, law, righteousness) began to take central importance. The ethical emphasis shifted from external ritual performance to the inner intention behind actions and the cultivation of self-knowledge.</p>
-              
-              <h2>The Classical Period: Dharma, Karma, and Liberation</h2>
-              <p>The classical period of Indian philosophy (c. 500 BCE - 500 CE) saw the systematic development of ethical thought across multiple schools. The concept of dharma became further elaborated in texts like the Dharmasūtras and Dharmaśāstras, which provided detailed codes of conduct for different social groups and life stages.</p>
-              
-              <p>The epic Mahābhārata, particularly the Bhagavad Gītā, represents a pivotal moment in Indian ethical thought. It addresses the tension between different ethical demands (svadharma vs. sādhāraṇa dharma) and proposes a way of action without attachment to results (niṣkāmakarma).</p>
-              
-              <p>Buddhist ethics developed a distinctive approach centered on the Four Noble Truths and the Eightfold Path. The emphasis on non-harming (ahiṃsā), compassion (karuṇā), and the cultivation of virtuous mental states provided a psychological dimension to ethics that continues to influence contemporary thought.</p>
-              
-              <p>Jain ethics, with its radical emphasis on non-violence and respect for all life forms, developed one of the world's earliest systematic environmental ethics.</p>
-              
-              <h2>Medieval Developments: Devotion and Tantra</h2>
-              <p>Medieval India saw the rise of bhakti (devotional) movements that emphasized love and devotion over ritual observance or philosophical knowledge. This period also saw the development of Tantric traditions that sometimes challenged conventional ethical norms in service of higher spiritual realization.</p>
-              
-              <h2>Colonial Encounters and Modern Reformulations</h2>
-              <p>The colonial period brought Indian ethical thought into dialogue with Western traditions. Figures like Ram Mohan Roy, Swami Vivekananda, and most prominently, Mahatma Gandhi, reinterpreted traditional ethical concepts like ahiṃsā and satyagraha (truth-force) to address modern political and social challenges.</p>
-              
-              <h2>Contemporary Relevance</h2>
-              <p>Indian ethical traditions continue to offer valuable perspectives on contemporary ethical issues. Concepts like dharma provide a duty-based approach that differs from Western deontology by emphasizing contextual appropriateness rather than universal maxims.</p>
-              
-              <p>The emphasis on character development and virtue cultivation in Indian traditions resonates with virtue ethics approaches. The psychological sophistication of Buddhist ethics, with its analysis of mental states and their role in ethical action, offers resources for addressing problems in moral psychology.</p>
-              
-              <h2>Conclusion</h2>
-              <p>The evolution of ethics in Indian philosophy represents a rich tradition of moral thinking that has addressed perennial questions about right action, virtue, and human flourishing. As global ethical discourse becomes increasingly pluralistic, these traditions offer valuable resources for addressing contemporary moral challenges.</p>
-            `,
-            excerpt: 'Exploring the transformation of ethical frameworks from classical Sanskrit texts to contemporary Indian philosophical discourse.',
-            createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-            featuredImage: demoImages[0],
-            author: { name: 'Dr. Rajesh Mehta', avatarUrl: null },
-          },
-          categories: [{ id: 1, name: 'Philosophy' }, { id: 2, name: 'Ethics' }],
-          tags: [{ id: 1, name: 'Indian Philosophy' }, { id: 2, name: 'Ethics' }, { id: 3, name: 'Philosophy History' }],
-          coAuthors: []
-        };
+        return null;
       }
     }
   });

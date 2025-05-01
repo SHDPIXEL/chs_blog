@@ -41,6 +41,10 @@ function Router() {
         const BlogDetail = require("./pages/public/BlogDetail").default;
         return <BlogDetail />;
       }} />
+      <Route path="/test-blog" component={() => {
+        const TestPage = require("./pages/public/TestPage").default;
+        return <TestPage />;
+      }} />
 
       {/* Protected admin routes */}
 

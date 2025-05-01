@@ -518,6 +518,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get article with relations
+  // Public endpoints for the blog interface
+  app.get("/api/articles/published", async (req, res) => {
+    try {
+      const articles = await storage.getPublishedArticles();
+      
+      // For each article, fetch the author, categories, and tags
+      const articlesWithRelations = await Promise.all(
+        articles.map(async (article) => {
+          try {
+            const author = article.authorId ? await storage.getUser(article.authorId) : null;
+            const categories = await storage.getArticleCategories(article.id);
+            const tags = await storage.getArticleTags(article.id);
+            
+            return {
+              ...article,
+              author: author ? { 
+                id: author.id,
+                name: author.name,
+                avatarUrl: author.avatarUrl 
+              } : null,
+              categories,
+              tags
+            };
+          } catch (err) {
+            console.error(`Error fetching relations for article ${article.id}:`, err);
+            return article;
+          }
+        })
+      );
+      
+      res.json(articlesWithRelations);
+    } catch (error) {
+      console.error('Error fetching published articles:', error);
+      res.status(500).json({ message: 'Failed to fetch published articles' });
+    }
+  });
+
+  // Public endpoint for a single article with all its relations
+  app.get("/api/articles/:id/public", async (req, res) => {
+    try {
+      const articleId = parseInt(req.params.id);
+      if (isNaN(articleId)) {
+        return res.status(400).json({ message: "Invalid article ID" });
+      }
+      
+      const article = await storage.getArticle(articleId);
+      if (!article) {
+        return res.status(404).json({ message: "Article not found" });
+      }
+      
+      // Only published articles should be accessible to public
+      if (article.status !== ArticleStatus.PUBLISHED) {
+        return res.status(404).json({ message: "Article not found" });
+      }
+      
+      // Get full article with relations
+      const fullArticle = await storage.getArticleWithRelations(articleId);
+      if (!fullArticle) {
+        return res.status(404).json({ message: "Article not found" });
+      }
+      
+      // Get author info with limited fields
+      const author = fullArticle.article.authorId 
+        ? await storage.getUser(fullArticle.article.authorId)
+        : null;
+        
+      // Return article with author info but limited fields for security
+      return res.json({
+        ...fullArticle,
+        article: {
+          ...fullArticle.article,
+          author: author ? {
+            id: author.id,
+            name: author.name,
+            avatarUrl: author.avatarUrl,
+            bio: author.bio
+          } : null
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching article:', error);
+      res.status(500).json({ message: 'Failed to fetch article' });
+    }
+  });
+
   app.get("/api/articles/:id/full", authenticateToken, requireAuth, async (req: AuthRequest, res) => {
     try {
       if (!req.user?.id) {
