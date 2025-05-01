@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, MessageSquare, ThumbsUp, Share2, Bookmark, Eye } from 'lucide-react';
+import { ArrowLeft, MessageSquare, Share2, Eye } from 'lucide-react';
 import PublicLayout from '@/components/layout/PublicLayout';
 import { CommentsList } from '@/components/comments/CommentsList';
 import { getInitials } from '@/lib/avatarUtils';
@@ -194,10 +194,6 @@ const BlogDetail: React.FC = () => {
           {/* Article actions */}
           <div className="mt-12 flex justify-between items-center py-4 border-t border-b">
             <div className="flex gap-6">
-              <Button variant="ghost" className="flex items-center gap-1">
-                <ThumbsUp className="h-5 w-5" />
-                <span>Like</span>
-              </Button>
               <Button 
                 variant="ghost" 
                 className="flex items-center gap-1"
@@ -210,9 +206,6 @@ const BlogDetail: React.FC = () => {
             <div className="flex gap-3">
               <Button variant="ghost" size="icon">
                 <Share2 className="h-5 w-5" />
-              </Button>
-              <Button variant="ghost" size="icon">
-                <Bookmark className="h-5 w-5" />
               </Button>
             </div>
           </div>

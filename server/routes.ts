@@ -1273,9 +1273,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return {
           ...article,
           author: author?.name || "Unknown Author",
-          categories: categories.map(cat => cat.name),
-          viewCount: Math.floor(Math.random() * 1000) + 50, // Sample data
-          featured: Math.random() > 0.5 // Sample data
+          categories: categories.map(cat => cat.name)
         };
       }));
       
