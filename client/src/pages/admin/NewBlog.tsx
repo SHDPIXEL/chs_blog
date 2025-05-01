@@ -115,8 +115,13 @@ const NewBlog: React.FC = () => {
         authorId: user?.id,
         featuredImage,
         // For admin, published is set based on status
-        published: values.status === ArticleStatus.PUBLISHED
+        published: values.status === ArticleStatus.PUBLISHED,
+        // Convert customTags to the expected tags format for the API
+        tags: values.customTags,
       };
+      
+      // Remove customTags as it's not in the API schema
+      delete (articleData as any).customTags;
   
       const res = await apiRequest('POST', '/api/articles', articleData);
       return res.json();
@@ -148,6 +153,7 @@ const NewBlog: React.FC = () => {
   };
 
   const [keywordInput, setKeywordInput] = useState<string>('');
+  const [tagInput, setTagInput] = useState<string>('');
   
   // Handle adding a keyword
   const addKeyword = () => {
@@ -164,6 +170,23 @@ const NewBlog: React.FC = () => {
   const removeKeyword = (keyword: string) => {
     const currentKeywords = form.getValues('keywords') || [];
     form.setValue('keywords', currentKeywords.filter(k => k !== keyword));
+  };
+  
+  // Handle adding a custom tag
+  const addCustomTag = () => {
+    if (tagInput.trim()) {
+      const currentTags = form.getValues('customTags') || [];
+      if (!currentTags.includes(tagInput.trim())) {
+        form.setValue('customTags', [...currentTags, tagInput.trim()]);
+      }
+      setTagInput('');
+    }
+  };
+  
+  // Handle removing a custom tag
+  const removeCustomTag = (tag: string) => {
+    const currentTags = form.getValues('customTags') || [];
+    form.setValue('customTags', currentTags.filter(t => t !== tag));
   };
 
   return (
@@ -505,50 +528,109 @@ const NewBlog: React.FC = () => {
                       
                       <div>
                         <h3 className="text-base font-medium mb-3">Tags</h3>
+                        
+                        {/* Custom Tags Input */}
                         <FormField
                           control={form.control}
-                          name="tagIds"
-                          render={() => (
+                          name="customTags"
+                          render={({ field }) => (
                             <FormItem>
-                              <ScrollArea className="h-[300px] border rounded-md p-4">
-                                <div className="space-y-2">
-                                  {tags ? (
-                                    tags.map((tag) => (
-                                      <div key={tag.id} className="flex items-start space-x-2">
-                                        <Checkbox
-                                          id={`tag-${tag.id}`}
-                                          onCheckedChange={(checked) => {
-                                            const currentTagIds = form.getValues("tagIds") || [];
-                                            if (checked) {
-                                              form.setValue("tagIds", [...currentTagIds, tag.id]);
-                                            } else {
-                                              form.setValue(
-                                                "tagIds",
-                                                currentTagIds.filter((id) => id !== tag.id)
-                                              );
-                                            }
-                                          }}
-                                          checked={form.getValues("tagIds")?.includes(tag.id)}
-                                        />
-                                        <label
-                                          htmlFor={`tag-${tag.id}`}
-                                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                                        >
-                                          {tag.name}
-                                        </label>
-                                      </div>
-                                    ))
-                                  ) : (
-                                    <p className="text-muted-foreground">Loading tags...</p>
+                              <FormLabel>Add Custom Tags</FormLabel>
+                              <div className="space-y-4">
+                                <div className="flex flex-wrap gap-2 mb-2 min-h-8">
+                                  {field.value && field.value.map((tag, index) => (
+                                    <Badge key={index} variant="secondary" className="px-2 py-1">
+                                      {tag}
+                                      <button
+                                        type="button"
+                                        className="ml-2 text-muted-foreground hover:text-foreground"
+                                        onClick={() => removeCustomTag(tag)}
+                                      >
+                                        ×
+                                      </button>
+                                    </Badge>
+                                  ))}
+                                  {(!field.value || field.value.length === 0) && (
+                                    <span className="text-sm text-muted-foreground">No tags added yet</span>
                                   )}
                                 </div>
-                              </ScrollArea>
-                              <FormDescription>
-                                Select tags that are relevant to your blog post
-                              </FormDescription>
+                                <div className="flex gap-2">
+                                  <Input
+                                    placeholder="Enter a tag"
+                                    value={tagInput}
+                                    onChange={(e) => setTagInput(e.target.value)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                        addCustomTag();
+                                      }
+                                    }}
+                                  />
+                                  <Button 
+                                    type="button" 
+                                    variant="secondary" 
+                                    onClick={addCustomTag}
+                                  >
+                                    Add Tag
+                                  </Button>
+                                </div>
+                                <FormDescription>
+                                  Enter custom tags for your blog post. Press Enter or click Add Tag to add each tag.
+                                </FormDescription>
+                              </div>
+                              <FormMessage />
                             </FormItem>
                           )}
                         />
+                        
+                        {/* Existing Tags Selection */}
+                        <div className="mt-6">
+                          <FormLabel className="text-base font-medium mb-3">Or Select from Existing Tags</FormLabel>
+                          <FormField
+                            control={form.control}
+                            name="tagIds"
+                            render={() => (
+                              <FormItem>
+                                <ScrollArea className="h-[200px] border rounded-md p-4">
+                                  <div className="space-y-2">
+                                    {tags ? (
+                                      tags.map((tag) => (
+                                        <div key={tag.id} className="flex items-start space-x-2">
+                                          <Checkbox
+                                            id={`tag-${tag.id}`}
+                                            onCheckedChange={(checked) => {
+                                              const currentTagIds = form.getValues("tagIds") || [];
+                                              if (checked) {
+                                                form.setValue("tagIds", [...currentTagIds, tag.id]);
+                                              } else {
+                                                form.setValue(
+                                                  "tagIds",
+                                                  currentTagIds.filter((id) => id !== tag.id)
+                                                );
+                                              }
+                                            }}
+                                            checked={form.getValues("tagIds")?.includes(tag.id)}
+                                          />
+                                          <label
+                                            htmlFor={`tag-${tag.id}`}
+                                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                          >
+                                            {tag.name}
+                                          </label>
+                                        </div>
+                                      ))
+                                    ) : (
+                                      <p className="text-muted-foreground">Loading tags...</p>
+                                    )}
+                                  </div>
+                                </ScrollArea>
+                                <FormDescription>
+                                  Select tags that are relevant to your blog post
+                                </FormDescription>
+                              </FormItem>
+                            )}
+                          />
+                        </div>
                       </div>
                     </div>
                   </TabsContent>
