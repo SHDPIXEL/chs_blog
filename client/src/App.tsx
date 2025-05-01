@@ -15,6 +15,7 @@ import Register from "@/pages/auth/Register";
 import AdminDashboard from "@/pages/admin/Dashboard";
 import AuthorManagement from "@/pages/admin/AuthorManagement";
 import BlogManagement from "@/pages/admin/BlogManagement";
+import BlogApprovals from "@/pages/admin/BlogApprovals";
 import AuthorDashboard from "@/pages/author/Dashboard";
 import AuthorProfile from "@/pages/author/Profile";
 import AuthorBlogs from "@/pages/author/Blogs";
