@@ -33,6 +33,14 @@ function Router() {
       <Route path="/auth/login" component={Login} />
       <Route path="/auth/register" component={Register} />
       <Route path="/blog/:id" component={ViewBlog} />
+      <Route path="/blogs" component={() => {
+        const Blogs = require("./pages/public/Blogs").default;
+        return <Blogs />;
+      }} />
+      <Route path="/blogs/:id" component={() => {
+        const BlogDetail = require("./pages/public/BlogDetail").default;
+        return <BlogDetail />;
+      }} />
 
       {/* Protected admin routes */}
 
