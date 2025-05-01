@@ -152,6 +152,11 @@ const BlogDetail: React.FC = () => {
                     <span>{coAuthors.length + 1} authors</span>
                   </>
                 )}
+                <span className="mx-2">•</span>
+                <span className="flex items-center">
+                  <Eye className="h-4 w-4 mr-1" />
+                  {Intl.NumberFormat().format(articleData.viewCount || 0)} views
+                </span>
               </div>
             </div>
           </div>

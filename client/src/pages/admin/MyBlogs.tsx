@@ -1,16 +1,16 @@
-import React, { useState } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { apiRequest, queryClient } from '@/lib/queryClient';
-import { useLocation } from 'wouter';
-import { useAuth } from '@/hooks/use-auth';
-import AdminLayout from '@/components/layout/AdminLayout';
+import React, { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useLocation } from "wouter";
+import { useAuth } from "@/hooks/use-auth";
+import AdminLayout from "@/components/layouts/AdminLayout";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
+} from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -18,7 +18,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,27 +26,27 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle 
-} from '@/components/ui/dialog';
-import { useToast } from '@/hooks/use-toast';
-import { format } from 'date-fns';
+} from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
 import {
   MoreHorizontal,
   Pencil,
@@ -59,8 +59,8 @@ import {
   XCircle,
   Star,
   Plus,
-} from 'lucide-react';
-import { Article, ArticleStatus } from '@shared/schema';
+} from "lucide-react";
+import { Article, ArticleStatus } from "@shared/schema";
 
 interface ExtendedArticle extends Article {
   author: string;
@@ -74,19 +74,21 @@ const AdminMyBlogs: React.FC = () => {
   const { toast } = useToast();
   const [, navigate] = useLocation();
   const { user } = useAuth();
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [blogToDelete, setBlogToDelete] = useState<number | null>(null);
-  
+
   // Fetch only admin's blogs
   const { data: blogs, isLoading } = useQuery<ExtendedArticle[]>({
-    queryKey: ['/api/admin/articles', 'my'],
+    queryKey: ["/api/admin/articles", "my"],
     queryFn: async () => {
       if (!user) return [];
-      const res = await apiRequest('GET', '/api/admin/articles');
+      const res = await apiRequest("GET", "/api/admin/articles");
       const allBlogs = await res.json();
-      return allBlogs.filter((blog: ExtendedArticle) => blog.authorId === user.id);
+      return allBlogs.filter(
+        (blog: ExtendedArticle) => blog.authorId === user.id,
+      );
     },
     enabled: !!user,
   });
@@ -94,89 +96,105 @@ const AdminMyBlogs: React.FC = () => {
   // Delete blog post
   const deleteBlogMutation = useMutation({
     mutationFn: async (blogId: number) => {
-      const res = await apiRequest('DELETE', `/api/articles/${blogId}`);
+      const res = await apiRequest("DELETE", `/api/articles/${blogId}`);
       return res;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/articles'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/articles"] });
       setDeleteDialogOpen(false);
       setBlogToDelete(null);
       toast({
-        title: 'Blog deleted',
-        description: 'The blog post has been deleted successfully',
+        title: "Blog deleted",
+        description: "The blog post has been deleted successfully",
       });
     },
     onError: (error: Error) => {
       toast({
-        title: 'Delete failed',
+        title: "Delete failed",
         description: error.message,
-        variant: 'destructive',
+        variant: "destructive",
       });
-    }
+    },
   });
 
   // Update blog status
   const updateStatusMutation = useMutation({
-    mutationFn: async ({ blogId, status }: { blogId: number; status: string }) => {
-      const res = await apiRequest('PATCH', `/api/articles/${blogId}/status`, {
-        status
+    mutationFn: async ({
+      blogId,
+      status,
+    }: {
+      blogId: number;
+      status: string;
+    }) => {
+      const res = await apiRequest("PATCH", `/api/articles/${blogId}/status`, {
+        status,
       });
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/articles'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/articles"] });
       toast({
-        title: 'Status updated',
-        description: 'Blog status has been updated successfully',
+        title: "Status updated",
+        description: "Blog status has been updated successfully",
       });
     },
     onError: (error: Error) => {
       toast({
-        title: 'Update failed',
+        title: "Update failed",
         description: error.message,
-        variant: 'destructive',
+        variant: "destructive",
       });
-    }
+    },
   });
 
   // Toggle featured status
   const toggleFeaturedMutation = useMutation({
-    mutationFn: async ({ blogId, featured }: { blogId: number; featured: boolean }) => {
-      const res = await apiRequest('PATCH', `/api/articles/${blogId}`, {
-        featured
+    mutationFn: async ({
+      blogId,
+      featured,
+    }: {
+      blogId: number;
+      featured: boolean;
+    }) => {
+      const res = await apiRequest("PATCH", `/api/articles/${blogId}`, {
+        featured,
       });
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/articles'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/articles"] });
       toast({
-        title: 'Featured status updated',
-        description: 'Blog featured status has been updated successfully',
+        title: "Featured status updated",
+        description: "Blog featured status has been updated successfully",
       });
     },
     onError: (error: Error) => {
       toast({
-        title: 'Update failed',
+        title: "Update failed",
         description: error.message,
-        variant: 'destructive',
+        variant: "destructive",
       });
-    }
+    },
   });
 
   // Filter blogs
-  const filteredBlogs = blogs?.filter(blog => {
+  const filteredBlogs = blogs?.filter((blog) => {
     // Text search filter
-    const matchesSearch = 
-      searchQuery === '' || 
+    const matchesSearch =
+      searchQuery === "" ||
       blog.title.toLowerCase().includes(searchQuery.toLowerCase());
-    
+
     // Status filter
-    const matchesStatus = 
-      statusFilter === 'all' || 
-      (statusFilter === 'published' && blog.published) ||
-      (statusFilter === 'draft' && !blog.published && blog.status === ArticleStatus.DRAFT) ||
-      (statusFilter === 'review' && !blog.published && blog.status === ArticleStatus.REVIEW);
-    
+    const matchesStatus =
+      statusFilter === "all" ||
+      (statusFilter === "published" && blog.published) ||
+      (statusFilter === "draft" &&
+        !blog.published &&
+        blog.status === ArticleStatus.DRAFT) ||
+      (statusFilter === "review" &&
+        !blog.published &&
+        blog.status === ArticleStatus.REVIEW);
+
     return matchesSearch && matchesStatus;
   });
 
@@ -198,7 +216,7 @@ const AdminMyBlogs: React.FC = () => {
         <div className="flex flex-col">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-3xl font-bold">My Blogs</h1>
-            <Button onClick={() => navigate('/admin/blogs/new')}>
+            <Button onClick={() => navigate("/admin/blogs/new")}>
               <Plus className="mr-2 h-4 w-4" />
               Create New Blog
             </Button>
@@ -265,7 +283,7 @@ const AdminMyBlogs: React.FC = () => {
                             <div className="flex flex-col">
                               <span className="font-medium">{blog.title}</span>
                               <span className="text-xs text-muted-foreground mt-1 line-clamp-1">
-                                {blog.excerpt || 'No excerpt available'}
+                                {blog.excerpt || "No excerpt available"}
                               </span>
                             </div>
                           </TableCell>
@@ -283,10 +301,10 @@ const AdminMyBlogs: React.FC = () => {
                             )}
                           </TableCell>
                           <TableCell>
-                            {format(new Date(blog.createdAt), 'MMM d, yyyy')}
+                            {format(new Date(blog.createdAt), "MMM d, yyyy")}
                           </TableCell>
                           <TableCell>
-                            {format(new Date(blog.updatedAt), 'MMM d, yyyy')}
+                            {format(new Date(blog.updatedAt), "MMM d, yyyy")}
                           </TableCell>
                           <TableCell>
                             {blog.featured ? (
@@ -308,43 +326,55 @@ const AdminMyBlogs: React.FC = () => {
                                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
-                                  onClick={() => window.open(`/blogs/${blog.id}`, '_blank')}
+                                  onClick={() =>
+                                    window.open(`/blogs/${blog.id}`, "_blank")
+                                  }
                                 >
                                   <Eye className="mr-2 h-4 w-4" /> Preview
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
-                                  onClick={() => navigate(`/admin/blogs/${blog.id}`)}
+                                  onClick={() =>
+                                    navigate(`/admin/blogs/${blog.id}`)
+                                  }
                                 >
                                   <Pencil className="mr-2 h-4 w-4" /> Edit
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 {!blog.published ? (
                                   <DropdownMenuItem
-                                    onClick={() => updateStatusMutation.mutate({
-                                      blogId: blog.id,
-                                      status: ArticleStatus.PUBLISHED
-                                    })}
+                                    onClick={() =>
+                                      updateStatusMutation.mutate({
+                                        blogId: blog.id,
+                                        status: ArticleStatus.PUBLISHED,
+                                      })
+                                    }
                                   >
-                                    <CheckCircle2 className="mr-2 h-4 w-4 text-green-500" /> Publish
+                                    <CheckCircle2 className="mr-2 h-4 w-4 text-green-500" />{" "}
+                                    Publish
                                   </DropdownMenuItem>
                                 ) : (
                                   <DropdownMenuItem
-                                    onClick={() => updateStatusMutation.mutate({
-                                      blogId: blog.id,
-                                      status: ArticleStatus.DRAFT
-                                    })}
+                                    onClick={() =>
+                                      updateStatusMutation.mutate({
+                                        blogId: blog.id,
+                                        status: ArticleStatus.DRAFT,
+                                      })
+                                    }
                                   >
-                                    <XCircle className="mr-2 h-4 w-4" /> Unpublish
+                                    <XCircle className="mr-2 h-4 w-4" />{" "}
+                                    Unpublish
                                   </DropdownMenuItem>
                                 )}
                                 <DropdownMenuItem
-                                  onClick={() => toggleFeaturedMutation.mutate({
-                                    blogId: blog.id,
-                                    featured: !blog.featured
-                                  })}
+                                  onClick={() =>
+                                    toggleFeaturedMutation.mutate({
+                                      blogId: blog.id,
+                                      featured: !blog.featured,
+                                    })
+                                  }
                                 >
                                   <Star className="mr-2 h-4 w-4" />
-                                  {blog.featured ? 'Unfeature' : 'Feature'}
+                                  {blog.featured ? "Unfeature" : "Feature"}
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
@@ -364,7 +394,8 @@ const AdminMyBlogs: React.FC = () => {
                       {(!filteredBlogs || filteredBlogs.length === 0) && (
                         <TableRow>
                           <TableCell colSpan={6} className="h-24 text-center">
-                            No blog posts found. Create a new blog to get started.
+                            No blog posts found. Create a new blog to get
+                            started.
                           </TableCell>
                         </TableRow>
                       )}
@@ -383,19 +414,25 @@ const AdminMyBlogs: React.FC = () => {
           <DialogHeader>
             <DialogTitle>Confirm Delete</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this blog post? This action cannot be undone.
+              Are you sure you want to delete this blog post? This action cannot
+              be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteDialogOpen(false)}
+            >
               Cancel
             </Button>
-            <Button 
-              variant="destructive" 
-              onClick={() => blogToDelete && deleteBlogMutation.mutate(blogToDelete)}
+            <Button
+              variant="destructive"
+              onClick={() =>
+                blogToDelete && deleteBlogMutation.mutate(blogToDelete)
+              }
               disabled={deleteBlogMutation.isPending}
             >
-              {deleteBlogMutation.isPending ? 'Deleting...' : 'Delete'}
+              {deleteBlogMutation.isPending ? "Deleting..." : "Delete"}
             </Button>
           </DialogFooter>
         </DialogContent>

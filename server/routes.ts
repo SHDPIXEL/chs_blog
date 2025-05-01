@@ -575,11 +575,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Article not found" });
       }
       
+      // Increment view count asynchronously - no need to await
+      const viewCount = (article.viewCount || 0) + 1;
+      storage.updateArticle(articleId, { viewCount }).catch(err => {
+        console.error("Failed to update view count:", err);
+      });
+      
       // Get full article with relations
       const fullArticle = await storage.getArticleWithRelations(articleId);
       if (!fullArticle) {
         return res.status(404).json({ message: "Article not found" });
       }
+      
+      // Update the view count in the response
+      fullArticle.article.viewCount = viewCount;
       
       // Get author info with limited fields
       const author = fullArticle.article.authorId 
