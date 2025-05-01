@@ -619,21 +619,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Author not found" });
       }
       
-      // Get author's published articles
-      const articles = await storage.searchArticles({
+      // Get author's own published articles
+      const ownArticles = await storage.searchArticles({
         authorId,
         published: true,
+        status: ArticleStatus.PUBLISHED,
         page: 1,
         limit: 10
       });
+      
+      // Get articles where author is a co-author
+      const coAuthoredArticles = await storage.getCoAuthoredArticles(authorId, ArticleStatus.PUBLISHED);
+      
+      // Combine all articles
+      const allArticles = [...ownArticles.articles, ...coAuthoredArticles];
       
       // Return author info but limited fields for security
       const { password, email, ...authorPublicInfo } = author;
       
       return res.json({
         author: authorPublicInfo,
-        articles: articles.articles,
-        totalArticles: articles.total
+        articles: {
+          own: ownArticles.articles,
+          coAuthored: coAuthoredArticles,
+          all: allArticles
+        },
+        totalArticles: ownArticles.total + coAuthoredArticles.length
       });
     } catch (error) {
       console.error('Error fetching author profile:', error);

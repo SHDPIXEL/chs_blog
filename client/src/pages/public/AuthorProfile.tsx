@@ -100,6 +100,7 @@ const AuthorProfile: React.FC = () => {
   }
 
   const { author, articles, totalArticles } = data;
+  const { own: ownArticles = [], coAuthored: coAuthoredArticles = [], all: allArticles = [] } = articles || {};
 
   return (
     <PublicLayout>
@@ -227,25 +228,54 @@ const AuthorProfile: React.FC = () => {
         <div className="mb-10">
           <h2 className="text-2xl font-bold mb-6">{author.name}'s Articles</h2>
           
-          {articles.length > 0 ? (
-            <>
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {articles.map((article: any) => (
-                  <BlogCard key={article.id} blog={article} />
-                ))}
-              </div>
+          {/* Tabs for switching between authored and co-authored articles */}
+          <div className="border-b mb-8">
+            <div className="flex space-x-8">
+              <button 
+                className={`pb-2 font-medium text-lg border-b-2 border-rose-600 text-gray-900`}
+              >
+                All Articles ({allArticles.length})
+              </button>
+            </div>
+          </div>
+          
+          {allArticles.length > 0 ? (
+            <div className="space-y-12">
+              {/* Main author articles */}
+              {ownArticles.length > 0 && (
+                <div>
+                  <h3 className="text-xl font-semibold mb-4">Articles by {author.name}</h3>
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {ownArticles.map((article: any) => (
+                      <BlogCard key={`own-${article.id}`} blog={article} />
+                    ))}
+                  </div>
+                </div>
+              )}
               
-              {totalArticles > articles.length && (
+              {/* Co-authored articles */}
+              {coAuthoredArticles.length > 0 && (
+                <div>
+                  <h3 className="text-xl font-semibold mb-4">Co-Authored Articles</h3>
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {coAuthoredArticles.map((article: any) => (
+                      <BlogCard key={`co-${article.id}`} blog={article} />
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {totalArticles > allArticles.length && (
                 <div className="mt-10 text-center">
                   <p className="text-gray-600 mb-4">
-                    Showing {articles.length} of {totalArticles} articles
+                    Showing {allArticles.length} of {totalArticles} articles
                   </p>
                   <Button>
                     Load More Articles
                   </Button>
                 </div>
               )}
-            </>
+            </div>
           ) : (
             <div className="text-center py-12 border rounded-lg">
               <BookOpen className="mx-auto h-12 w-12 text-gray-400 mb-4" />

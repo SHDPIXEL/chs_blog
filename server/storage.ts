@@ -58,6 +58,7 @@ export interface IStorage {
   getArticlesByAuthor(authorId: number): Promise<Article[]>;
   getArticlesByStatus(authorId: number, status: ArticleStatusType): Promise<Article[]>;
   getPublishedArticles(): Promise<Article[]>;
+  getCoAuthoredArticles(userId: number, status?: ArticleStatusType): Promise<Article[]>;
   createArticle(article: InsertArticle): Promise<Article>;
   createExtendedArticle(article: ExtendedInsertArticle): Promise<Article>;
   updateArticle(id: number, article: Partial<UpdateArticle>): Promise<Article | undefined>;
@@ -186,6 +187,36 @@ export class DatabaseStorage implements IStorage {
 
   async getPublishedArticles(): Promise<Article[]> {
     return await db.select().from(articles).where(eq(articles.published, true));
+  }
+  
+  async getCoAuthoredArticles(userId: number, status?: ArticleStatusType): Promise<Article[]> {
+    // Start with a query to get all article IDs where the user is a co-author
+    const coAuthoredIds = await db
+      .select({ articleId: articleCoAuthors.articleId })
+      .from(articleCoAuthors)
+      .where(eq(articleCoAuthors.userId, userId));
+    
+    // If no co-authored articles, return empty array
+    if (coAuthoredIds.length === 0) {
+      return [];
+    }
+    
+    // Extract just the IDs into an array
+    const articleIds = coAuthoredIds.map(item => item.articleId);
+    
+    // Query for all articles with these IDs
+    let query = db
+      .select()
+      .from(articles)
+      .where(inArray(articles.id, articleIds));
+    
+    // Apply status filter if provided
+    if (status) {
+      query = query.where(eq(articles.status, status));
+    }
+    
+    // Get and return the articles
+    return await query;
   }
 
   async createArticle(insertArticle: InsertArticle): Promise<Article> {
