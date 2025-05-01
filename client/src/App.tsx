@@ -31,6 +31,8 @@ function Router() {
       
       {/* Protected admin routes */}
       <ProtectedRoute path="/admin/dashboard" component={AdminDashboard} role="admin" />
+      <ProtectedRoute path="/admin/authors" component={AuthorManagement} role="admin" />
+      <ProtectedRoute path="/admin/blogs" component={BlogManagement} role="admin" />
       
       {/* Protected author routes */}
       <ProtectedRoute path="/author/dashboard" component={AuthorDashboard} role="author" />

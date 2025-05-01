@@ -6,6 +6,11 @@ export interface User {
   email: string;
   role: UserRole;
   createdAt: string;
+  avatarUrl?: string | null;
+  bio?: string | null;
+  bannerUrl?: string | null;
+  socialLinks?: string | null;
+  canPublish?: boolean;
 }
 
 export interface AuthResponse {

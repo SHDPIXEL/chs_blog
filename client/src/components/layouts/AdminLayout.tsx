@@ -1,28 +1,29 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'wouter';
-import { useAuth } from '@/hooks/use-auth';
-import { 
-  Users, 
-  FileText, 
-  Settings, 
-  LayoutDashboard, 
-  LogOut, 
-  UserCog, 
-  Image,
+import { useAuth } from '@/context/AuthContext';
+import {
+  LayoutDashboard,
+  Users,
+  FileText,
+  Settings,
+  Tag,
+  LogOut,
+  ChevronRight,
   Menu,
-  X
+  X,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { UserRole } from '@shared/schema';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { 
-  Sheet, 
-  SheetContent, 
-  SheetTrigger, 
-  SheetClose 
-} from "@/components/ui/sheet";
+import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Separator } from '@/components/ui/separator';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -30,136 +31,231 @@ interface AdminLayoutProps {
 
 const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const [location] = useLocation();
-  const { user, logoutMutation } = useAuth();
-  const isMobile = useIsMobile();
-  const [open, setOpen] = React.useState(false);
+  const { user, logout, isLoading } = useAuth();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Redirect if not admin
-  if (user?.role !== UserRole.ADMIN) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-4">
-        <h1 className="text-2xl font-bold mb-4">Admin Access Required</h1>
-        <p className="text-muted-foreground mb-6">You don't have permission to access this area.</p>
-        <Button asChild>
-          <Link href="/">Return to Home</Link>
-        </Button>
-      </div>
-    );
-  }
-
-  const navigationItems = [
-    { href: '/admin', label: 'Dashboard', icon: <LayoutDashboard className="h-5 w-5 mr-2" /> },
-    { href: '/admin/authors', label: 'Author Management', icon: <Users className="h-5 w-5 mr-2" /> },
-    { href: '/admin/blogs', label: 'Blog Management', icon: <FileText className="h-5 w-5 mr-2" /> },
-    { href: '/admin/assets', label: 'Asset Management', icon: <Image className="h-5 w-5 mr-2" /> },
-    { href: '/admin/settings', label: 'Settings', icon: <Settings className="h-5 w-5 mr-2" /> },
-    { href: '/admin/profile', label: 'My Profile', icon: <UserCog className="h-5 w-5 mr-2" /> },
+  const navigation = [
+    {
+      name: 'Dashboard',
+      href: '/admin/dashboard',
+      icon: LayoutDashboard,
+      current: location === '/admin/dashboard',
+    },
+    {
+      name: 'Author Management',
+      href: '/admin/authors',
+      icon: Users,
+      current: location === '/admin/authors',
+    },
+    {
+      name: 'Blog Management',
+      href: '/admin/blogs',
+      icon: FileText,
+      current: location === '/admin/blogs',
+    },
+    {
+      name: 'Categories',
+      href: '/admin/categories',
+      icon: Tag,
+      current: location === '/admin/categories',
+    },
+    {
+      name: 'Settings',
+      href: '/admin/settings',
+      icon: Settings,
+      current: location === '/admin/settings',
+    },
   ];
 
+  const userInitials = user?.name
+    ? user.name
+        .split(' ')
+        .map((n) => n[0])
+        .join('')
+        .toUpperCase()
+    : 'AD';
+
   const handleLogout = () => {
-    logoutMutation.mutate();
+    logout();
   };
 
-  const renderNavigation = () => (
-    <div className="space-y-1">
-      {navigationItems.map((item) => {
-        const isActive = location === item.href;
-        return (
-          <Button
-            key={item.href}
-            variant={isActive ? "secondary" : "ghost"}
-            className={`w-full justify-start ${
-              isActive ? "bg-muted" : ""
-            }`}
-            asChild
-          >
-            <Link href={item.href}>
-              {item.icon}
-              {item.label}
-            </Link>
-          </Button>
-        );
-      })}
-      <Button
-        variant="ghost"
-        className="w-full justify-start text-red-500 hover:text-red-500 hover:bg-red-50"
-        onClick={handleLogout}
-      >
-        <LogOut className="h-5 w-5 mr-2" />
-        Logout
-      </Button>
-    </div>
-  );
+  const closeMobileMenu = () => {
+    setIsMobileMenuOpen(false);
+  };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Mobile Header */}
-      {isMobile && (
-        <header className="border-b bg-card h-16 flex items-center px-4 sticky top-0 z-30">
-          <div className="flex items-center justify-between w-full">
-            <div className="flex items-center">
-              <Sheet open={open} onOpenChange={setOpen}>
-                <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <Menu className="h-6 w-6" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="left" className="w-[240px] sm:w-[300px]">
-                  <div className="px-2 py-6">
-                    <div className="flex items-center mb-6">
-                      <Avatar className="h-8 w-8 mr-2">
-                        <AvatarImage src={user?.avatarUrl || ''} />
-                        <AvatarFallback>
-                          {user?.name?.[0] || 'A'}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <div className="font-medium">{user?.name}</div>
-                        <div className="text-xs text-muted-foreground">Admin</div>
-                      </div>
-                    </div>
-                    <Separator className="mb-6" />
-                    <SheetClose asChild>
-                      <div onClick={() => setOpen(false)}>
-                        {renderNavigation()}
-                      </div>
-                    </SheetClose>
-                  </div>
-                </SheetContent>
-              </Sheet>
-              <div className="font-semibold text-lg ml-2">Admin Panel</div>
+    <div className="flex h-screen bg-background">
+      {/* Desktop sidebar */}
+      <div className="hidden lg:flex lg:flex-shrink-0">
+        <div className="flex w-64 flex-col">
+          <div className="flex min-h-0 flex-1 flex-col border-r">
+            <div className="flex flex-1 flex-col overflow-y-auto pt-5 pb-4">
+              <div className="flex flex-shrink-0 items-center px-4">
+                <h1 className="text-2xl font-bold">Admin Panel</h1>
+              </div>
+              <Separator className="my-4" />
+              <nav className="mt-5 flex-1 space-y-1 px-2">
+                {navigation.map((item) => (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className={`
+                      group flex items-center px-2 py-2 text-base font-medium rounded-md
+                      ${
+                        item.current
+                          ? 'bg-muted text-primary'
+                          : 'text-foreground hover:bg-muted hover:text-primary'
+                      }
+                    `}
+                  >
+                    <item.icon
+                      className={`
+                        mr-3 h-5 w-5 flex-shrink-0
+                        ${item.current ? 'text-primary' : 'text-muted-foreground'}
+                      `}
+                      aria-hidden="true"
+                    />
+                    {item.name}
+                  </Link>
+                ))}
+              </nav>
             </div>
-            <Avatar className="h-8 w-8">
-              <AvatarImage src={user?.avatarUrl || ''} />
-              <AvatarFallback>{user?.name?.[0] || 'A'}</AvatarFallback>
-            </Avatar>
-          </div>
-        </header>
-      )}
-
-      <div className="flex h-screen overflow-hidden">
-        {/* Sidebar - Desktop */}
-        {!isMobile && (
-          <aside className="w-64 border-r bg-card hidden md:block overflow-y-auto">
-            <div className="p-6">
-              <div className="flex items-center mb-6">
-                <Avatar className="h-10 w-10 mr-3">
-                  <AvatarImage src={user?.avatarUrl || ''} />
-                  <AvatarFallback>{user?.name?.[0] || 'A'}</AvatarFallback>
-                </Avatar>
+            <div className="flex flex-shrink-0 border-t p-4">
+              <div className="flex items-center">
                 <div>
-                  <div className="font-semibold">{user?.name}</div>
-                  <div className="text-sm text-muted-foreground">Admin</div>
+                  <Avatar>
+                    <AvatarImage src={user?.avatarUrl || ''} alt={user?.name || 'Admin'} />
+                    <AvatarFallback>{userInitials}</AvatarFallback>
+                  </Avatar>
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm font-medium">{user?.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {user?.email}
+                  </p>
                 </div>
               </div>
-              <Separator className="mb-6" />
-              {renderNavigation()}
             </div>
-          </aside>
-        )}
+          </div>
+        </div>
+      </div>
 
-        {/* Main Content */}
-        <main className="flex-1 overflow-y-auto p-0">
+      {/* Mobile menu */}
+      <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+        <SheetContent side="left" className="w-[240px] sm:w-[300px]">
+          <div className="flex h-full flex-col overflow-y-auto bg-background pb-4">
+            <div className="flex flex-shrink-0 items-center px-4 pt-5">
+              <h1 className="text-2xl font-bold">Admin Panel</h1>
+            </div>
+            <Separator className="my-4" />
+            <nav className="mt-5 flex-1 space-y-1 px-2">
+              {navigation.map((item) => (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  onClick={closeMobileMenu}
+                  className={`
+                    group flex items-center px-2 py-2 text-base font-medium rounded-md
+                    ${
+                      item.current
+                        ? 'bg-muted text-primary'
+                        : 'text-foreground hover:bg-muted hover:text-primary'
+                    }
+                  `}
+                >
+                  <item.icon
+                    className={`
+                      mr-3 h-5 w-5 flex-shrink-0
+                      ${item.current ? 'text-primary' : 'text-muted-foreground'}
+                    `}
+                    aria-hidden="true"
+                  />
+                  {item.name}
+                </Link>
+              ))}
+            </nav>
+            <div className="flex flex-shrink-0 border-t p-4">
+              <div className="flex w-full items-center justify-between">
+                <div className="flex items-center">
+                  <Avatar>
+                    <AvatarImage src={user?.avatarUrl || ''} alt={user?.name || 'Admin'} />
+                    <AvatarFallback>{userInitials}</AvatarFallback>
+                  </Avatar>
+                  <div className="ml-3">
+                    <p className="text-sm font-medium text-foreground">{user?.name}</p>
+                    <p className="text-xs text-muted-foreground truncate max-w-[160px]">
+                      {user?.email}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleLogout}
+                  disabled={isLoading}
+                >
+                  <LogOut className="h-5 w-5" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Content area */}
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <div className="relative z-10 flex h-16 flex-shrink-0 border-b bg-background">
+          <div className="flex items-center justify-between flex-1 px-4">
+            {/* Mobile menu button */}
+            <div className="lg:hidden">
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(true)}>
+                  <Menu className="h-6 w-6" />
+                </Button>
+              </SheetTrigger>
+            </div>
+
+            {/* Header Title - shows on mobile */}
+            <div className="lg:hidden">
+              <h1 className="text-xl font-bold">Admin Panel</h1>
+            </div>
+
+            {/* Right side of navbar */}
+            <div className="flex items-center">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={user?.avatarUrl || ''} alt={user?.name || 'Admin'} />
+                      <AvatarFallback>{userInitials}</AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/admin/settings">
+                      <Settings className="mr-2 h-4 w-4" />
+                      Settings
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={handleLogout}
+                    disabled={logoutMutation.isPending}
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    {logoutMutation.isPending ? 'Logging out...' : 'Logout'}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+        </div>
+
+        {/* Main content */}
+        <main className="flex-1 overflow-y-auto bg-muted/30">
           {children}
         </main>
       </div>
