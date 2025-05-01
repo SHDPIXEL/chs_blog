@@ -208,11 +208,9 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
           <div className="flex items-center justify-between flex-1 px-4">
             {/* Mobile menu button */}
             <div className="lg:hidden">
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(true)}>
-                  <Menu className="h-6 w-6" />
-                </Button>
-              </SheetTrigger>
+              <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(true)}>
+                <Menu className="h-6 w-6" />
+              </Button>
             </div>
 
             {/* Header Title - shows on mobile */}
