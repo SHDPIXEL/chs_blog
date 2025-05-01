@@ -4,6 +4,7 @@ import { useLocation } from 'wouter';
 import AuthorLayout from '@/components/layout/AuthorLayout';
 import PageHeader from '@/components/ui/PageHeader';
 import StatsCard from '@/components/ui/StatsCard';
+import NotificationsList from '@/components/ui/NotificationsList';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { 
@@ -86,6 +87,12 @@ const AuthorDashboard: React.FC = () => {
                   />
                 </>
               ) : null}
+            </div>
+
+            {/* Notifications */}
+            <div className="mt-8">
+              <h2 className="text-lg leading-6 font-medium text-gray-900 mb-4">Notifications</h2>
+              <NotificationsList />
             </div>
 
             {/* Recent Blogs */}

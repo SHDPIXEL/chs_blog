@@ -114,6 +114,21 @@ async function main() {
       )
     `);
 
+    console.log('Creating notifications table...');
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS notifications (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id),
+        type TEXT NOT NULL,
+        title TEXT NOT NULL,
+        message TEXT NOT NULL,
+        article_id INTEGER REFERENCES articles(id),
+        read BOOLEAN NOT NULL DEFAULT false,
+        created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+      )
+    `);
+
     console.log('Schema pushed successfully!');
   } catch (error) {
     console.error('Error pushing schema:', error);

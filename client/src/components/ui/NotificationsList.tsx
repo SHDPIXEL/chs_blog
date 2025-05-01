@@ -104,13 +104,13 @@ const NotificationsList: React.FC = () => {
   const getBadgeVariant = (type: string) => {
     switch (type) {
       case 'ARTICLE_APPROVED':
-        return 'success';
+        return 'default'; // Using default for approved (green is not available)
       case 'ARTICLE_REJECTED':
         return 'destructive';
       case 'ARTICLE_COMMENT':
         return 'secondary';
       default:
-        return 'default';
+        return 'outline';
     }
   };
 
