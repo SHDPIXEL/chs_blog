@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useRoute, Link } from 'wouter';
 import { Helmet } from 'react-helmet-async';
@@ -26,34 +26,81 @@ const BlogDetail: React.FC = () => {
   const [readingProgress, setReadingProgress] = useState(0);
   const contentRef = useRef<HTMLDivElement>(null);
 
-  // Calculate reading progress
+  // Throttle function to limit how often the scroll handler runs
+  const throttle = useCallback((func: Function, delay: number) => {
+    let lastCall = 0;
+    return (...args: any[]) => {
+      const now = Date.now();
+      if (now - lastCall < delay) return;
+      lastCall = now;
+      return func(...args);
+    };
+  }, []);
+
+  // Calculate reading progress with enhanced accuracy and smoothness
   useEffect(() => {
-    const handleScroll = () => {
+    // Main calculation logic in a separate function for clarity
+    const calculateReadingProgress = () => {
       if (!contentRef.current) return;
       
       const element = contentRef.current;
-      const totalHeight = element.clientHeight;
+      const totalHeight = element.scrollHeight; // Use scrollHeight for better accuracy 
       const windowHeight = window.innerHeight;
       const scrollTop = window.scrollY || document.documentElement.scrollTop;
+      const contentBox = element.getBoundingClientRect();
       
-      // Get the starting position of the content section
-      const contentStart = element.offsetTop;
+      // More accurate calculation of content start position
+      const contentStart = contentBox.top + scrollTop - 100; // Small offset for better UX
       
-      // Calculate how far we've scrolled into the content
-      const scrolled = scrollTop - contentStart + windowHeight / 2;
+      // Calculate visible content area
+      const contentBottom = contentStart + totalHeight;
+      const viewportBottom = scrollTop + windowHeight;
       
-      // Convert to percentage (clamped between 0-100)
-      const percentage = Math.min(Math.max(scrolled / totalHeight * 100, 0), 100);
+      // Calculate reading progress with improved accuracy
+      // This handles cases where content is shorter than viewport
+      let readableContent = totalHeight;
+      let progress = 0;
       
-      setReadingProgress(percentage);
+      if (totalHeight > 0) {
+        // If we haven't scrolled to the content yet
+        if (scrollTop < contentStart) {
+          progress = 0;
+        }
+        // If we've scrolled past the content
+        else if (scrollTop >= contentBottom - windowHeight) {
+          progress = 100;
+        }
+        // If we're somewhere in the content
+        else {
+          progress = ((scrollTop - contentStart) / (totalHeight - windowHeight + 200)) * 100;
+        }
+      }
+      
+      // Ensure progress is always within valid range with smoother interpolation
+      const smoothedProgress = Math.min(Math.max(progress, 0), 100);
+      
+      // Update state only if the change is significant (reduces unnecessary renders)
+      if (Math.abs(smoothedProgress - readingProgress) > 0.5) {
+        setReadingProgress(smoothedProgress);
+      }
     };
 
-    window.addEventListener('scroll', handleScroll);
-    // Initial calculation
-    handleScroll();
+    // Throttled scroll handler to improve performance
+    const handleScroll = throttle(calculateReadingProgress, 16); // ~60fps for smooth animation
+
+    // Attach event listeners for different scenarios to make it more responsive
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('resize', handleScroll, { passive: true });
     
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+    // Initial calculation
+    calculateReadingProgress();
+    
+    // Remove event listeners on cleanup
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleScroll);
+    };
+  }, [readingProgress, throttle]);
 
   // Fetch article details
   const { data: article, isLoading, error } = useQuery({
@@ -120,11 +167,16 @@ const BlogDetail: React.FC = () => {
         <meta name="description" content={articleData.excerpt} />
       </Helmet>
       
-      {/* Reading Progress Bar - Fixed at the top */}
-      <div className="fixed top-0 left-0 right-0 h-1 bg-gray-200 z-50">
+      {/* Enhanced Reading Progress Bar - Fixed at the top */}
+      <div className="fixed top-0 left-0 right-0 h-1.5 bg-gray-200 z-50 shadow-sm">
         <div 
-          className="h-full bg-[#CC0033] transition-all duration-300 ease-out"
-          style={{ width: `${readingProgress}%` }}
+          className="h-full bg-gradient-to-r from-rose-600 to-rose-500 transition-all duration-200 ease-in-out will-change-transform"
+          style={{ 
+            width: `${readingProgress}%`,
+            transform: `translateZ(0)`, // Force hardware acceleration for smoother animations
+            backgroundSize: '200% 100%',
+            boxShadow: readingProgress > 0 ? '0 0 10px rgba(204, 0, 51, 0.5)' : 'none'
+          }}
           aria-hidden="true"
         />
       </div>
