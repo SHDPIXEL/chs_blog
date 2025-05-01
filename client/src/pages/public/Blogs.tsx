@@ -137,60 +137,60 @@ const Blogs: React.FC = () => {
                 {/* Featured Article (First Article) */}
                 {filteredArticles.length > 0 && (
                   <div className="mb-10">
-                    <Card className="overflow-hidden">
-                      <div className="md:flex">
-                        <div className="md:flex-shrink-0 h-64 md:h-auto md:w-1/2 overflow-hidden">
-                          <img 
-                            src={filteredArticles[0].featuredImage || placeholderImage} 
-                            alt={filteredArticles[0].title} 
-                            className="h-full w-full object-cover"
-                          />
-                        </div>
-                        <CardContent className="p-8 md:w-1/2">
-                          <div className="flex items-center mb-4">
+                    <Link href={`/blogs/${filteredArticles[0].id}`}>
+                      <Card className="overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-300 group">
+                        <div className="md:flex">
+                          <div className="md:flex-shrink-0 h-64 md:h-auto md:w-1/2 overflow-hidden">
                             <img 
-                              src={filteredArticles[0].author?.avatarUrl || placeholderImage} 
-                              alt={filteredArticles[0].author?.name || 'Author'} 
-                              className="w-10 h-10 rounded-full object-cover mr-3"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src = placeholderImage;
-                              }}
+                              src={filteredArticles[0].featuredImage || placeholderImage} 
+                              alt={filteredArticles[0].title} 
+                              className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-700"
                             />
-                            <div>
-                              <h3 className="font-medium text-sm">
-                                {filteredArticles[0].author?.name || 'Anonymous'}
-                                {filteredArticles[0].coAuthors && filteredArticles[0].coAuthors.length > 0 && ' and others'}
-                              </h3>
-                              <div className="flex items-center text-xs text-[#333A3D]/70">
-                                <Calendar className="h-3 w-3 mr-1" />
-                                {formatDate(filteredArticles[0].createdAt.toString())}
+                          </div>
+                          <CardContent className="p-8 md:w-1/2">
+                            <div className="flex items-center mb-4">
+                              <img 
+                                src={filteredArticles[0].author?.avatarUrl || placeholderImage} 
+                                alt={filteredArticles[0].author?.name || 'Author'} 
+                                className="w-10 h-10 rounded-full object-cover mr-3"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src = placeholderImage;
+                                }}
+                              />
+                              <div>
+                                <h3 className="font-medium text-sm">
+                                  {filteredArticles[0].author?.name || 'Anonymous'}
+                                  {filteredArticles[0].coAuthors && filteredArticles[0].coAuthors.length > 0 && ' and others'}
+                                </h3>
+                                <div className="flex items-center text-xs text-[#333A3D]/70">
+                                  <Calendar className="h-3 w-3 mr-1" />
+                                  {formatDate(filteredArticles[0].createdAt.toString())}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                          
-                          <h2 className="font-serif text-2xl md:text-3xl font-bold text-[#333A3D] mb-3">
-                            {filteredArticles[0].title}
-                          </h2>
-                          <p className="font-sans text-[#333A3D]/80 mb-4">
-                            {filteredArticles[0].excerpt || 'No excerpt available for this article.'}
-                          </p>
-                          
-                          <div className="flex flex-wrap gap-2 mb-6">
-                            {filteredArticles[0].categories?.map((category: any) => (
-                              <span key={category.id} className="inline-block bg-[#FFEDD2] text-[#81204D] text-xs px-2 py-1 rounded">
-                                {category.name}
-                              </span>
-                            ))}
-                          </div>
-                          
-                          <Link href={`/blogs/${filteredArticles[0].id}`}>
-                            <a className="inline-block bg-[#CC0033] text-white hover:bg-[#CC0033]/90 font-sans text-sm font-medium py-2 px-4 rounded-md transition duration-300">
+                            
+                            <h2 className="font-serif text-2xl md:text-3xl font-bold text-[#333A3D] mb-3 group-hover:text-[#CC0033] transition-colors duration-300">
+                              {filteredArticles[0].title}
+                            </h2>
+                            <p className="font-sans text-[#333A3D]/80 mb-4">
+                              {filteredArticles[0].excerpt || 'No excerpt available for this article.'}
+                            </p>
+                            
+                            <div className="flex flex-wrap gap-2 mb-6">
+                              {filteredArticles[0].categories?.map((category: any) => (
+                                <span key={category.id} className="inline-block bg-[#FFEDD2] text-[#81204D] text-xs px-2 py-1 rounded">
+                                  {category.name}
+                                </span>
+                              ))}
+                            </div>
+                            
+                            <div className="inline-block bg-[#CC0033] text-white hover:bg-[#CC0033]/90 font-sans text-sm font-medium py-2 px-4 rounded-md transition duration-300">
                               Read Full Article
-                            </a>
-                          </Link>
-                        </CardContent>
-                      </div>
-                    </Card>
+                            </div>
+                          </CardContent>
+                        </div>
+                      </Card>
+                    </Link>
                   </div>
                 )}
 
@@ -198,54 +198,54 @@ const Blogs: React.FC = () => {
                 {filteredArticles.length > 1 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {filteredArticles.slice(1).map((article: any) => (
-                      <Card key={article.id} className="overflow-hidden hover:shadow-lg transition-shadow duration-300">
-                        <div className="h-48 overflow-hidden">
-                          <img 
-                            src={article.featuredImage || placeholderImage} 
-                            alt={article.title}
-                            className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).src = placeholderImage;
-                            }}
-                          />
-                        </div>
-                        <CardContent className="p-6">
-                          <div className="flex items-center mb-3">
+                      <Link key={article.id} href={`/blogs/${article.id}`}>
+                        <Card className="overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-300 h-full group">
+                          <div className="h-48 overflow-hidden">
                             <img 
-                              src={article.author?.avatarUrl || placeholderImage} 
-                              alt={article.author?.name || 'Author'} 
-                              className="w-8 h-8 rounded-full object-cover mr-2"
+                              src={article.featuredImage || placeholderImage} 
+                              alt={article.title}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                               onError={(e) => {
                                 (e.target as HTMLImageElement).src = placeholderImage;
                               }}
                             />
-                            <span className="text-xs font-sans text-[#333A3D]/70">
-                              {article.author?.name || 'Anonymous'}
-                              {article.coAuthors && article.coAuthors.length > 0 && ' and others'}
-                            </span>
-                            <span className="mx-2 text-xs text-[#333A3D]/50">•</span>
-                            <span className="text-xs font-sans text-[#333A3D]/70">{formatDate(article.createdAt.toString())}</span>
                           </div>
-                          <h3 className="font-serif text-xl font-bold mb-2 text-[#333A3D]">{article.title}</h3>
-                          <p className="font-sans text-sm text-[#333A3D]/80 mb-4 line-clamp-2">
-                            {article.excerpt || 'No excerpt available for this article.'}
-                          </p>
-                          
-                          <div className="flex flex-wrap gap-2 mb-4">
-                            {article.categories?.slice(0, 2).map((category: any) => (
-                              <span key={category.id} className="inline-block bg-[#FFEDD2] text-[#81204D] text-xs px-2 py-1 rounded">
-                                {category.name}
+                          <CardContent className="p-6">
+                            <div className="flex items-center mb-3">
+                              <img 
+                                src={article.author?.avatarUrl || placeholderImage} 
+                                alt={article.author?.name || 'Author'} 
+                                className="w-8 h-8 rounded-full object-cover mr-2"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src = placeholderImage;
+                                }}
+                              />
+                              <span className="text-xs font-sans text-[#333A3D]/70">
+                                {article.author?.name || 'Anonymous'}
+                                {article.coAuthors && article.coAuthors.length > 0 && ' and others'}
                               </span>
-                            ))}
-                          </div>
-                          
-                          <Link href={`/blogs/${article.id}`}>
-                            <a className="text-[#CC0033] hover:text-[#DB5527] font-medium text-sm">
+                              <span className="mx-2 text-xs text-[#333A3D]/50">•</span>
+                              <span className="text-xs font-sans text-[#333A3D]/70">{formatDate(article.createdAt.toString())}</span>
+                            </div>
+                            <h3 className="font-serif text-xl font-bold mb-2 text-[#333A3D] group-hover:text-[#CC0033] transition-colors duration-300">{article.title}</h3>
+                            <p className="font-sans text-sm text-[#333A3D]/80 mb-4 line-clamp-2">
+                              {article.excerpt || 'No excerpt available for this article.'}
+                            </p>
+                            
+                            <div className="flex flex-wrap gap-2 mb-4">
+                              {article.categories?.slice(0, 2).map((category: any) => (
+                                <span key={category.id} className="inline-block bg-[#FFEDD2] text-[#81204D] text-xs px-2 py-1 rounded">
+                                  {category.name}
+                                </span>
+                              ))}
+                            </div>
+                            
+                            <div className="text-[#CC0033] font-medium text-sm">
                               Read Full Article →
-                            </a>
-                          </Link>
-                        </CardContent>
-                      </Card>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </Link>
                     ))}
                   </div>
                 ) : filteredArticles.length === 0 ? (
