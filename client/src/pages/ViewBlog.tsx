@@ -136,7 +136,7 @@ const ViewBlog: React.FC<ViewBlogProps> = () => {
             
             <div className="flex items-center">
               <UserIcon className="h-4 w-4 mr-1" />
-              <span>By Author</span>
+              <span>By {coAuthors.find(author => author.id === article.authorId)?.name || 'Unknown Author'}</span>
             </div>
             
             {coAuthors.length > 0 && (

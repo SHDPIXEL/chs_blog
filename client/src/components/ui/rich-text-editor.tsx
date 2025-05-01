@@ -251,6 +251,13 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       onChange(editor.getHTML());
     },
   });
+  
+  // Update content when value prop changes
+  React.useEffect(() => {
+    if (editor && value !== editor.getHTML()) {
+      editor.commands.setContent(value);
+    }
+  }, [editor, value]);
 
   const setLink = useCallback(() => {
     if (!editor) return;
