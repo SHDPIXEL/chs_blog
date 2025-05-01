@@ -62,16 +62,8 @@ const AuthorProfile: React.FC = () => {
   // Fetch author profile data
   const { data, isLoading, error } = useQuery({
     queryKey: [`/api/authors/${authorId}/public`],
-    queryFn: async () => {
-      try {
-        const res = await fetch(`/api/authors/${authorId}/public`);
-        if (!res.ok) throw new Error('Failed to fetch author profile');
-        return await res.json();
-      } catch (error) {
-        console.error('Error fetching author profile:', error);
-        return null;
-      }
-    }
+    enabled: !!authorId,
+    refetchOnWindowFocus: false
   });
 
   // Loading state
