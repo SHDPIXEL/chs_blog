@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, MessageSquare, ThumbsUp, Share2, Bookmark } from 'lucide-react';
+import { ArrowLeft, MessageSquare, ThumbsUp, Share2, Bookmark, Eye } from 'lucide-react';
 import PublicLayout from '@/components/layout/PublicLayout';
 import { CommentsList } from '@/components/comments/CommentsList';
 import { getInitials } from '@/lib/avatarUtils';

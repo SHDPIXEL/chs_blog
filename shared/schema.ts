@@ -196,6 +196,7 @@ export const updateArticleSchema = z.object({
   excerpt: z.string().optional(),
   status: z.enum([ArticleStatus.DRAFT, ArticleStatus.REVIEW, ArticleStatus.PUBLISHED]).optional(),
   published: z.boolean().optional(),
+  viewCount: z.number().int().nonnegative().optional(),
   // Accept any string for featuredImage, including relative paths
   featuredImage: z.string().optional().nullable(),
   // Review fields
