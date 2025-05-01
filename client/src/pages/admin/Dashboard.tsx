@@ -4,6 +4,7 @@ import { apiRequest } from '@/lib/queryClient';
 import { Link } from 'wouter';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { Button } from '@/components/ui/button';
+import { AuthDebug } from '@/components/debug/AuthDebug';
 import {
   Card,
   CardContent,
@@ -346,6 +347,9 @@ const AdminDashboard: React.FC = () => {
             </Table>
           </CardContent>
         </Card>
+        
+        {/* Auth Debug Component (for debugging authentication issues) */}
+        <AuthDebug />
       </div>
     </AdminLayout>
   );
