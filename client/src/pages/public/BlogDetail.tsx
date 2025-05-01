@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useRoute, Link } from 'wouter';
 import { Helmet } from 'react-helmet-async';
@@ -23,6 +23,37 @@ const demoImages = [
 const BlogDetail: React.FC = () => {
   const [, params] = useRoute('/blogs/:id');
   const articleId = params?.id ? parseInt(params.id) : 0;
+  const [readingProgress, setReadingProgress] = useState(0);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  // Calculate reading progress
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!contentRef.current) return;
+      
+      const element = contentRef.current;
+      const totalHeight = element.clientHeight;
+      const windowHeight = window.innerHeight;
+      const scrollTop = window.scrollY || document.documentElement.scrollTop;
+      
+      // Get the starting position of the content section
+      const contentStart = element.offsetTop;
+      
+      // Calculate how far we've scrolled into the content
+      const scrolled = scrollTop - contentStart + windowHeight / 2;
+      
+      // Convert to percentage (clamped between 0-100)
+      const percentage = Math.min(Math.max(scrolled / totalHeight * 100, 0), 100);
+      
+      setReadingProgress(percentage);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    // Initial calculation
+    handleScroll();
+    
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Fetch article details
   const { data: article, isLoading, error } = useQuery({
@@ -88,6 +119,15 @@ const BlogDetail: React.FC = () => {
         <title>{articleData.title} | BlogCMS</title>
         <meta name="description" content={articleData.excerpt} />
       </Helmet>
+      
+      {/* Reading Progress Bar - Fixed at the top */}
+      <div className="fixed top-0 left-0 right-0 h-1 bg-gray-200 z-50">
+        <div 
+          className="h-full bg-[#CC0033] transition-all duration-300 ease-out"
+          style={{ width: `${readingProgress}%` }}
+          aria-hidden="true"
+        />
+      </div>
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Back button */}
@@ -174,7 +214,7 @@ const BlogDetail: React.FC = () => {
         )}
         
         {/* Article content */}
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-4xl mx-auto" ref={contentRef}>
           <div 
             className="prose prose-lg max-w-none prose-headings:text-gray-900 prose-p:text-gray-700"
             dangerouslySetInnerHTML={{ __html: articleData.content }}
