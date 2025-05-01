@@ -1,24 +1,24 @@
 import React, { useEffect } from 'react';
 import { useLocation } from 'wouter';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/hooks/use-auth';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { SquarePen } from 'lucide-react';
 
 const Home: React.FC = () => {
   const [location, setLocation] = useLocation();
-  const { isAuthenticated, user } = useAuth();
+  const { user } = useAuth();
 
   useEffect(() => {
     // If user is authenticated, redirect to their dashboard
-    if (isAuthenticated && user) {
+    if (user) {
       const dashboardPath = user.role === 'admin' ? '/admin/dashboard' : '/author/dashboard';
       setLocation(dashboardPath);
     }
-  }, [isAuthenticated, user, setLocation]);
+  }, [user, setLocation]);
 
   const handleGetStarted = () => {
-    setLocation('/login');
+    setLocation('/auth/login');
   };
 
   return (

@@ -1,7 +1,7 @@
 import React from "react";
 import { Route, Redirect } from "wouter";
 import { Loader2 } from "lucide-react";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/hooks/use-auth";
 
 interface ProtectedRouteProps {
   path: string;
@@ -14,7 +14,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   component: Component,
   role,
 }) => {
-  const { user, isLoading, isAuthenticated } = useAuth();
+  const { user, isLoading } = useAuth();
 
   if (isLoading) {
     return (
@@ -28,7 +28,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   return (
     <Route path={path}>
-      {isAuthenticated ? (
+      {user ? (
         // If role is specified, check if user has that role
         role ? (
           user?.role === role ? (

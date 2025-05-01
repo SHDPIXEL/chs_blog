@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'wouter';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { 
@@ -31,7 +31,7 @@ interface NavItem {
 
 const Sidebar: React.FC<SidebarProps> = ({ role }) => {
   const [location] = useLocation();
-  const { user, logout } = useAuth();
+  const { user, logoutMutation } = useAuth();
 
   // Define navigation items based on role
   const adminNavItems: NavItem[] = [
@@ -53,7 +53,7 @@ const Sidebar: React.FC<SidebarProps> = ({ role }) => {
   const navItems = role === 'admin' ? adminNavItems : authorNavItems;
   
   const handleLogout = () => {
-    logout();
+    logoutMutation.mutate();
   };
 
   return (

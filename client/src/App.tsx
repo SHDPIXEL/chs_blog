@@ -3,7 +3,7 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { AuthProvider } from "@/context/AuthContext";
+import { AuthProvider } from "@/hooks/use-auth";
 import { AssetManagerProvider } from "@/context/AssetManagerContext";
 import AssetManager from "@/components/assets/AssetManager";
 import { ProtectedRoute } from "@/lib/protected-route";
@@ -32,24 +32,63 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/auth/login" component={Login} />
       <Route path="/auth/register" component={Register} />
-      
+
       {/* Protected admin routes */}
-      <AuthProvider>
-        <ProtectedRoute path="/admin/dashboard" component={AdminDashboard} role="admin" />
-        <ProtectedRoute path="/admin/authors" component={AuthorManagement} role="admin" />
-        <ProtectedRoute path="/admin/blogs" component={BlogManagement} role="admin" />
-        <ProtectedRoute path="/admin/blogs/new" component={AdminNewBlog} role="admin" />
-        <ProtectedRoute path="/admin/blog-approvals" component={BlogApprovals} role="admin" />
-      </AuthProvider>
-      
+
+      <ProtectedRoute
+        path="/admin/dashboard"
+        component={AdminDashboard}
+        role="admin"
+      />
+      <ProtectedRoute
+        path="/admin/authors"
+        component={AuthorManagement}
+        role="admin"
+      />
+      <ProtectedRoute
+        path="/admin/blogs"
+        component={BlogManagement}
+        role="admin"
+      />
+      <ProtectedRoute
+        path="/admin/blogs/new"
+        component={AdminNewBlog}
+        role="admin"
+      />
+      <ProtectedRoute
+        path="/admin/blog-approvals"
+        component={BlogApprovals}
+        role="admin"
+      />
+
       {/* Protected author routes */}
-      <ProtectedRoute path="/author/dashboard" component={AuthorDashboard} role="author" />
-      <ProtectedRoute path="/author/profile" component={AuthorProfile} role="author" />
-      <ProtectedRoute path="/author/blogs" component={AuthorBlogs} role="author" />
-      <ProtectedRoute path="/author/blogs/new" component={NewBlog} role="author" />
-      <ProtectedRoute path="/author/blogs/:id" component={EditBlog} role="author" />
+      <ProtectedRoute
+        path="/author/dashboard"
+        component={AuthorDashboard}
+        role="author"
+      />
+      <ProtectedRoute
+        path="/author/profile"
+        component={AuthorProfile}
+        role="author"
+      />
+      <ProtectedRoute
+        path="/author/blogs"
+        component={AuthorBlogs}
+        role="author"
+      />
+      <ProtectedRoute
+        path="/author/blogs/new"
+        component={NewBlog}
+        role="author"
+      />
+      <ProtectedRoute
+        path="/author/blogs/:id"
+        component={EditBlog}
+        role="author"
+      />
       <Route path="/blog/:id" component={ViewBlog} />
-      
+
       {/* Fallback to 404 */}
       <Route component={NotFound} />
     </Switch>
