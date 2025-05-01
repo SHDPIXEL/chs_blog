@@ -137,7 +137,7 @@ const AdminDashboard: React.FC = () => {
               <div className="bg-primary/10 p-3 rounded-full mb-4">
                 <Users className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="font-bold text-3xl">{dashboardData.totalUsers}</h3>
+              <h3 className="font-bold text-3xl">{dashboardData.totalUsers || 0}</h3>
               <p className="text-muted-foreground">Total Users</p>
             </CardContent>
           </Card>
@@ -146,7 +146,7 @@ const AdminDashboard: React.FC = () => {
               <div className="bg-primary/10 p-3 rounded-full mb-4">
                 <BookOpen className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="font-bold text-3xl">{dashboardData.totalPosts}</h3>
+              <h3 className="font-bold text-3xl">{dashboardData.totalPosts || 0}</h3>
               <p className="text-muted-foreground">Total Blog Posts</p>
             </CardContent>
           </Card>
@@ -155,7 +155,7 @@ const AdminDashboard: React.FC = () => {
               <div className="bg-primary/10 p-3 rounded-full mb-4">
                 <Eye className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="font-bold text-3xl">{dashboardData.totalViews}</h3>
+              <h3 className="font-bold text-3xl">{dashboardData.totalViews || 0}</h3>
               <p className="text-muted-foreground">Total Page Views</p>
             </CardContent>
           </Card>
@@ -164,7 +164,7 @@ const AdminDashboard: React.FC = () => {
               <div className="bg-primary/10 p-3 rounded-full mb-4">
                 <FileText className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="font-bold text-3xl">{dashboardData.postsThisMonth}</h3>
+              <h3 className="font-bold text-3xl">{dashboardData.postsThisMonth || 0}</h3>
               <p className="text-muted-foreground">Posts This Month</p>
             </CardContent>
           </Card>
@@ -185,7 +185,7 @@ const AdminDashboard: React.FC = () => {
               <div className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart
-                    data={dashboardData.viewsOverTime}
+                    data={dashboardData.viewsOverTime || []}
                     margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" />
@@ -215,7 +215,7 @@ const AdminDashboard: React.FC = () => {
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
-                      data={dashboardData.postsByStatus}
+                      data={dashboardData.postsByStatus || []}
                       cx="50%"
                       cy="50%"
                       labelLine={false}
@@ -225,7 +225,7 @@ const AdminDashboard: React.FC = () => {
                       dataKey="count"
                       nameKey="status"
                     >
-                      {dashboardData.postsByStatus.map((entry, index) => (
+                      {(dashboardData.postsByStatus || []).map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
@@ -246,7 +246,7 @@ const AdminDashboard: React.FC = () => {
               <div className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
-                    data={dashboardData.popularCategories}
+                    data={dashboardData.popularCategories || []}
                     margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" />
@@ -282,7 +282,7 @@ const AdminDashboard: React.FC = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {dashboardData.recentActivity.map((activity) => (
+                {(dashboardData.recentActivity || []).map((activity) => (
                   <TableRow key={activity.id}>
                     <TableCell>{activity.action}</TableCell>
                     <TableCell>{activity.user}</TableCell>
