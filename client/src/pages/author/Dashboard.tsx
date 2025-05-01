@@ -5,6 +5,7 @@ import AuthorLayout from '@/components/layout/AuthorLayout';
 import PageHeader from '@/components/ui/PageHeader';
 import StatsCard from '@/components/ui/StatsCard';
 import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { 
   FileText, 
   FilePlus,
@@ -143,42 +144,44 @@ interface ArticleItemProps {
 }
 
 const ArticleItem: React.FC<ArticleItemProps> = ({ article }) => {
+  const [, navigate] = useLocation();
+  
   return (
-    <li>
-      <a href={`/author/blogs/${article.id}`} className="block hover:bg-gray-50">
-        <div className="px-4 py-4 sm:px-6">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-medium text-primary truncate">
-              {article.title}
-            </p>
-            <div className="ml-2 flex-shrink-0 flex">
-              <Badge variant={article.published ? "default" : "secondary"}>
-                {article.published ? 'Published' : 'Draft'}
-              </Badge>
-            </div>
+    <li className="block hover:bg-gray-50">
+      <div className="px-4 py-4 sm:px-6">
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-medium text-primary truncate">
+            {article.title}
+          </p>
+          <div className="ml-2 flex-shrink-0 flex items-center space-x-2">
+            <Badge variant={article.published ? "default" : article.status === 'review' ? "outline" : "secondary"} className="capitalize">
+              {article.status || (article.published ? 'published' : 'draft')}
+            </Badge>
           </div>
-          <div className="mt-2 sm:flex sm:justify-between">
-            <div className="sm:flex">
-              {article.published && (
-                <p className="flex items-center text-sm text-gray-500">
-                  <Eye className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" />
-                  243 views
-                </p>
-              )}
-              {article.published && (
-                <p className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0 sm:ml-6">
-                  <MessageSquare className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" />
-                  5 comments
-                </p>
-              )}
-              {!article.published && (
-                <p className="flex items-center text-sm text-gray-500">
-                  <Edit className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" />
-                  Last edited {formatDistanceToNow(new Date(article.updatedAt), { addSuffix: true })}
-                </p>
-              )}
-            </div>
-            <div className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
+        </div>
+        <div className="mt-2 sm:flex sm:justify-between">
+          <div className="sm:flex">
+            {article.published && (
+              <p className="flex items-center text-sm text-gray-500">
+                <Eye className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" />
+                {article.viewCount || '0'} views
+              </p>
+            )}
+            {article.published && (
+              <p className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0 sm:ml-6">
+                <MessageSquare className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" />
+                {article.commentCount || '0'} comments
+              </p>
+            )}
+            {!article.published && (
+              <p className="flex items-center text-sm text-gray-500">
+                <Edit className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" />
+                Last edited {formatDistanceToNow(new Date(article.updatedAt), { addSuffix: true })}
+              </p>
+            )}
+          </div>
+          <div className="mt-2 flex items-center justify-between sm:mt-0">
+            <div className="flex items-center text-sm text-gray-500 mr-4">
               <Clock className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" />
               <p>
                 {article.published 
@@ -186,9 +189,25 @@ const ArticleItem: React.FC<ArticleItemProps> = ({ article }) => {
                   : `Created ${formatDistanceToNow(new Date(article.createdAt), { addSuffix: true })}`}
               </p>
             </div>
+            <div className="flex space-x-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => navigate(`/author/blogs/${article.id}`)}
+              >
+                <Edit className="h-4 w-4 mr-1" /> Edit
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => navigate(`/blog/${article.id}`)}
+              >
+                <Eye className="h-4 w-4 mr-1" /> View
+              </Button>
+            </div>
           </div>
         </div>
-      </a>
+      </div>
     </li>
   );
 };

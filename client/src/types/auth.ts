@@ -74,8 +74,13 @@ export interface Article {
   content: string;
   authorId: number;
   published: boolean;
+  status?: string;
   createdAt: string;
   updatedAt: string;
+  viewCount?: number;
+  commentCount?: number;
+  featuredImage?: string;
+  excerpt?: string;
 }
 
 export interface AuthorDashboardData {
