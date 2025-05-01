@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { MessageSquare } from 'lucide-react';
 
+// Comment already has an optional replyCount property from schema.ts
 interface CommentProps {
   comment: Comment;
   articleId: number;
@@ -139,8 +140,8 @@ export function CommentComponent({ comment, articleId, isReply = false }: Commen
               Reply
             </Button>
             
-            {/* Always show the Reply button, but only show Show Replies if we check and have replies */}
-            {(comment.replyCount > 0 || replies.length > 0) && (
+            {/* Show replies button - regardless of whether this is a reply or top-level comment */}
+            {((comment.replyCount ?? 0) > 0 || replies.length > 0) && (
               <Button 
                 variant="ghost" 
                 size="sm"
@@ -151,7 +152,7 @@ export function CommentComponent({ comment, articleId, isReply = false }: Commen
                   ? 'Loading...' 
                   : showReplies 
                     ? `Hide Replies (${replies.length})` 
-                    : `Show Replies (${comment.replyCount || replies.length})`
+                    : `Show Replies (${comment.replyCount ?? replies.length})`
                 }
               </Button>
             )}
