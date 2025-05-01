@@ -268,18 +268,25 @@ export const AssetManagerProvider: React.FC<AssetManagerProviderProps> = ({
     console.log("multiSelect:", multiSelect);
     console.log("selectedAssets:", selectedAssets);
     
-    if (onAssetSelect) {
+    // Save the callback and selected assets before clearing state
+    const callback = onAssetSelect;
+    const assetToSelect = multiSelect ? selectedAssets : selectedAsset;
+    
+    // First close the manager (but we'll handle the callback separately)
+    setIsOpen(false);
+    
+    // Only invoke the callback after we've captured it
+    if (callback) {
       if (multiSelect) {
         // For multi-select, pass the array of selected assets
-        onAssetSelect(selectedAssets);
-      } else {
+        callback(selectedAssets);
+      } else if (selectedAsset) {
         // For single select, pass the selected asset
-        onAssetSelect(selectedAsset!);
+        callback(selectedAsset);
       }
     }
     
-    // Close the asset manager after selection is handled
-    setIsOpen(false);
+    // Now we can safely clear the state
     setOnAssetSelect(undefined);
     setSelectedAsset(null);
     setSelectedAssets([]);
