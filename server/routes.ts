@@ -445,6 +445,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Admin route for article status update with remarks
+  app.patch("/api/admin/articles/:id/status", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      if (!req.user?.id) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      
+      const articleId = parseInt(req.params.id);
+      if (isNaN(articleId)) {
+        return res.status(400).json({ message: "Invalid article ID" });
+      }
+      
+      const { status, remarks } = req.body;
+      
+      // Validate status
+      if (!Object.values(ArticleStatus).includes(status)) {
+        return res.status(400).json({ message: "Invalid status" });
+      }
+      
+      // Check if article exists
+      const article = await storage.getArticle(articleId);
+      
+      if (!article) {
+        return res.status(404).json({ message: "Article not found" });
+      }
+      
+      // Update article status and add remarks
+      const updatedArticle = await storage.updateArticle(articleId, {
+        status,
+        reviewRemarks: remarks || null,
+        reviewedBy: req.user.id,
+        reviewedAt: new Date().toISOString()
+      });
+      
+      return res.json(updatedArticle);
+    } catch (error) {
+      return res.status(500).json({ message: "Server error" });
+    }
+  });
+  
   // Get article with relations
   app.get("/api/articles/:id/full", authenticateToken, requireAuth, async (req: AuthRequest, res) => {
     try {

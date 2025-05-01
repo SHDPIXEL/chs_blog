@@ -14,7 +14,9 @@ import {
   FileSpreadsheet,
   MessageSquare,
   User,
-  LogOut
+  LogOut,
+  CheckSquare,
+  UserCheck
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -34,8 +36,9 @@ const Sidebar: React.FC<SidebarProps> = ({ role }) => {
   // Define navigation items based on role
   const adminNavItems: NavItem[] = [
     { icon: <LayoutDashboard className="h-5 w-5" />, label: 'Dashboard', href: '/admin/dashboard' },
-    { icon: <UserCog className="h-5 w-5" />, label: 'User Management', href: '/admin/users' },
-    { icon: <FileText className="h-5 w-5" />, label: 'Content Library', href: '/admin/content' },
+    { icon: <UserCheck className="h-5 w-5" />, label: 'Author Management', href: '/admin/authors' },
+    { icon: <FileText className="h-5 w-5" />, label: 'Blog Management', href: '/admin/blogs' },
+    { icon: <CheckSquare className="h-5 w-5" />, label: 'Blog Approvals', href: '/admin/approvals' },
     { icon: <Settings className="h-5 w-5" />, label: 'Site Settings', href: '/admin/settings' },
     { icon: <BarChart2 className="h-5 w-5" />, label: 'Analytics', href: '/admin/analytics' },
   ];
