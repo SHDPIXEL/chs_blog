@@ -1,3 +1,4 @@
+import React from "react";
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -25,6 +26,11 @@ import EditBlog from "@/pages/author/EditBlog";
 import ViewBlog from "@/pages/ViewBlog";
 import NotFound from "@/pages/not-found";
 
+// Public blog pages
+import Blogs from "./pages/public/Blogs";
+import BlogDetail from "./pages/public/BlogDetail";
+import TestPage from "./pages/public/TestPage";
+
 function Router() {
   return (
     <Switch>
@@ -33,18 +39,22 @@ function Router() {
       <Route path="/auth/login" component={Login} />
       <Route path="/auth/register" component={Register} />
       <Route path="/blog/:id" component={ViewBlog} />
-      <Route path="/blogs" component={() => {
-        const Blogs = require("./pages/public/Blogs").default;
-        return <Blogs />;
-      }} />
-      <Route path="/blogs/:id" component={() => {
-        const BlogDetail = require("./pages/public/BlogDetail").default;
-        return <BlogDetail />;
-      }} />
-      <Route path="/test-blog" component={() => {
-        const TestPage = require("./pages/public/TestPage").default;
-        return <TestPage />;
-      }} />
+      
+      <Route path="/blogs" component={() => (
+        <Suspense fallback={<div className="flex items-center justify-center h-screen">Loading...</div>}>
+          <Blogs />
+        </Suspense>
+      )} />
+      <Route path="/blogs/:id" component={() => (
+        <Suspense fallback={<div className="flex items-center justify-center h-screen">Loading...</div>}>
+          <BlogDetail />
+        </Suspense>
+      )} />
+      <Route path="/test-blog" component={() => (
+        <Suspense fallback={<div className="flex items-center justify-center h-screen">Loading...</div>}>
+          <TestPage />
+        </Suspense>
+      )} />
 
       {/* Protected admin routes */}
 
