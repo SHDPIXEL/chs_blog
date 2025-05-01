@@ -232,8 +232,9 @@ export const AssetManagerProvider: React.FC<AssetManagerProviderProps> = ({
       isSelectMode: boolean = false,
     ) => {
       setIsOpen(true);
-      console.log("onSelect : " + onSelect);
-      setOnAssetSelect(onSelect);
+      setOnAssetSelect(
+        onSelect
+      );
       setSelectedAsset(null);
       setSelectedAssets([]);
       setMultiSelect(allowMultiple);
@@ -254,9 +255,13 @@ export const AssetManagerProvider: React.FC<AssetManagerProviderProps> = ({
   // Close asset manager
   const closeAssetManager = useCallback(() => {
     setIsOpen(false);
-    setOnAssetSelect(undefined);
-    setSelectedAsset(null);
-    setSelectedAssets([]);
+    console.log("closing");
+    console.log("onAssetSelect : " + onAssetSelect);
+    console.log("selectedAsset : " + selectedAsset);
+    if (onAssetSelect) onAssetSelect(selectedAsset ?? []);
+    //  setOnAssetSelect(undefined);
+    //  setSelectedAsset(null);
+    //  setSelectedAssets([]);
     setMultiSelect(false);
   }, []);
 

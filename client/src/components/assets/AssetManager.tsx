@@ -48,10 +48,6 @@ const AssetManager: React.FC = () => {
     onAssetSelect,
   } = useAssetManager();
 
-  // Debug output
-  console.log("multiSelect : " + multiSelect);
-  console.log("selectMode : " + selectMode);
-
   const [activeTab, setActiveTab] = useState<string>("browse");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -124,6 +120,8 @@ const AssetManager: React.FC = () => {
   // Handle selecting an asset
   const handleSelectAsset = (asset: Asset) => {
     // Always set the selected asset for the details panel
+    console.log("handleSelectAsset");
+    console.log("asset : " , asset);
     setSelectedAsset(asset);
 
     // In multi-select mode, we don't auto-close or auto-select
@@ -148,6 +146,9 @@ const AssetManager: React.FC = () => {
 
   // Handle final selection confirmation for both modes
   const handleConfirmSelection = () => {
+    console.log("handleConfirmSelection");
+    console.log("onAssetSelect : " + onAssetSelect);
+    console.log("selectedAsset : " + selectedAsset);
     if (onAssetSelect) {
       if (multiSelect) {
         // In multi-select mode, pass the array of assets
@@ -180,9 +181,6 @@ const AssetManager: React.FC = () => {
         return "";
     }
   };
-
-  console.log("multiSelect : " + multiSelect);
-  console.log("selectMode : " + selectMode);
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && closeAssetManager()}>
