@@ -25,34 +25,78 @@ const NotificationsList: React.FC = () => {
   const queryClient = useQueryClient();
   const [showRead, setShowRead] = useState(false);
 
-  // Fetch notifications
+  // Fetch notifications with error handling for unauthorized requests
   const { data: notifications, isLoading, error } = useQuery<Notification[]>({
     queryKey: ['/api/notifications'],
+    queryFn: async () => {
+      try {
+        const response = await apiRequest('GET', '/api/notifications');
+        return response.json();
+      } catch (error) {
+        console.error('Error fetching notifications:', error);
+        // Return empty array to avoid breaking the UI
+        return [];
+      }
+    },
   });
 
-  // Mark notification as read
+  // Mark notification as read with improved error handling
   const markAsReadMutation = useMutation({
     mutationFn: async (id: number) => {
-      const response = await apiRequest('PATCH', `/api/notifications/${id}`);
-      return response.json();
+      try {
+        const response = await apiRequest('PATCH', `/api/notifications/${id}`);
+        return response.json();
+      } catch (error: any) {
+        console.error('Error marking notification as read:', error);
+        // Check for authentication errors
+        if (error.message?.includes('401') || error.message?.includes('403')) {
+          toast({
+            title: 'Authentication Error',
+            description: 'Please log in again to continue.',
+            variant: 'destructive',
+          });
+        } else {
+          toast({
+            title: 'Error',
+            description: 'Could not mark notification as read.',
+            variant: 'destructive',
+          });
+        }
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
     },
     onError: (error: Error) => {
-      toast({
-        title: 'Error',
-        description: 'Could not mark notification as read.',
-        variant: 'destructive',
-      });
+      // Additional error handling if needed
     },
   });
 
-  // Mark all notifications as read
+  // Mark all notifications as read with improved error handling
   const markAllAsReadMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest('PATCH', '/api/notifications');
-      return response.json();
+      try {
+        const response = await apiRequest('PATCH', '/api/notifications');
+        return response.json();
+      } catch (error: any) {
+        console.error('Error marking all notifications as read:', error);
+        // Check for authentication errors
+        if (error.message?.includes('401') || error.message?.includes('403')) {
+          toast({
+            title: 'Authentication Error',
+            description: 'Please log in again to continue.',
+            variant: 'destructive',
+          });
+        } else {
+          toast({
+            title: 'Error',
+            description: 'Could not mark all notifications as read.',
+            variant: 'destructive',
+          });
+        }
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
@@ -61,12 +105,8 @@ const NotificationsList: React.FC = () => {
         description: 'All notifications marked as read',
       });
     },
-    onError: (error: Error) => {
-      toast({
-        title: 'Error',
-        description: 'Could not mark all notifications as read.',
-        variant: 'destructive',
-      });
+    onError: () => {
+      // Additional error handling if needed - already handled in mutationFn
     },
   });
 
