@@ -89,6 +89,11 @@ export const articles = pgTable("articles", {
   // Statistics
   viewCount: integer("view_count").default(0).notNull(),
   
+  // Review and approval fields
+  reviewRemarks: text("review_remarks"),
+  reviewedBy: integer("reviewed_by").references(() => users.id),
+  reviewedAt: timestamp("reviewed_at"),
+  
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -156,6 +161,10 @@ export const updateArticleSchema = z.object({
   published: z.boolean().optional(),
   // Accept any string for featuredImage, including relative paths
   featuredImage: z.string().optional().nullable(),
+  // Review fields
+  reviewRemarks: z.string().optional().nullable(),
+  reviewedBy: z.number().optional().nullable(),
+  reviewedAt: z.string().optional().nullable(),
 });
 
 // Define asset schemas

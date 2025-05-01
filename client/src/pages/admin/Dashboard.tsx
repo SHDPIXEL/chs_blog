@@ -1,7 +1,9 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
+import { Link } from 'wouter';
 import AdminLayout from '@/components/layouts/AdminLayout';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -34,6 +36,7 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   Users,
   BookOpen,
@@ -43,6 +46,8 @@ import {
   PieChart as PieChartIcon,
   TrendingUp,
   Clock,
+  AlertCircle,
+  CheckSquare,
 } from 'lucide-react';
 
 interface DashboardStats {
@@ -93,6 +98,16 @@ const AdminDashboard: React.FC = () => {
     queryFn: async () => {
       const res = await apiRequest('GET', '/api/admin/dashboard');
       return res.json();
+    }
+  });
+  
+  // Get count of blogs awaiting approval
+  const { data: pendingApprovals } = useQuery<{ count: number }>({
+    queryKey: ['/api/admin/articles/count', 'review'],
+    queryFn: async () => {
+      const res = await apiRequest('GET', '/api/admin/articles?status=review');
+      // Return the count of articles in review status
+      return { count: Array.isArray(res.json()) ? res.json().length : 0 };
     }
   });
 

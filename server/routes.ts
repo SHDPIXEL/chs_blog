@@ -1066,8 +1066,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Authentication required" });
       }
       
-      // Get all articles
-      const articles = await storage.searchArticles({});
+      // Get status filter from query params
+      const statusFilter = req.query.status as string | undefined;
+      
+      // Build filters
+      const filters: any = {};
+      if (statusFilter) {
+        filters.status = statusFilter;
+      }
+      
+      // Get articles
+      const articles = await storage.searchArticles(filters);
       
       // Prepare extended article info
       const extendedArticles = await Promise.all(articles.articles.map(async article => {
