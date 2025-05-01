@@ -6,6 +6,7 @@ import { Badge } from './badge';
 import { useToast } from '@/hooks/use-toast';
 import { Bell, CheckCheck, RefreshCw } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { apiRequest } from '@/lib/queryClient';
 
 // Define Notification type based on the database schema
 interface Notification {
@@ -32,15 +33,7 @@ const NotificationsList: React.FC = () => {
   // Mark notification as read
   const markAsReadMutation = useMutation({
     mutationFn: async (id: number) => {
-      const response = await fetch(`/api/notifications/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to mark notification as read');
-      }
-      
+      const response = await apiRequest('PATCH', `/api/notifications/${id}`);
       return response.json();
     },
     onSuccess: () => {
@@ -58,15 +51,7 @@ const NotificationsList: React.FC = () => {
   // Mark all notifications as read
   const markAllAsReadMutation = useMutation({
     mutationFn: async () => {
-      const response = await fetch('/api/notifications', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to mark all notifications as read');
-      }
-      
+      const response = await apiRequest('PATCH', '/api/notifications');
       return response.json();
     },
     onSuccess: () => {
