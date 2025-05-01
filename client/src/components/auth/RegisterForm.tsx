@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { RegisterFormData } from '@/types/auth';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/hooks/use-auth';
 import { Loader2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
@@ -48,7 +48,7 @@ interface RegisterFormProps {
 }
 
 const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess }) => {
-  const { register, isLoading, error } = useAuth();
+  const { registerMutation, isLoading, error } = useAuth();
 
   const form = useForm<z.infer<typeof registerFormSchema>>({
     resolver: zodResolver(registerFormSchema),
@@ -71,7 +71,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess }) => {
         role: values.role,
       };
       
-      await register(registerData);
+      await registerMutation.mutateAsync(registerData);
       form.reset();
       if (onSuccess) {
         onSuccess();

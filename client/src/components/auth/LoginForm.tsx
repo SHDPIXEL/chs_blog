@@ -15,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { LoginFormData } from '@/types/auth';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/hooks/use-auth';
 import { Loader2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
@@ -28,15 +28,15 @@ const loginFormSchema = z.object({
 
 const LoginForm: React.FC = () => {
   const [location, setLocation] = useLocation();
-  const { login, isLoading, error, user, isAuthenticated } = useAuth();
+  const { loginMutation, isLoading, error, user } = useAuth();
 
   // Redirect to appropriate dashboard if already logged in
   React.useEffect(() => {
-    if (isAuthenticated && user) {
+    if (user) {
       const redirectPath = user.role === 'admin' ? '/admin/dashboard' : '/author/dashboard';
       setLocation(redirectPath);
     }
-  }, [isAuthenticated, user, setLocation]);
+  }, [user, setLocation]);
 
   const form = useForm<z.infer<typeof loginFormSchema>>({
     resolver: zodResolver(loginFormSchema),
@@ -54,7 +54,7 @@ const LoginForm: React.FC = () => {
         password: values.password,
       };
       
-      await login(loginData);
+      await loginMutation.mutateAsync(loginData);
       // Redirect is handled in the useEffect
     } catch (error) {
       // Error is handled in the auth context
