@@ -58,9 +58,9 @@ const Sidebar: React.FC<SidebarProps> = ({ role }) => {
 
   return (
     <div className="flex flex-col h-full bg-white border-r border-gray-200">
-      <div className="flex items-center p-4 border-b">
-        <SquarePen className="h-6 w-6 text-primary mr-2" />
-        <h1 className="text-xl font-bold">
+      <div className="flex items-center p-4 border-b border-[#ffedd2]">
+        <SquarePen className="h-6 w-6 text-[#cc0033] mr-2" />
+        <h1 className="text-xl font-bold text-[#333a3d]">
           BlogCMS {role === 'admin' ? 'Admin' : 'Author'}
         </h1>
       </div>
@@ -74,14 +74,14 @@ const Sidebar: React.FC<SidebarProps> = ({ role }) => {
             <a className={cn(
               "flex items-center px-2 py-2 text-sm font-medium rounded-md",
               location === item.href 
-                ? "bg-gray-100 text-gray-900" 
-                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                ? "bg-[#ffedd2] text-[#333a3d]" 
+                : "text-[#333a3d]/70 hover:bg-[#ffedd2]/30 hover:text-[#333a3d]"
             )}>
               <span className={cn(
                 "mr-3",
                 location === item.href
-                  ? "text-gray-500"
-                  : "text-gray-400 group-hover:text-gray-500"
+                  ? "text-[#db541c]"
+                  : "text-[#333a3d]/60 group-hover:text-[#db541c]"
               )}>
                 {item.icon}
               </span>
@@ -91,21 +91,21 @@ const Sidebar: React.FC<SidebarProps> = ({ role }) => {
         ))}
       </nav>
       
-      <div className="p-4 border-t border-gray-200">
+      <div className="p-4 border-t border-[#ffedd2]">
         <div className="flex items-center">
           <div className="flex-shrink-0">
-            <div className="h-9 w-9 rounded-full bg-gray-100 flex items-center justify-center">
+            <div className="h-9 w-9 rounded-full bg-[#ffedd2] flex items-center justify-center">
               {role === 'admin' 
-                ? <UserCog className="h-5 w-5 text-gray-700" />
-                : <User className="h-5 w-5 text-gray-700" />
+                ? <UserCog className="h-5 w-5 text-[#db541c]" />
+                : <User className="h-5 w-5 text-[#db541c]" />
               }
             </div>
           </div>
           <div className="ml-3">
-            <p className="text-sm font-medium text-gray-700">{user?.name || 'User'}</p>
+            <p className="text-sm font-medium text-[#333a3d]">{user?.name || 'User'}</p>
             <Button 
               variant="link" 
-              className="p-0 h-auto text-xs font-medium text-primary"
+              className="p-0 h-auto text-xs font-medium text-[#cc0033]"
               onClick={handleLogout}
             >
               <LogOut className="h-3 w-3 mr-1" />

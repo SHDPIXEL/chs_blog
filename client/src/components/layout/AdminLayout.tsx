@@ -39,10 +39,10 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   }
 
   return (
-    <div className="h-screen flex overflow-hidden bg-gray-100">
+    <div className="h-screen flex overflow-hidden bg-[#ffedd2]/10">
       {/* Mobile sidebar */}
       <div className={`md:hidden fixed inset-0 flex z-40 ${sidebarOpen ? 'block' : 'hidden'}`}>
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={() => setSidebarOpen(false)} />
+        <div className="fixed inset-0 bg-[#333a3d]/60" onClick={() => setSidebarOpen(false)} />
         <div className="relative flex-1 flex flex-col max-w-xs w-full bg-white">
           <div className="absolute top-0 right-0 -mr-12 pt-2">
             <Button 
@@ -73,7 +73,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         <div className="relative z-10 flex-shrink-0 flex h-16 bg-white shadow">
           <Button 
             variant="ghost" 
-            className="md:hidden px-4 border-r border-gray-200 text-gray-500 focus:outline-none"
+            className="md:hidden px-4 border-r border-gray-200 text-[#333a3d] focus:outline-none"
             onClick={() => setSidebarOpen(true)}
           >
             <span className="sr-only">Open sidebar</span>
@@ -84,13 +84,13 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             <div className="flex-1 flex">
               <div className="w-full flex md:ml-0">
                 <label htmlFor="search-field" className="sr-only">Search</label>
-                <div className="relative w-full text-gray-400 focus-within:text-gray-600">
+                <div className="relative w-full text-[#333a3d]/60 focus-within:text-[#333a3d]">
                   <div className="absolute inset-y-0 left-0 flex items-center pointer-events-none px-3">
                     <Search className="h-5 w-5" />
                   </div>
                   <Input
                     id="search-field"
-                    className="block w-full h-full pl-10 pr-3 py-2 border-transparent text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-0 focus:border-transparent sm:text-sm"
+                    className="block w-full h-full pl-10 pr-3 py-2 border-transparent text-[#333a3d] placeholder-[#333a3d]/50 focus:outline-none focus:ring-0 focus:border-transparent sm:text-sm"
                     placeholder="Search"
                     type="search"
                   />
@@ -101,7 +101,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             <div className="ml-4 flex items-center md:ml-6">
               <Button
                 variant="ghost"
-                className="p-1 rounded-full text-gray-400 hover:text-gray-500"
+                className="p-1 rounded-full text-[#333a3d]/70 hover:text-[#333a3d]"
               >
                 <span className="sr-only">View notifications</span>
                 <Bell className="h-6 w-6" />
@@ -110,7 +110,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
           </div>
         </div>
 
-        <main className="flex-1 relative overflow-y-auto focus:outline-none">
+        <main className="flex-1 relative overflow-y-auto focus:outline-none bg-white">
           {children}
         </main>
       </div>
