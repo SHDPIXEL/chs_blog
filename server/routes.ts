@@ -460,7 +460,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid article ID" });
       }
       
-      const { status, remarks } = req.body;
+      const { status, remarks, scheduledPublishAt } = req.body;
+      
+      console.log('Admin article status update request:', { status, remarks, scheduledPublishAt });
       
       // Validate status
       if (!Object.values(ArticleStatus).includes(status)) {
