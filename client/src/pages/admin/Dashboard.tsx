@@ -79,6 +79,23 @@ interface ActivityItem {
   timestamp: string;
 }
 
+interface ExtendedArticle {
+  id: number;
+  title: string;
+  content: string;
+  excerpt?: string;
+  authorId: number;
+  status: string;
+  published: boolean;
+  createdAt: string;
+  updatedAt: string;
+  featuredImage?: string;
+  author: string;
+  categories: string[];
+  viewCount: number;
+  featured: boolean;
+}
+
 interface DashboardData {
   totalUsers: number;
   totalPosts: number;
@@ -101,13 +118,13 @@ const AdminDashboard: React.FC = () => {
     }
   });
   
-  // Get count of blogs awaiting approval
-  const { data: pendingApprovals } = useQuery<{ count: number }>({
-    queryKey: ['/api/admin/articles/count', 'review'],
+  // Get articles awaiting approval
+  const { data: pendingApprovals, isLoading: isLoadingApprovals } = useQuery<any[]>({
+    queryKey: ['/api/admin/articles', 'review'],
     queryFn: async () => {
       const res = await apiRequest('GET', '/api/admin/articles?status=review');
-      // Return the count of articles in review status
-      return { count: Array.isArray(res.json()) ? res.json().length : 0 };
+      const data = await res.json();
+      return data;
     }
   });
 
@@ -144,6 +161,25 @@ const AdminDashboard: React.FC = () => {
             Welcome to your dashboard. Here's an overview of your blog platform.
           </p>
         </div>
+        
+        {/* Pending approvals notification */}
+        {!isLoadingApprovals && pendingApprovals && pendingApprovals.length > 0 && (
+          <Alert variant="default" className="bg-amber-50 border-amber-200">
+            <AlertCircle className="h-4 w-4 text-amber-600" />
+            <AlertTitle className="text-amber-800">Pending Blog Approvals</AlertTitle>
+            <AlertDescription className="flex flex-row items-center justify-between">
+              <span className="text-amber-700">
+                You have {pendingApprovals.length} blog post{pendingApprovals.length > 1 ? 's' : ''} waiting for approval
+              </span>
+              <Button asChild variant="outline" className="border-amber-500 hover:bg-amber-100 text-amber-800">
+                <Link to="/admin/blog-approvals">
+                  <CheckSquare className="mr-2 h-4 w-4" />
+                  Review Blogs
+                </Link>
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Stats cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

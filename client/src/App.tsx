@@ -36,7 +36,7 @@ function Router() {
       <ProtectedRoute path="/admin/dashboard" component={AdminDashboard} role="admin" />
       <ProtectedRoute path="/admin/authors" component={AuthorManagement} role="admin" />
       <ProtectedRoute path="/admin/blogs" component={BlogManagement} role="admin" />
-      <ProtectedRoute path="/admin/approvals" component={BlogApprovals} role="admin" />
+      <ProtectedRoute path="/admin/blog-approvals" component={BlogApprovals} role="admin" />
       
       {/* Protected author routes */}
       <ProtectedRoute path="/author/dashboard" component={AuthorDashboard} role="author" />
