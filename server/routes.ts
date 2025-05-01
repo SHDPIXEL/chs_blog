@@ -604,6 +604,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: 'Failed to fetch article' });
     }
   });
+  
+  // Public endpoint for author profile and published articles
+  app.get("/api/authors/:id/public", async (req, res) => {
+    try {
+      const authorId = parseInt(req.params.id);
+      if (isNaN(authorId)) {
+        return res.status(400).json({ message: "Invalid author ID" });
+      }
+      
+      // Get author info
+      const author = await storage.getUser(authorId);
+      if (!author) {
+        return res.status(404).json({ message: "Author not found" });
+      }
+      
+      // Get author's published articles
+      const articles = await storage.searchArticles({
+        authorId,
+        published: true,
+        page: 1,
+        limit: 10
+      });
+      
+      // Return author info but limited fields for security
+      const { password, email, ...authorPublicInfo } = author;
+      
+      return res.json({
+        author: authorPublicInfo,
+        articles: articles.articles,
+        totalArticles: articles.total
+      });
+    } catch (error) {
+      console.error('Error fetching author profile:', error);
+      res.status(500).json({ message: 'Failed to fetch author profile' });
+    }
+  });
 
   app.get("/api/articles/:id/full", authenticateToken, requireAuth, async (req: AuthRequest, res) => {
     try {

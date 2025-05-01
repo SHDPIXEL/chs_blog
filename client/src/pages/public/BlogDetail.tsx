@@ -121,7 +121,11 @@ const BlogDetail: React.FC = () => {
             </Avatar>
             <div>
               <div className="flex items-center gap-2">
-                <p className="font-medium">{articleData.author?.name || 'Anonymous'}</p>
+                <Link href={`/authors/${articleData.author?.id}`}>
+                  <p className="font-medium hover:text-blue-600 transition-colors cursor-pointer">
+                    {articleData.author?.name || 'Anonymous'}
+                  </p>
+                </Link>
                 {coAuthors.length > 0 && (
                   <div className="flex -space-x-2 ml-2">
                     {coAuthors.slice(0, 3).map((coAuthor: any, index: number) => (
@@ -228,7 +232,9 @@ const BlogDetail: React.FC = () => {
                     <p className="text-gray-700 mb-4">
                       {articleData.author?.bio || 'Academic researcher and writer specializing in philosophy and ethics.'}
                     </p>
-                    <Button variant="outline">View Profile</Button>
+                    <Link href={`/authors/${articleData.author?.id}`}>
+                      <Button variant="outline">View Profile</Button>
+                    </Link>
                   </div>
                 </div>
               </CardContent>
@@ -251,7 +257,9 @@ const BlogDetail: React.FC = () => {
                           <p className="text-gray-700 text-sm mb-4">
                             {coAuthor.bio || 'Contributor to this article'}
                           </p>
-                          <Button variant="outline" size="sm">View Profile</Button>
+                          <Link href={`/authors/${coAuthor.id}`}>
+                            <Button variant="outline" size="sm">View Profile</Button>
+                          </Link>
                         </div>
                       </div>
                     </CardContent>

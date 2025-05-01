@@ -21,7 +21,7 @@ import AdminNewBlog from "@/pages/admin/NewBlog";
 import AdminEditBlog from "@/pages/admin/EditBlog";
 import AdminMyBlogs from "@/pages/admin/MyBlogs";
 import AuthorDashboard from "@/pages/author/Dashboard";
-import AuthorProfile from "@/pages/author/Profile";
+import AuthorProfilePage from "@/pages/author/Profile";
 import AuthorBlogs from "@/pages/author/Blogs";
 import NewBlog from "@/pages/author/NewBlog";
 import EditBlog from "@/pages/author/EditBlog";
@@ -31,6 +31,7 @@ import NotFound from "@/pages/not-found";
 // Public blog pages
 import Blogs from "./pages/public/Blogs";
 import BlogDetail from "./pages/public/BlogDetail";
+import PublicAuthorProfile from "./pages/public/AuthorProfile";
 import TestPage from "./pages/public/TestPage";
 
 function Router() {
@@ -44,6 +45,7 @@ function Router() {
       
       <Route path="/blogs" component={Blogs} />
       <Route path="/blogs/:id" component={BlogDetail} />
+      <Route path="/authors/:id" component={PublicAuthorProfile} />
       <Route path="/test-blog" component={TestPage} />
 
       {/* Protected admin routes */}
@@ -92,7 +94,7 @@ function Router() {
       />
       <ProtectedRoute
         path="/author/profile"
-        component={AuthorProfile}
+        component={AuthorProfilePage}
         role="author"
       />
       <ProtectedRoute
