@@ -31,7 +31,7 @@ interface AdminLayoutProps {
 
 const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const [location] = useLocation();
-  const { user, logoutMutation } = useAuth();
+  const { user, logout } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navigation = [
@@ -87,8 +87,20 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         .toUpperCase()
     : 'AD';
 
+  // Create local state for logout pending
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  
   const handleLogout = () => {
-    logoutMutation.mutate();
+    setIsLoggingOut(true);
+    try {
+      // Call the logout function from auth context
+      logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      // Set logging out status to false after a short delay
+      setTimeout(() => setIsLoggingOut(false), 500);
+    }
   };
 
   const closeMobileMenu = () => {
@@ -204,7 +216,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                   variant="ghost"
                   size="icon"
                   onClick={handleLogout}
-                  disabled={logoutMutation.isPending}
+                  disabled={isLoggingOut}
                 >
                   <LogOut className="h-5 w-5" />
                 </Button>
@@ -253,10 +265,10 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={handleLogout}
-                    disabled={logoutMutation.isPending}
+                    disabled={isLoggingOut}
                   >
                     <LogOut className="mr-2 h-4 w-4" />
-                    {logoutMutation.isPending ? 'Logging out...' : 'Logout'}
+                    {isLoggingOut ? 'Logging out...' : 'Logout'}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
