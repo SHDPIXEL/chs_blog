@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Save, Eye, ImagePlus, Layout, Search, Tags, Users } from 'lucide-react';
+import { ArrowLeft, Save, Eye, ImagePlus, Layout, Search, Tags, Users, Calendar } from 'lucide-react';
 import { ArticleStatus, Asset, Category, Tag, User } from '@shared/schema';
 import { AssetPickerButton } from '@/components/assets';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
@@ -22,6 +22,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
+import { format } from 'date-fns';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Switch } from '@/components/ui/switch';
 
 // Define form schema using zod
 const blogFormSchema = z.object({
@@ -135,6 +139,14 @@ const NewBlogPage: React.FC = () => {
       // Remove customTags as it's not in the API schema
       delete (formattedData as any).customTags;
       
+      // Handle scheduling - only include scheduledPublishAt if useScheduling is true
+      if (!formattedData.useScheduling) {
+        formattedData.scheduledPublishAt = undefined;
+      }
+      
+      // Always delete the useScheduling field as it's only for UI control
+      delete (formattedData as any).useScheduling;
+      
       const res = await apiRequest('POST', '/api/articles', formattedData);
       return await res.json();
     },
@@ -211,6 +223,10 @@ const NewBlogPage: React.FC = () => {
                     <TabsTrigger value="content">
                       <Layout className="w-4 h-4 mr-2" />
                       Content
+                    </TabsTrigger>
+                    <TabsTrigger value="scheduling">
+                      <Calendar className="w-4 h-4 mr-2" />
+                      Scheduling
                     </TabsTrigger>
                     <TabsTrigger value="seo">
                       <Search className="w-4 h-4 mr-2" />
@@ -389,6 +405,122 @@ const NewBlogPage: React.FC = () => {
                         </FormItem>
                       )}
                     />
+                  </TabsContent>
+                  
+                  {/* Scheduling Tab */}
+                  <TabsContent value="scheduling" className="space-y-6 px-4">
+                    <div className="rounded-lg border p-4 bg-muted/30">
+                      <h3 className="text-sm font-medium">Publication Scheduling</h3>
+                      <p className="text-sm text-muted-foreground mt-1 mb-2">
+                        Schedule your blog post to be published automatically at a future date and time
+                      </p>
+                    </div>
+                    
+                    {/* Enable scheduling field */}
+                    <FormField
+                      control={form.control}
+                      name="useScheduling"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-base">Schedule Publication</FormLabel>
+                            <FormDescription>
+                              Automatically publish your blog post at a scheduled date and time
+                            </FormDescription>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    
+                    {/* Scheduled date field */}
+                    {form.watch('useScheduling') && (
+                      <FormField
+                        control={form.control}
+                        name="scheduledPublishAt"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-col">
+                            <FormLabel>Scheduled Publication Date</FormLabel>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <FormControl>
+                                  <Button
+                                    variant="outline"
+                                    className={`w-full pl-3 text-left font-normal ${!field.value ? "text-muted-foreground" : ""}`}
+                                  >
+                                    {field.value ? (
+                                      format(new Date(field.value), "PPP p")
+                                    ) : (
+                                      <span>Pick a date and time</span>
+                                    )}
+                                    <Calendar className="ml-auto h-4 w-4 opacity-50" />
+                                  </Button>
+                                </FormControl>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-0" align="start">
+                                <CalendarComponent
+                                  mode="single"
+                                  selected={field.value ? new Date(field.value) : undefined}
+                                  onSelect={(date) => {
+                                    if (date) {
+                                      // Set time to noon by default
+                                      const scheduledDate = new Date(date);
+                                      scheduledDate.setHours(12, 0, 0, 0);
+                                      field.onChange(scheduledDate.toISOString());
+                                    } else {
+                                      field.onChange(undefined);
+                                    }
+                                  }}
+                                  disabled={(date) => date < new Date()}
+                                  initialFocus
+                                />
+                                <div className="border-t p-3">
+                                  <div className="flex justify-between items-center">
+                                    <FormLabel className="text-xs text-muted-foreground">
+                                      Time
+                                    </FormLabel>
+                                    {field.value && (
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-auto p-2"
+                                        onClick={() => field.onChange(undefined)}
+                                      >
+                                        Clear
+                                      </Button>
+                                    )}
+                                  </div>
+                                  <div className="mt-2 flex space-x-2">
+                                    <Input
+                                      type="time"
+                                      className="w-full"
+                                      value={field.value ? format(new Date(field.value), "HH:mm") : "12:00"}
+                                      onChange={(e) => {
+                                        if (field.value && e.target.value) {
+                                          const [hours, minutes] = e.target.value.split(':').map(Number);
+                                          const newDate = new Date(field.value);
+                                          newDate.setHours(hours, minutes, 0, 0);
+                                          field.onChange(newDate.toISOString());
+                                        }
+                                      }}
+                                    />
+                                  </div>
+                                </div>
+                              </PopoverContent>
+                            </Popover>
+                            <FormDescription>
+                              Choose a future date and time when your blog post will be automatically published
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
                   </TabsContent>
                   
                   {/* SEO Tab */}
