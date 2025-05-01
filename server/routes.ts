@@ -525,13 +525,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const articles = await storage.getPublishedArticles();
       
-      // For each article, fetch the author, categories, and tags
+      // For each article, fetch the author, co-authors, categories, and tags
       const articlesWithRelations = await Promise.all(
         articles.map(async (article) => {
           try {
             const author = article.authorId ? await storage.getUser(article.authorId) : null;
             const categories = await storage.getArticleCategories(article.id);
             const tags = await storage.getArticleTags(article.id);
+            const coAuthors = await storage.getArticleCoAuthors(article.id);
+            
+            // Format co-authors to only include necessary info
+            const formattedCoAuthors = coAuthors.map(coAuthor => ({
+              id: coAuthor.id,
+              name: coAuthor.name,
+              avatarUrl: coAuthor.avatarUrl
+            }));
             
             return {
               ...article,
@@ -541,7 +549,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 avatarUrl: author.avatarUrl 
               } : null,
               categories,
-              tags
+              tags,
+              coAuthors: formattedCoAuthors
             };
           } catch (err) {
             console.error(`Error fetching relations for article ${article.id}:`, err);

@@ -161,19 +161,43 @@ const Blogs: React.FC = () => {
                   </div>
                   <div className="flex flex-col justify-center">
                     <div className="flex items-center mb-2">
-                      <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-300 mr-2">
-                        <img 
-                          src={filteredArticles[0].author?.avatarUrl || '/placeholder-avatar.jpg'} 
-                          alt={filteredArticles[0].author?.name || 'Author'} 
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).style.display = 'none';
-                          }}
-                        />
+                      <div className="flex items-center mr-2">
+                        <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-300 z-10">
+                          <img 
+                            src={filteredArticles[0].author?.avatarUrl || '/placeholder-avatar.jpg'} 
+                            alt={filteredArticles[0].author?.name || 'Author'} 
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = 'none';
+                            }}
+                          />
+                        </div>
+                        {filteredArticles[0].coAuthors && filteredArticles[0].coAuthors.length > 0 && (
+                          <div className="flex -ml-3">
+                            {filteredArticles[0].coAuthors.slice(0, 2).map((coAuthor: any, index: number) => (
+                              <div key={index} className="w-8 h-8 rounded-full overflow-hidden bg-gray-300 border-2 border-white z-20">
+                                <img 
+                                  src={coAuthor.avatarUrl || '/placeholder-avatar.jpg'} 
+                                  alt={coAuthor.name} 
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    (e.target as HTMLImageElement).style.display = 'none';
+                                  }}
+                                />
+                              </div>
+                            ))}
+                            {filteredArticles[0].coAuthors.length > 2 && (
+                              <div className="w-8 h-8 rounded-full bg-gray-200 border-2 border-white flex items-center justify-center text-xs z-30">
+                                +{filteredArticles[0].coAuthors.length - 2}
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                       <div>
                         <p className="text-sm font-medium">
                           {filteredArticles[0].author?.name || 'Anonymous'}
+                          {filteredArticles[0].coAuthors && filteredArticles[0].coAuthors.length > 0 && ' and others'}
                         </p>
                         <p className="text-xs text-gray-500">
                           {formatDate(filteredArticles[0].createdAt.toString())}
@@ -216,18 +240,42 @@ const Blogs: React.FC = () => {
                   </div>
                   <CardContent className="p-5">
                     <div className="flex items-center mb-2">
-                      <div className="w-7 h-7 rounded-full overflow-hidden bg-gray-300 mr-2">
-                        <img 
-                          src={article.author?.avatarUrl || '/placeholder-avatar.jpg'} 
-                          alt={article.author?.name || 'Author'} 
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).style.display = 'none';
-                          }}
-                        />
+                      <div className="flex items-center">
+                        <div className="w-7 h-7 rounded-full overflow-hidden bg-gray-300 mr-2">
+                          <img 
+                            src={article.author?.avatarUrl || '/placeholder-avatar.jpg'} 
+                            alt={article.author?.name || 'Author'} 
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = 'none';
+                            }}
+                          />
+                        </div>
+                        {article.coAuthors && article.coAuthors.length > 0 && (
+                          <div className="flex -space-x-2 mr-2">
+                            {article.coAuthors.slice(0, 2).map((coAuthor: any, index: number) => (
+                              <div key={index} className="w-5 h-5 rounded-full overflow-hidden bg-gray-300 border border-white">
+                                <img 
+                                  src={coAuthor.avatarUrl || '/placeholder-avatar.jpg'} 
+                                  alt={coAuthor.name} 
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    (e.target as HTMLImageElement).style.display = 'none';
+                                  }}
+                                />
+                              </div>
+                            ))}
+                            {article.coAuthors.length > 2 && (
+                              <div className="w-5 h-5 rounded-full bg-gray-200 border border-white flex items-center justify-center text-[10px]">
+                                +{article.coAuthors.length - 2}
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                       <p className="text-xs text-gray-500">
-                        {article.author?.name || 'Anonymous'} • {formatDate(article.createdAt.toString())}
+                        {article.author?.name || 'Anonymous'} 
+                        {article.coAuthors && article.coAuthors.length > 0 && ' and others'} • {formatDate(article.createdAt.toString())}
                       </p>
                     </div>
                     <h3 className="text-lg font-bold text-gray-900 mb-2">
