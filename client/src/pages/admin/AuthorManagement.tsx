@@ -240,27 +240,27 @@ const AuthorManagement: React.FC = () => {
                   </div>
                   <div className="flex items-center space-x-2">
                     <Select
-                      value={roleFilter || ''}
-                      onValueChange={(value) => setRoleFilter(value || null)}
+                      value={roleFilter || 'all_roles'}
+                      onValueChange={(value) => setRoleFilter(value === 'all_roles' ? null : value)}
                     >
                       <SelectTrigger className="w-[130px]">
                         <SelectValue placeholder="Filter Role" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All Roles</SelectItem>
+                        <SelectItem value="all_roles">All Roles</SelectItem>
                         <SelectItem value="admin">Admin</SelectItem>
                         <SelectItem value="author">Author</SelectItem>
                       </SelectContent>
                     </Select>
                     <Select
-                      value={statusFilter || ''}
-                      onValueChange={(value) => setStatusFilter(value || null)}
+                      value={statusFilter || 'all_status'}
+                      onValueChange={(value) => setStatusFilter(value === 'all_status' ? null : value)}
                     >
                       <SelectTrigger className="w-[130px]">
                         <SelectValue placeholder="Filter Status" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All Status</SelectItem>
+                        <SelectItem value="all_status">All Status</SelectItem>
                         <SelectItem value="active">Active</SelectItem>
                         <SelectItem value="inactive">Inactive</SelectItem>
                       </SelectContent>
