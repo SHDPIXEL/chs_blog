@@ -207,6 +207,28 @@ const EditBlogPage: React.FC = () => {
       // Remove customTags as it's not in the API schema
       delete (formattedData as any).customTags;
       
+      // Handle scheduling - only include scheduledPublishAt if useScheduling is true
+      if (!formattedData.useScheduling) {
+        formattedData.scheduledPublishAt = null;
+      } else if (formattedData.status !== ArticleStatus.PUBLISHED) {
+        // If not publishing, don't schedule
+        formattedData.useScheduling = false;
+        formattedData.scheduledPublishAt = null;
+      }
+      
+      // Remove useScheduling flag as it's not in the API schema
+      delete (formattedData as any).useScheduling;
+      
+      // Auto-generate slug from title if not provided
+      if (!formattedData.slug && formattedData.title) {
+        formattedData.slug = formattedData.title
+          .toLowerCase()
+          .replace(/[^\w\s-]/g, '') // Remove special chars
+          .replace(/\s+/g, '-') // Replace spaces with hyphens
+          .replace(/--+/g, '-') // Replace multiple hyphens with single hyphen
+          .trim();
+      }
+      
       const res = await apiRequest('PATCH', `/api/articles/${articleId}`, formattedData);
       return await res.json();
     },
@@ -534,6 +556,59 @@ const EditBlogPage: React.FC = () => {
                         </FormItem>
                       )}
                     />
+                    
+                    {/* Scheduling section (only visible if user can publish and status is PUBLISHED) */}
+                    {canPublish && form.watch("status") === ArticleStatus.PUBLISHED && (
+                      <div className="space-y-4 border rounded-md p-4 bg-muted/10">
+                        <h3 className="font-medium">Publishing Schedule</h3>
+                        
+                        <FormField
+                          control={form.control}
+                          name="useScheduling"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md p-2">
+                              <FormControl>
+                                <Checkbox
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                              <div className="space-y-1 leading-none">
+                                <FormLabel>
+                                  Schedule for later publication
+                                </FormLabel>
+                                <FormDescription>
+                                  Set a future date and time when this post should be published
+                                </FormDescription>
+                              </div>
+                            </FormItem>
+                          )}
+                        />
+                        
+                        {form.watch("useScheduling") && (
+                          <FormField
+                            control={form.control}
+                            name="scheduledPublishAt"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Publication Date and Time</FormLabel>
+                                <FormControl>
+                                  <Input
+                                    type="datetime-local"
+                                    {...field}
+                                    min={new Date().toISOString().slice(0, 16)}
+                                  />
+                                </FormControl>
+                                <FormDescription>
+                                  The blog will automatically publish at this date and time
+                                </FormDescription>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        )}
+                      </div>
+                    )}
                   </TabsContent>
                   
                   {/* SEO Tab */}
@@ -544,6 +619,28 @@ const EditBlogPage: React.FC = () => {
                         Optimize your blog post for search engines to improve visibility
                       </p>
                     </div>
+                    
+                    {/* Slug field */}
+                    <FormField
+                      control={form.control}
+                      name="slug"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>URL Slug</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="custom-url-path" 
+                              {...field} 
+                              value={field.value || ''}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Custom URL path for this article (leave empty for auto-generation from title)
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   
                     {/* Meta Title field */}
                     <FormField
@@ -585,6 +682,28 @@ const EditBlogPage: React.FC = () => {
                           </FormControl>
                           <FormDescription>
                             Summary that appears in search results (max 160 characters)
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    {/* Canonical URL field */}
+                    <FormField
+                      control={form.control}
+                      name="canonicalUrl"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Canonical URL</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="https://original-source.com/page" 
+                              {...field} 
+                              value={field.value || ''}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            URL of the original source if this content is syndicated from another site
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
