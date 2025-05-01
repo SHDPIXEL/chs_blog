@@ -221,11 +221,19 @@ export class DatabaseStorage implements IStorage {
 
   async createArticle(insertArticle: InsertArticle): Promise<Article> {
     // Create a copy of insertArticle data with potential modifications
-    const articleData = { ...insertArticle };
+    const articleData: Record<string, any> = { ...insertArticle };
     
     // Generate slug from title if not provided
     if (!articleData.slug && articleData.title) {
       articleData.slug = this.generateSlug(articleData.title);
+    }
+    
+    // Handle scheduledPublishAt field if it's a string
+    if (typeof articleData.scheduledPublishAt === 'string' && articleData.scheduledPublishAt) {
+      articleData.scheduledPublishAt = new Date(articleData.scheduledPublishAt);
+    } else if (articleData.scheduledPublishAt === undefined) {
+      // Remove undefined values to avoid database type errors
+      delete articleData.scheduledPublishAt;
     }
     
     // Set publishedAt timestamp if article is published
@@ -239,15 +247,22 @@ export class DatabaseStorage implements IStorage {
 
   async updateArticle(id: number, updateData: Partial<UpdateArticle>): Promise<Article | undefined> {
     // Create a copy of updateData
-    const dataToUpdate = { ...updateData };
+    const dataToUpdate: Record<string, any> = { ...updateData };
     
     // Convert date string fields to Date objects if they exist
     if (dataToUpdate.reviewedAt) {
       dataToUpdate.reviewedAt = new Date(dataToUpdate.reviewedAt);
     }
     
+    // Special handling for scheduled publishing
     if (dataToUpdate.scheduledPublishAt) {
       dataToUpdate.scheduledPublishAt = new Date(dataToUpdate.scheduledPublishAt);
+    } else if (dataToUpdate.scheduledPublishAt === null) {
+      // If explicitly set to null, maintain it as null
+      dataToUpdate.scheduledPublishAt = null;
+    } else {
+      // If undefined, remove it from the update to avoid type errors
+      delete dataToUpdate.scheduledPublishAt;
     }
     
     if (dataToUpdate.publishedAt) {
@@ -575,8 +590,16 @@ export class DatabaseStorage implements IStorage {
     // Extract relation data
     const { categoryIds, tagIds, coAuthorIds, ...articleData } = extendedArticle;
     
+    // Handle scheduledPublishAt field if it's a string or undefined
+    if (typeof articleData.scheduledPublishAt === 'string' && articleData.scheduledPublishAt) {
+      articleData.scheduledPublishAt = new Date(articleData.scheduledPublishAt);
+    } else if (articleData.scheduledPublishAt === undefined) {
+      // Remove undefined values to avoid database type errors
+      delete (articleData as any).scheduledPublishAt;
+    }
+    
     // Create the article
-    const article = await this.createArticle(articleData);
+    const article = await this.createArticle(articleData as InsertArticle);
     
     // Add categories if provided
     if (categoryIds && categoryIds.length > 0) {
@@ -620,6 +643,14 @@ export class DatabaseStorage implements IStorage {
   async updateExtendedArticle(id: number, extendedArticle: Partial<ExtendedUpdateArticle>): Promise<Article | undefined> {
     // Extract relation data
     const { categoryIds, tagIds, coAuthorIds, ...articleData } = extendedArticle;
+    
+    // Handle scheduledPublishAt field if it's a string
+    if (typeof articleData.scheduledPublishAt === 'string' && articleData.scheduledPublishAt) {
+      articleData.scheduledPublishAt = new Date(articleData.scheduledPublishAt);
+    } else if (articleData.scheduledPublishAt === null) {
+      // If explicitly set to null, maintain it as null
+      articleData.scheduledPublishAt = null;
+    }
     
     // Update the article basic data
     const article = await this.updateArticle(id, articleData);

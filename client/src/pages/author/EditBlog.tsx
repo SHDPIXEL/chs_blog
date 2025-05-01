@@ -209,11 +209,11 @@ const EditBlogPage: React.FC = () => {
       
       // Handle scheduling - only include scheduledPublishAt if useScheduling is true
       if (!formattedData.useScheduling) {
-        formattedData.scheduledPublishAt = null;
+        formattedData.scheduledPublishAt = undefined; // Use undefined instead of null to avoid type errors
       } else if (formattedData.status !== ArticleStatus.PUBLISHED) {
         // If not publishing, don't schedule
         formattedData.useScheduling = false;
-        formattedData.scheduledPublishAt = null;
+        formattedData.scheduledPublishAt = undefined; // Use undefined instead of null
       }
       
       // Remove useScheduling flag as it's not in the API schema
