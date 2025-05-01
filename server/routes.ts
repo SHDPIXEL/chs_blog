@@ -19,6 +19,7 @@ import {
   insertTagSchema,
   UserRole,
   ArticleStatus,
+  NotificationType,
   insertArticleSchema,
   searchAssetsSchema,
   updateAssetSchema
@@ -476,8 +477,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status,
         reviewRemarks: remarks || null,
         reviewedBy: req.user.id,
-        reviewedAt: new Date()
+        reviewedAt: new Date().toISOString()
       });
+      
+      // Create a notification for the author
+      if (status === ArticleStatus.PUBLISHED) {
+        try {
+          await storage.createNotification({
+            userId: article.authorId,
+            type: NotificationType.ARTICLE_APPROVED,
+            title: "Article Approved",
+            message: `Your article "${article.title}" has been approved and published.`,
+            articleId: article.id,
+            read: false
+          });
+        } catch (notificationError) {
+          console.error("Error creating notification:", notificationError);
+          // Continue execution even if notification creation fails
+        }
+      } else if (status === ArticleStatus.DRAFT && article.status === ArticleStatus.REVIEW) {
+        try {
+          await storage.createNotification({
+            userId: article.authorId,
+            type: NotificationType.ARTICLE_REJECTED,
+            title: "Article Needs Revision",
+            message: `Your article "${article.title}" requires revisions before it can be published.`,
+            articleId: article.id,
+            read: false
+          });
+        } catch (notificationError) {
+          console.error("Error creating notification:", notificationError);
+          // Continue execution even if notification creation fails
+        }
+      }
       
       return res.json(updatedArticle);
     } catch (error) {
@@ -1118,13 +1150,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid status" });
       }
       
-      // Update each article's status
+      // Update each article's status and send notifications
       const results = await Promise.all(
         ids.map(async (id) => {
           try {
-            const article = await storage.updateArticleStatus(id, status);
-            return { id, success: !!article };
+            // First get the article to know who the author is and current status
+            const article = await storage.getArticle(id);
+            if (!article) {
+              return { id, success: false };
+            }
+            
+            // Update the article status
+            const updatedArticle = await storage.updateArticleStatus(id, status);
+            
+            // Create notifications based on status change
+            if (updatedArticle) {
+              if (status === ArticleStatus.PUBLISHED) {
+                try {
+                  await storage.createNotification({
+                    userId: article.authorId,
+                    type: NotificationType.ARTICLE_APPROVED,
+                    title: "Article Approved",
+                    message: `Your article "${article.title}" has been approved and published.`,
+                    articleId: article.id,
+                    read: false
+                  });
+                } catch (notificationError) {
+                  console.error("Error creating notification:", notificationError);
+                  // Continue execution even if notification creation fails
+                }
+              } else if (status === ArticleStatus.DRAFT && article.status === ArticleStatus.REVIEW) {
+                try {
+                  await storage.createNotification({
+                    userId: article.authorId,
+                    type: NotificationType.ARTICLE_REJECTED,
+                    title: "Article Needs Revision",
+                    message: `Your article "${article.title}" requires revisions before it can be published.`,
+                    articleId: article.id,
+                    read: false
+                  });
+                } catch (notificationError) {
+                  console.error("Error creating notification:", notificationError);
+                  // Continue execution even if notification creation fails
+                }
+              }
+            }
+            
+            return { id, success: !!updatedArticle };
           } catch (error) {
+            console.error(`Error updating article ${id}:`, error);
             return { id, success: false };
           }
         })
