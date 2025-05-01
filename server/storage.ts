@@ -204,19 +204,19 @@ export class DatabaseStorage implements IStorage {
     // Extract just the IDs into an array
     const articleIds = coAuthoredIds.map(item => item.articleId);
     
-    // Query for all articles with these IDs
-    let query = db
-      .select()
-      .from(articles)
-      .where(inArray(articles.id, articleIds));
+    // Create conditions array
+    const conditions = [inArray(articles.id, articleIds)];
     
-    // Apply status filter if provided
+    // Add status condition if provided
     if (status) {
-      query = query.where(eq(articles.status, status));
+      conditions.push(eq(articles.status, status));
     }
     
-    // Get and return the articles
-    return await query;
+    // Query with all conditions
+    return await db
+      .select()
+      .from(articles)
+      .where(and(...conditions));
   }
 
   async createArticle(insertArticle: InsertArticle): Promise<Article> {
@@ -225,9 +225,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateArticle(id: number, updateData: Partial<UpdateArticle>): Promise<Article | undefined> {
+    // Create a copy of updateData
+    const dataToUpdate = { ...updateData };
+    
+    // Convert reviewedAt string to Date if it exists
+    if (dataToUpdate.reviewedAt) {
+      dataToUpdate.reviewedAt = new Date(dataToUpdate.reviewedAt);
+    }
+    
     const [article] = await db.update(articles)
       .set({
-        ...updateData,
+        ...dataToUpdate,
         updatedAt: new Date()
       })
       .where(eq(articles.id, id))
