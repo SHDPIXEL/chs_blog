@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { Comment } from '@shared/schema';
 import { createInitialsAvatar } from '@/lib/avatarUtils';
@@ -33,6 +33,27 @@ export function CommentComponent({ comment, articleId, isReply = false }: Commen
   
   // Generate avatar from author name
   const avatarUrl = createInitialsAvatar(comment.authorName);
+
+  // Check for replies on initial render for reply comments
+  useEffect(() => {
+    // For replies that might have their own replies, we need to check if they have replies
+    if (isReply && (comment.replyCount === undefined || comment.replyCount === null)) {
+      const checkForReplies = async () => {
+        try {
+          const res = await apiRequest('GET', `/api/comments/${comment.id}/replies`);
+          const fetchedReplies = await res.json();
+          if (fetchedReplies.length > 0) {
+            // If we found replies, store them
+            setReplies(fetchedReplies);
+          }
+        } catch (error) {
+          console.error("Error checking for replies", error);
+        }
+      };
+      
+      checkForReplies();
+    }
+  }, [comment.id, isReply, comment.replyCount]);
 
   // Load replies when user clicks to show them
   const loadReplies = async () => {
