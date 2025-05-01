@@ -34,11 +34,13 @@ function Router() {
       <Route path="/auth/register" component={Register} />
       
       {/* Protected admin routes */}
-      <ProtectedRoute path="/admin/dashboard" component={AdminDashboard} role="admin" />
-      <ProtectedRoute path="/admin/authors" component={AuthorManagement} role="admin" />
-      <ProtectedRoute path="/admin/blogs" component={BlogManagement} role="admin" />
-      <ProtectedRoute path="/admin/blogs/new" component={AdminNewBlog} role="admin" />
-      <ProtectedRoute path="/admin/blog-approvals" component={BlogApprovals} role="admin" />
+      <AuthProvider>
+        <ProtectedRoute path="/admin/dashboard" component={AdminDashboard} role="admin" />
+        <ProtectedRoute path="/admin/authors" component={AuthorManagement} role="admin" />
+        <ProtectedRoute path="/admin/blogs" component={BlogManagement} role="admin" />
+        <ProtectedRoute path="/admin/blogs/new" component={AdminNewBlog} role="admin" />
+        <ProtectedRoute path="/admin/blog-approvals" component={BlogApprovals} role="admin" />
+      </AuthProvider>
       
       {/* Protected author routes */}
       <ProtectedRoute path="/author/dashboard" component={AuthorDashboard} role="author" />
