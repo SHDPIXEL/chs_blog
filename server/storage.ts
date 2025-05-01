@@ -726,9 +726,10 @@ export class DatabaseStorage implements IStorage {
   }
   
   // Comment methods
-  async getArticleComments(articleId: number): Promise<(Comment & { replyCount: number })[]> {
+  async getArticleComments(articleId: number): Promise<Comment[]> {
     // Get all top-level comments (no parent) for the article, ordered by creation time
-    const topLevelComments = await db.select()
+    // replyCount is now a column in the database, so we don't need to calculate it
+    return await db.select()
       .from(comments)
       .where(
         and(
@@ -737,50 +738,15 @@ export class DatabaseStorage implements IStorage {
         )
       )
       .orderBy(asc(comments.createdAt));
-    
-    // For each comment, count its replies
-    const enhancedComments = await Promise.all(
-      topLevelComments.map(async (comment) => {
-        const replyCount = await db
-          .select({ count: sql<number>`count(*)` })
-          .from(comments)
-          .where(eq(comments.parentId, comment.id))
-          .then(result => result[0]?.count || 0);
-        
-        return {
-          ...comment,
-          replyCount
-        };
-      })
-    );
-    
-    return enhancedComments;
   }
   
-  async getCommentReplies(commentId: number): Promise<(Comment & { replyCount: number })[]> {
+  async getCommentReplies(commentId: number): Promise<Comment[]> {
     // Get all replies to a comment, ordered by creation time
-    const replies = await db.select()
+    // replyCount is now a column in the database, so we don't need to calculate it
+    return await db.select()
       .from(comments)
       .where(eq(comments.parentId, commentId))
       .orderBy(asc(comments.createdAt));
-    
-    // For each reply, count its own replies (for nested replies)
-    const enhancedReplies = await Promise.all(
-      replies.map(async (reply) => {
-        const replyCount = await db
-          .select({ count: sql<number>`count(*)` })
-          .from(comments)
-          .where(eq(comments.parentId, reply.id))
-          .then(result => result[0]?.count || 0);
-        
-        return {
-          ...reply,
-          replyCount
-        };
-      })
-    );
-    
-    return enhancedReplies;
   }
   
   async getComment(id: number): Promise<Comment | undefined> {
@@ -791,9 +757,17 @@ export class DatabaseStorage implements IStorage {
   async createComment(comment: InsertComment): Promise<Comment> {
     const [newComment] = await db.insert(comments).values(comment).returning();
     
-    // If this is a reply to another comment (has parentId), create a notification
-    // for the author of the article
+    // If this is a reply to another comment (has parentId), update the parent's replyCount
+    // and create a notification for the author of the article
     if (comment.parentId) {
+      // Increment the parent comment's replyCount
+      await db.update(comments)
+        .set({ 
+          replyCount: sql`${comments.replyCount} + 1`,
+          updatedAt: new Date() 
+        })
+        .where(eq(comments.id, comment.parentId));
+      
       // Get the parent comment to see who we're replying to
       const parentComment = await this.getComment(comment.parentId);
       
@@ -846,7 +820,11 @@ export class DatabaseStorage implements IStorage {
   }
   
   async deleteComment(id: number): Promise<boolean> {
-    // First, delete all replies to this comment
+    // First, get the comment to check if it's a reply (has parentId)
+    const comment = await this.getComment(id);
+    if (!comment) return false;
+    
+    // Delete all replies to this comment first
     await db.delete(comments)
       .where(eq(comments.parentId, id));
     
@@ -854,6 +832,16 @@ export class DatabaseStorage implements IStorage {
     const result = await db.delete(comments)
       .where(eq(comments.id, id))
       .returning({ id: comments.id });
+    
+    // If the deleted comment was a reply, decrement the parent's replyCount
+    if (comment.parentId) {
+      await db.update(comments)
+        .set({ 
+          replyCount: sql`GREATEST(${comments.replyCount} - 1, 0)`, // Ensure replyCount never goes below 0
+          updatedAt: new Date() 
+        })
+        .where(eq(comments.id, comment.parentId));
+    }
     
     return result.length > 0;
   }

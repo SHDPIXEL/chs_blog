@@ -140,6 +140,7 @@ export const comments = pgTable("comments", {
   authorEmail: text("author_email").notNull(),
   articleId: integer("article_id").references(() => articles.id).notNull(),
   parentId: integer("parent_id").references((): any => comments.id), // For nested replies
+  replyCount: integer("reply_count").default(0).notNull(), // Store count of replies to this comment
   isApproved: boolean("is_approved").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
