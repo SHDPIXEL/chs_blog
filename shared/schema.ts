@@ -202,7 +202,7 @@ export const updateArticleSchema = z.object({
   // Review fields
   reviewRemarks: z.string().optional().nullable(),
   reviewedBy: z.number().optional().nullable(),
-  reviewedAt: z.string().optional().nullable(),
+  reviewedAt: z.union([z.string(), z.date(), z.null()]).optional(),
 });
 
 // Define asset schemas

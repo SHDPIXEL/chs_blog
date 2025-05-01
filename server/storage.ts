@@ -687,9 +687,9 @@ export class DatabaseStorage implements IStorage {
     }
     
     // Count total matching records
-    const countQuery = db.select({ count: sql<number>`count(*)` }).from(articles);
+    let countQuery = db.select({ count: sql<number>`count(*)` }).from(articles);
     if (conditions.length > 0) {
-      countQuery.where(and(...conditions));
+      countQuery = countQuery.where(and(...conditions));
     }
     const totalCount = await countQuery;
     const total = totalCount[0]?.count || 0;
