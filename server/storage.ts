@@ -27,7 +27,11 @@ import {
   articleCoAuthors,
   notifications,
   type Notification,
-  type InsertNotification
+  type InsertNotification,
+  comments,
+  type Comment,
+  type InsertComment,
+  type UpdateComment
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, or, desc, sql, asc, inArray, type SQL } from "drizzle-orm";
@@ -93,6 +97,14 @@ export interface IStorage {
   getUserNotifications(userId: number): Promise<Notification[]>;
   markNotificationAsRead(id: number): Promise<Notification | undefined>;
   markAllNotificationsAsRead(userId: number): Promise<boolean>;
+  
+  // Comment operations
+  getArticleComments(articleId: number): Promise<Comment[]>;
+  getCommentReplies(commentId: number): Promise<Comment[]>;
+  getComment(id: number): Promise<Comment | undefined>;
+  createComment(comment: InsertComment): Promise<Comment>;
+  updateComment(id: number, comment: UpdateComment): Promise<Comment | undefined>;
+  deleteComment(id: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -709,6 +721,103 @@ export class DatabaseStorage implements IStorage {
       .set({ read: true })
       .where(eq(notifications.userId, userId))
       .returning({ id: notifications.id });
+    
+    return result.length > 0;
+  }
+  
+  // Comment methods
+  async getArticleComments(articleId: number): Promise<Comment[]> {
+    // Get all top-level comments (no parent) for the article, ordered by creation time
+    return await db.select()
+      .from(comments)
+      .where(
+        and(
+          eq(comments.articleId, articleId),
+          sql`${comments.parentId} IS NULL`
+        )
+      )
+      .orderBy(asc(comments.createdAt));
+  }
+  
+  async getCommentReplies(commentId: number): Promise<Comment[]> {
+    // Get all replies to a comment, ordered by creation time
+    return await db.select()
+      .from(comments)
+      .where(eq(comments.parentId, commentId))
+      .orderBy(asc(comments.createdAt));
+  }
+  
+  async getComment(id: number): Promise<Comment | undefined> {
+    const [comment] = await db.select().from(comments).where(eq(comments.id, id));
+    return comment;
+  }
+  
+  async createComment(comment: InsertComment): Promise<Comment> {
+    const [newComment] = await db.insert(comments).values(comment).returning();
+    
+    // If this is a reply to another comment (has parentId), create a notification
+    // for the author of the article
+    if (comment.parentId) {
+      // Get the parent comment to see who we're replying to
+      const parentComment = await this.getComment(comment.parentId);
+      
+      if (parentComment) {
+        // Get the article to notify the author
+        const article = await this.getArticle(comment.articleId);
+        
+        if (article) {
+          // Create notification for article author about new reply
+          await this.createNotification({
+            userId: article.authorId,
+            type: "comment_received",
+            title: "New Reply to Comment",
+            message: `${comment.authorName} replied to a comment on your article "${article.title}"`,
+            articleId: article.id,
+            commentId: newComment.id
+          });
+        }
+      }
+    } else {
+      // This is a top-level comment, notify the article author
+      const article = await this.getArticle(comment.articleId);
+      
+      if (article) {
+        // Create notification for article author about new comment
+        await this.createNotification({
+          userId: article.authorId,
+          type: "comment_received",
+          title: "New Comment on Article",
+          message: `${comment.authorName} commented on your article "${article.title}"`,
+          articleId: article.id,
+          commentId: newComment.id
+        });
+      }
+    }
+    
+    return newComment;
+  }
+  
+  async updateComment(id: number, commentData: UpdateComment): Promise<Comment | undefined> {
+    const [comment] = await db.update(comments)
+      .set({
+        ...commentData,
+        updatedAt: new Date()
+      })
+      .where(eq(comments.id, id))
+      .returning();
+    
+    return comment;
+  }
+  
+  async deleteComment(id: number): Promise<boolean> {
+    // First, delete all replies to this comment
+    await db.delete(comments)
+      .where(eq(comments.parentId, id));
+    
+    // Then delete the comment itself
+    const result = await db.delete(comments)
+      .where(eq(comments.id, id))
+      .returning({ id: comments.id });
     
     return result.length > 0;
   }

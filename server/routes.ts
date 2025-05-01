@@ -22,7 +22,9 @@ import {
   NotificationType,
   insertArticleSchema,
   searchAssetsSchema,
-  updateAssetSchema
+  updateAssetSchema,
+  insertCommentSchema,
+  updateCommentSchema
 } from "@shared/schema";
 import { z } from "zod";
 import { authenticateToken, requireAdmin, requireAuthor, requireAuth, type AuthRequest } from "./middleware/auth";
