@@ -82,14 +82,13 @@ export function CommentComponent({ comment, articleId, isReply = false }: Commen
       
       const newReply = await res.json();
       
-      // Add the new reply to the list if replies are currently visible
-      if (showReplies) {
-        setReplies([...replies, newReply]);
-      } else {
-        // If replies aren't visible, show them now with the new reply
-        setReplies([newReply]);
-        setShowReplies(true);
-      }
+      // Explicitly reload all replies to ensure correct nesting structure
+      const repliesRes = await apiRequest('GET', `/api/comments/${comment.id}/replies`);
+      const updatedReplies = await repliesRes.json();
+      setReplies(updatedReplies);
+      
+      // Make sure replies are visible
+      setShowReplies(true);
       
       // Reset form
       setReplyContent('');

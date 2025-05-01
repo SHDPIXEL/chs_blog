@@ -42,6 +42,16 @@ export function CommentsList({ articleId }: CommentsListProps) {
     }
   };
 
+  const handleCommentAdded = (newComment: Comment) => {
+    // If it's a top-level comment (no parentId), add it to the comments list
+    if (!newComment.parentId) {
+      setComments([...comments, newComment]);
+    } else {
+      // If it's a reply, refresh the comments list to ensure proper nesting
+      fetchComments();
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -65,8 +75,8 @@ export function CommentsList({ articleId }: CommentsListProps) {
       
       const comment = await res.json();
       
-      // Add new comment to the list
-      setComments([...comments, comment]);
+      // Add new comment to the list using our handler
+      handleCommentAdded(comment);
       
       // Reset form
       setNewComment('');
