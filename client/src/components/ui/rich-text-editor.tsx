@@ -296,7 +296,11 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => editor.chain().focus().toggleBold().run()}
+            onClick={(e) => {
+              e.preventDefault(); // Prevent form submission
+              editor.chain().focus().toggleBold().run();
+            }}
+            type="button" // Explicitly set button type to prevent form submission
             className={cn(editor.isActive('bold') ? 'bg-muted' : '')}
           >
             <Bold className="h-4 w-4" />
@@ -305,7 +309,11 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => editor.chain().focus().toggleItalic().run()}
+            onClick={(e) => {
+              e.preventDefault();
+              editor.chain().focus().toggleItalic().run();
+            }}
+            type="button"
             className={cn(editor.isActive('italic') ? 'bg-muted' : '')}
           >
             <Italic className="h-4 w-4" />
@@ -314,7 +322,11 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => editor.chain().focus().toggleUnderline().run()}
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              editor.chain().focus().toggleUnderline().run();
+            }}
             className={cn(editor.isActive('underline') ? 'bg-muted' : '')}
           >
             <UnderlineIcon className="h-4 w-4" />
@@ -325,7 +337,11 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              editor.chain().focus().toggleHeading({ level: 1 }).run();
+            }}
             className={cn(editor.isActive('heading', { level: 1 }) ? 'bg-muted' : '')}
           >
             <Heading1 className="h-4 w-4" />
@@ -334,7 +350,11 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              editor.chain().focus().toggleHeading({ level: 2 }).run();
+            }}
             className={cn(editor.isActive('heading', { level: 2 }) ? 'bg-muted' : '')}
           >
             <Heading2 className="h-4 w-4" />
@@ -345,7 +365,11 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => editor.chain().focus().toggleBulletList().run()}
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              editor.chain().focus().toggleBulletList().run();
+            }}
             className={cn(editor.isActive('bulletList') ? 'bg-muted' : '')}
           >
             <List className="h-4 w-4" />
@@ -354,7 +378,11 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => editor.chain().focus().toggleOrderedList().run()}
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              editor.chain().focus().toggleOrderedList().run();
+            }}
             className={cn(editor.isActive('orderedList') ? 'bg-muted' : '')}
           >
             <ListOrdered className="h-4 w-4" />
@@ -365,7 +393,11 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => editor.chain().focus().setTextAlign('left').run()}
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              editor.chain().focus().setTextAlign('left').run();
+            }}
             className={cn(editor.isActive({ textAlign: 'left' }) ? 'bg-muted' : '')}
           >
             <AlignLeft className="h-4 w-4" />
@@ -374,7 +406,11 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => editor.chain().focus().setTextAlign('center').run()}
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              editor.chain().focus().setTextAlign('center').run();
+            }}
             className={cn(editor.isActive({ textAlign: 'center' }) ? 'bg-muted' : '')}
           >
             <AlignCenter className="h-4 w-4" />
@@ -383,7 +419,11 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => editor.chain().focus().setTextAlign('right').run()}
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              editor.chain().focus().setTextAlign('right').run();
+            }}
             className={cn(editor.isActive({ textAlign: 'right' }) ? 'bg-muted' : '')}
           >
             <AlignRight className="h-4 w-4" />
@@ -394,7 +434,11 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => editor.chain().focus().toggleBlockquote().run()}
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              editor.chain().focus().toggleBlockquote().run();
+            }}
             className={cn(editor.isActive('blockquote') ? 'bg-muted' : '')}
           >
             <Quote className="h-4 w-4" />
@@ -403,7 +447,11 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              editor.chain().focus().toggleCodeBlock().run();
+            }}
             className={cn(editor.isActive('codeBlock') ? 'bg-muted' : '')}
           >
             <Code className="h-4 w-4" />
@@ -411,69 +459,31 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           
           <div className="w-px h-6 bg-border mx-1"></div>
           
-          <Popover open={showImagePopover} onOpenChange={setShowImagePopover}>
-            <PopoverTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowImagePopover(true)}
-              >
-                <ImageIcon className="h-4 w-4" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-80">
-              <div className="space-y-2">
-                <h4 className="font-medium">Insert Image</h4>
-                <Tabs defaultValue="library" className="w-full">
-                  <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="library">Media Library</TabsTrigger>
-                    <TabsTrigger value="url">Image URL</TabsTrigger>
-                  </TabsList>
-                  <TabsContent value="library" className="space-y-4">
-                    <AssetPickerButton
-                      accept="image"
-                      onSelect={(asset) => {
-                        if (Array.isArray(asset)) {
-                          // Just use the first asset if multiple are selected
-                          if (asset.length > 0) {
-                            addImage(asset[0].url);
-                          }
-                        } else {
-                          addImage(asset.url);
-                        }
-                      }}
-                      variant="outline"
-                      className="w-full"
-                    >
-                      <ImageIcon className="mr-2 h-4 w-4" /> Choose from Library
-                    </AssetPickerButton>
-                  </TabsContent>
-                  <TabsContent value="url" className="space-y-4">
-                    <div className="flex items-center space-x-2">
-                      <Input
-                        placeholder="Enter image URL..."
-                        value={imageUrl}
-                        onChange={(e) => setImageUrl(e.target.value)}
-                      />
-                      <Button
-                        onClick={() => addImage(imageUrl)}
-                        disabled={!imageUrl}
-                        size="sm"
-                      >
-                        Add
-                      </Button>
-                    </div>
-                  </TabsContent>
-                </Tabs>
-              </div>
-            </PopoverContent>
-          </Popover>
+          {/* Replace popover with direct AssetPickerButton */}
+          <AssetPickerButton
+            accept="image"
+            onSelect={(asset) => {
+              if (Array.isArray(asset)) {
+                // Just use the first asset if multiple are selected
+                if (asset.length > 0) {
+                  addImage(asset[0].url);
+                }
+              } else {
+                addImage(asset.url);
+              }
+            }}
+            variant="ghost"
+            className="h-9 w-9 p-0"
+          >
+            <ImageIcon className="h-4 w-4" />
+          </AssetPickerButton>
           
           <Popover>
             <PopoverTrigger asChild>
               <Button
                 variant="ghost"
                 size="sm"
+                type="button"
                 className={cn(editor.isActive('link') ? 'bg-muted' : '')}
               >
                 <LinkIcon className="h-4 w-4" />
@@ -515,7 +525,11 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => editor.chain().focus().setHorizontalRule().run()}
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              editor.chain().focus().setHorizontalRule().run();
+            }}
           >
             <Minus className="h-4 w-4" />
           </Button>
@@ -535,7 +549,11 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => editor.chain().focus().toggleBold().run()}
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                editor.chain().focus().toggleBold().run();
+              }}
               className={cn(editor.isActive('bold') ? 'bg-muted' : '')}
             >
               <Bold className="h-4 w-4" />
@@ -544,7 +562,11 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => editor.chain().focus().toggleItalic().run()}
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                editor.chain().focus().toggleItalic().run();
+              }}
               className={cn(editor.isActive('italic') ? 'bg-muted' : '')}
             >
               <Italic className="h-4 w-4" />
@@ -553,7 +575,11 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => editor.chain().focus().toggleUnderline().run()}
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                editor.chain().focus().toggleUnderline().run();
+              }}
               className={cn(editor.isActive('underline') ? 'bg-muted' : '')}
             >
               <UnderlineIcon className="h-4 w-4" />
@@ -566,6 +592,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
                 <Button
                   variant="ghost"
                   size="sm"
+                  type="button"
                   className={cn(editor.isActive('link') ? 'bg-muted' : '')}
                 >
                   <LinkIcon className="h-4 w-4" />
@@ -583,7 +610,9 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => {
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
                         setLinkUrl('');
                         editor.chain().focus().extendMarkRange('link').unsetLink().run();
                       }}
@@ -593,7 +622,11 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
                     </Button>
                     <Button 
                       size="sm"
-                      onClick={setLink}
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setLink();
+                      }}
                     >
                       {editor.isActive('link') ? 'Update' : 'Add'}
                     </Button>
