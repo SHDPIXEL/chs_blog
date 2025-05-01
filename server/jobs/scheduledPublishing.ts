@@ -1,6 +1,6 @@
 import { db } from '../db';
 import { articles, ArticleStatus } from '@shared/schema';
-import { eq, and, lte, isNotNull } from 'drizzle-orm';
+import { eq, and, lte, isNotNull, sql } from 'drizzle-orm';
 import { log } from '../vite';
 
 /**
@@ -12,6 +12,31 @@ export async function processScheduledArticles() {
   try {
     const now = new Date();
     log(`Checking for scheduled articles to publish at ${now.toISOString()}`, 'scheduler');
+    
+    // First, let's get all articles with scheduledPublishAt for debugging
+    const allScheduledArticles = await db
+      .select({
+        id: articles.id,
+        title: articles.title,
+        status: articles.status,
+        published: articles.published,
+        scheduledPublishAt: articles.scheduledPublishAt
+      })
+      .from(articles)
+      .where(
+        and(
+          isNotNull(articles.scheduledPublishAt)
+        )
+      );
+    
+    if (allScheduledArticles.length > 0) {
+      log(`Debug: Found ${allScheduledArticles.length} articles with scheduledPublishAt dates:`, 'scheduler');
+      for (const article of allScheduledArticles) {
+        log(`- Article ID ${article.id}: "${article.title}" status=${article.status}, published=${article.published}, scheduledPublishAt=${article.scheduledPublishAt instanceof Date ? article.scheduledPublishAt.toISOString() : article.scheduledPublishAt}`, 'scheduler');
+      }
+    } else {
+      log(`Debug: No articles with scheduledPublishAt dates found`, 'scheduler');
+    }
     
     // Find articles that:
     // 1. Have PUBLISHED status (approved by admin)
