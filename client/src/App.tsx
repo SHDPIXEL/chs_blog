@@ -39,6 +39,8 @@ function Router() {
       <ProtectedRoute path="/author/profile" component={AuthorProfile} role="author" />
       <ProtectedRoute path="/author/blogs" component={AuthorBlogs} role="author" />
       <ProtectedRoute path="/author/blogs/new" component={NewBlog} role="author" />
+      <ProtectedRoute path="/author/blogs/:id" component={NotFound} role="author" />
+      <Route path="/blog/:id" component={NotFound} />
       
       {/* Fallback to 404 */}
       <Route component={NotFound} />
