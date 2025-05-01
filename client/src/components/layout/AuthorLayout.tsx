@@ -18,19 +18,19 @@ interface AuthorLayoutProps {
 const AuthorLayout: React.FC<AuthorLayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [location, setLocation] = useLocation();
-  const { user, isLoading } = useAuth();
+  const { user } = useAuth();
 
   // Redirect if not authenticated as author
   React.useEffect(() => {
-    if (!isLoading && !user) {
-      setLocation('/auth');
+    if (!user) {
+      setLocation('/auth/login');
     } else if (user && user.role !== 'author') {
       setLocation('/admin/dashboard');
     }
-  }, [isLoading, user, setLocation]);
+  }, [user, setLocation]);
 
   // If not authenticated or not author, don't render the layout
-  if (isLoading) {
+  if (!user) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
   

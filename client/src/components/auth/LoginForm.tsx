@@ -28,7 +28,7 @@ const loginFormSchema = z.object({
 
 const LoginForm: React.FC = () => {
   const [location, setLocation] = useLocation();
-  const { loginMutation, isLoading, error, user } = useAuth();
+  const { loginMutation, user } = useAuth();
 
   // Redirect to appropriate dashboard if already logged in
   React.useEffect(() => {
@@ -126,20 +126,20 @@ const LoginForm: React.FC = () => {
           </div>
         </div>
 
-        {error && (
+        {loginMutation.error && (
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Error</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
+            <AlertDescription>{loginMutation.error.message}</AlertDescription>
           </Alert>
         )}
 
         <Button 
           type="submit" 
           className="w-full" 
-          disabled={isLoading}
+          disabled={loginMutation.isPending}
         >
-          {isLoading ? (
+          {loginMutation.isPending ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Processing...
