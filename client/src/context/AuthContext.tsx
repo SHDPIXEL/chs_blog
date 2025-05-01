@@ -25,14 +25,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const { toast } = useToast();
 
-  // Initialize auth state
+  // Initialize auth state and fetch current user from API if token exists
   useEffect(() => {
-    const initAuth = () => {
+    const initAuth = async () => {
       const currentUser = getCurrentUser();
       const authenticated = checkIsAuthenticated();
       
       setUser(currentUser);
       setIsAuthenticated(authenticated);
+      
+      // If we have a token but no user data in localStorage, try to fetch from API
+      if (authenticated && !currentUser) {
+        try {
+          const response = await fetch('/api/auth/me', {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('blogcms_token')}`
+            }
+          });
+          
+          if (response.ok) {
+            const userData = await response.json();
+            setUser(userData);
+            // Update localStorage with fresh user data
+            localStorage.setItem('blogcms_user', JSON.stringify(userData));
+          }
+        } catch (error) {
+          console.error('Failed to fetch user data:', error);
+        }
+      }
+      
       setIsLoading(false);
     };
     

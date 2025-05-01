@@ -2,6 +2,18 @@ import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
+    // Special handling for auth errors
+    if (res.status === 401 || res.status === 403) {
+      // If the token is expired or invalid, remove it
+      if (res.status === 403) {
+        console.warn("Authentication token is invalid or expired. Clearing token...");
+        localStorage.removeItem("blogcms_token");
+      }
+      
+      const text = "Authentication required. Please log in again.";
+      throw new Error(`${res.status}: ${text}`);
+    }
+    
     const text = (await res.text()) || res.statusText;
     throw new Error(`${res.status}: ${text}`);
   }
