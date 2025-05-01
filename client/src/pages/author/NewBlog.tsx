@@ -30,10 +30,16 @@ const blogFormSchema = z.object({
   excerpt: z.string().max(200, 'Excerpt cannot exceed 200 characters').optional(),
   status: z.enum([ArticleStatus.DRAFT, ArticleStatus.REVIEW, ArticleStatus.PUBLISHED]),
   featuredImage: z.string().optional().or(z.literal('')),
+  slug: z.string().optional(),
+  
+  // Publishing options
+  useScheduling: z.boolean().default(false),
+  scheduledPublishAt: z.string().optional(),
   
   // SEO Fields
   metaTitle: z.string().max(70, 'Meta title should be at most 70 characters').optional(),
   metaDescription: z.string().max(160, 'Meta description should be at most 160 characters').optional(),
+  canonicalUrl: z.string().url('Must be a valid URL').optional().or(z.literal('')),
   keywords: z.array(z.string()).default([]),
   
   // Relationships
@@ -88,10 +94,14 @@ const NewBlogPage: React.FC = () => {
       featuredImage: '',
       metaTitle: '',
       metaDescription: '',
+      canonicalUrl: '',
       keywords: [],
       categoryIds: [],
       customTags: [],
       coAuthorIds: [],
+      useScheduling: false,
+      scheduledPublishAt: undefined,
+      slug: '',
     },
   });
   
@@ -145,9 +155,25 @@ const NewBlogPage: React.FC = () => {
     },
   });
   
+  // Generate slug from title
+  const generateSlug = (title: string): string => {
+    return title
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, '') // Remove special characters
+      .replace(/\s+/g, '-') // Replace spaces with hyphens
+      .replace(/-+/g, '-') // Replace multiple hyphens with single hyphen
+      .trim(); // Trim leading/trailing spaces
+  };
+
   // Form submission handler
   const onSubmit = (data: BlogFormValues) => {
-    createBlogMutation.mutate(data);
+    // Generate slug if not provided
+    const formattedData = {
+      ...data,
+      slug: data.slug || generateSlug(data.title),
+    };
+    
+    createBlogMutation.mutate(formattedData);
   };
 
   // Handle asset selection for featured image
