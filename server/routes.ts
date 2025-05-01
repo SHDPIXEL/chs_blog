@@ -1378,6 +1378,142 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Comment routes
+  
+  // Get all comments for an article (top-level only)
+  app.get("/api/articles/:id/comments", async (req, res) => {
+    try {
+      const articleId = parseInt(req.params.id);
+      if (isNaN(articleId)) {
+        return res.status(400).json({ message: "Invalid article ID" });
+      }
+      
+      const comments = await storage.getArticleComments(articleId);
+      return res.json(comments);
+    } catch (error) {
+      console.error("Error getting article comments:", error);
+      return res.status(500).json({ message: "Server error" });
+    }
+  });
+  
+  // Get replies for a specific comment
+  app.get("/api/comments/:id/replies", async (req, res) => {
+    try {
+      const commentId = parseInt(req.params.id);
+      if (isNaN(commentId)) {
+        return res.status(400).json({ message: "Invalid comment ID" });
+      }
+      
+      const replies = await storage.getCommentReplies(commentId);
+      return res.json(replies);
+    } catch (error) {
+      console.error("Error getting comment replies:", error);
+      return res.status(500).json({ message: "Server error" });
+    }
+  });
+  
+  // Create a new comment or reply
+  app.post("/api/articles/:id/comments", async (req, res) => {
+    try {
+      const articleId = parseInt(req.params.id);
+      if (isNaN(articleId)) {
+        return res.status(400).json({ message: "Invalid article ID" });
+      }
+      
+      // Check if the article exists and is published
+      const article = await storage.getArticle(articleId);
+      if (!article) {
+        return res.status(404).json({ message: "Article not found" });
+      }
+      
+      if (!article.published) {
+        return res.status(403).json({ message: "Cannot comment on unpublished articles" });
+      }
+      
+      // Validate the comment data
+      const validatedData = insertCommentSchema.parse({
+        ...req.body,
+        articleId
+      });
+      
+      // Create the comment
+      const comment = await storage.createComment(validatedData);
+      return res.status(201).json(comment);
+    } catch (error) {
+      console.error("Error creating comment:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Validation error", 
+          errors: error.errors 
+        });
+      }
+      return res.status(500).json({ message: "Server error" });
+    }
+  });
+  
+  // Update a comment (admin only)
+  app.patch("/api/comments/:id", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const commentId = parseInt(req.params.id);
+      if (isNaN(commentId)) {
+        return res.status(400).json({ message: "Invalid comment ID" });
+      }
+      
+      // Check if comment exists
+      const comment = await storage.getComment(commentId);
+      if (!comment) {
+        return res.status(404).json({ message: "Comment not found" });
+      }
+      
+      // Validate update data
+      const validatedData = updateCommentSchema.parse(req.body);
+      
+      // Update the comment
+      const updatedComment = await storage.updateComment(commentId, validatedData);
+      if (!updatedComment) {
+        return res.status(400).json({ message: "Failed to update comment" });
+      }
+      
+      return res.json(updatedComment);
+    } catch (error) {
+      console.error("Error updating comment:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Validation error", 
+          errors: error.errors 
+        });
+      }
+      return res.status(500).json({ message: "Server error" });
+    }
+  });
+  
+  // Delete a comment (admin only)
+  app.delete("/api/comments/:id", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const commentId = parseInt(req.params.id);
+      if (isNaN(commentId)) {
+        return res.status(400).json({ message: "Invalid comment ID" });
+      }
+      
+      // Check if comment exists
+      const comment = await storage.getComment(commentId);
+      if (!comment) {
+        return res.status(404).json({ message: "Comment not found" });
+      }
+      
+      // Delete the comment
+      const success = await storage.deleteComment(commentId);
+      if (!success) {
+        return res.status(400).json({ message: "Failed to delete comment" });
+      }
+      
+      return res.json({ message: "Comment deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+      return res.status(500).json({ message: "Server error" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
