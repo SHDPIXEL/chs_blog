@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb, primaryKey } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb, primaryKey, uuid } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -132,6 +132,19 @@ export const articleCoAuthors = pgTable("article_co_authors", {
   pk: primaryKey({ columns: [t.articleId, t.userId] }),
 }));
 
+// Comments table for blog posts
+export const comments = pgTable("comments", {
+  id: serial("id").primaryKey(),
+  content: text("content").notNull(),
+  authorName: text("author_name").notNull(),
+  authorEmail: text("author_email").notNull(),
+  articleId: integer("article_id").references(() => articles.id).notNull(),
+  parentId: integer("parent_id").references(() => comments.id), // For nested replies
+  isApproved: boolean("is_approved").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Notifications table
 export const notifications = pgTable("notifications", {
   id: serial("id").primaryKey(),
@@ -140,6 +153,7 @@ export const notifications = pgTable("notifications", {
   title: text("title").notNull(),
   message: text("message").notNull(),
   articleId: integer("article_id").references(() => articles.id),
+  commentId: integer("comment_id").references(() => comments.id), // Reference to the comment if notification is about a comment
   read: boolean("read").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -228,6 +242,7 @@ export const articlesRelations = relations(articles, ({ one, many }) => ({
   tags: many(articleTags, { relationName: "articleTagsRelation" }),
   coAuthors: many(articleCoAuthors, { relationName: "articleCoAuthorsRelation" }),
   notifications: many(notifications, { relationName: "articleNotifications" }),
+  comments: many(comments, { relationName: "articleComments" }),
 }));
 
 export const categoriesRelations = relations(categories, ({ many }) => ({
@@ -283,6 +298,20 @@ export const assetsRelations = relations(assets, ({ one }) => ({
     references: [users.id],
     relationName: "userAssets",
   }),
+}));
+
+export const commentsRelations = relations(comments, ({ one, many }) => ({
+  article: one(articles, {
+    fields: [comments.articleId],
+    references: [articles.id],
+    relationName: "articleComments",
+  }),
+  parent: one(comments, {
+    fields: [comments.parentId],
+    references: [comments.id],
+    relationName: "parentComment",
+  }),
+  replies: many(comments, { relationName: "childComments" }),
 }));
 
 export const notificationsRelations = relations(notifications, ({ one }) => ({
@@ -344,6 +373,18 @@ export const updateNotificationSchema = z.object({
   read: z.boolean().optional(),
 });
 
+// Comment schemas
+export const insertCommentSchema = createInsertSchema(comments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const updateCommentSchema = z.object({
+  content: z.string().min(1).optional(),
+  isApproved: z.boolean().optional(),
+});
+
 // Type definitions based on schema
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -366,3 +407,6 @@ export type SearchAssets = z.infer<typeof searchAssetsSchema>;
 export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 export type UpdateNotification = z.infer<typeof updateNotificationSchema>;
+export type Comment = typeof comments.$inferSelect;
+export type InsertComment = z.infer<typeof insertCommentSchema>;
+export type UpdateComment = z.infer<typeof updateCommentSchema>;
