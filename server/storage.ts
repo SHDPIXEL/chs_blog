@@ -7,15 +7,27 @@ import {
   type Article, 
   type InsertArticle,
   type UpdateArticle,
+  type ExtendedInsertArticle,
+  type ExtendedUpdateArticle,
   type ArticleStatusType,
   assets,
   type Asset,
   type InsertAsset,
   type UpdateAsset,
-  type SearchAssets
+  type SearchAssets,
+  categories,
+  type Category,
+  type InsertCategory,
+  type UpdateCategory,
+  tags,
+  type Tag,
+  type InsertTag,
+  articleCategories,
+  articleTags,
+  articleCoAuthors
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, or, desc, sql, type SQL } from "drizzle-orm";
+import { eq, and, or, desc, sql, asc, inArray, type SQL } from "drizzle-orm";
 import * as bcrypt from "bcrypt";
 
 // Interface for storage operations
@@ -25,16 +37,45 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUserProfile(id: number, profileData: UpdateUserProfile): Promise<User | undefined>;
+  getUsers(role?: string): Promise<User[]>;
+  updateUserPublishingRights(id: number, canPublish: boolean): Promise<User | undefined>;
   
   // Article operations 
   getArticle(id: number): Promise<Article | undefined>;
+  getArticleWithRelations(id: number): Promise<{
+    article: Article;
+    categories: Category[];
+    tags: Tag[];
+    coAuthors: User[];
+  } | undefined>;
   getArticlesByAuthor(authorId: number): Promise<Article[]>;
   getArticlesByStatus(authorId: number, status: ArticleStatusType): Promise<Article[]>;
   getPublishedArticles(): Promise<Article[]>;
   createArticle(article: InsertArticle): Promise<Article>;
+  createExtendedArticle(article: ExtendedInsertArticle): Promise<Article>;
   updateArticle(id: number, article: Partial<UpdateArticle>): Promise<Article | undefined>;
+  updateExtendedArticle(id: number, article: Partial<ExtendedUpdateArticle>): Promise<Article | undefined>;
   updateArticleStatus(id: number, status: ArticleStatusType): Promise<Article | undefined>;
   deleteArticle(id: number): Promise<boolean>;
+  getArticleCategories(articleId: number): Promise<Category[]>;
+  getArticleTags(articleId: number): Promise<Tag[]>;
+  getArticleCoAuthors(articleId: number): Promise<User[]>;
+  searchArticles(filters: any): Promise<{ articles: Article[], total: number }>;
+  
+  // Category operations
+  getAllCategories(): Promise<Category[]>;
+  getCategory(id: number): Promise<Category | undefined>;
+  getCategoryBySlug(slug: string): Promise<Category | undefined>;
+  createCategory(category: InsertCategory): Promise<Category>;
+  updateCategory(id: number, category: UpdateCategory): Promise<Category | undefined>;
+  deleteCategory(id: number): Promise<boolean>;
+  
+  // Tag operations
+  getAllTags(): Promise<Tag[]>;
+  getTag(id: number): Promise<Tag | undefined>;
+  getTagBySlug(slug: string): Promise<Tag | undefined>;
+  createTag(tag: InsertTag): Promise<Tag>;
+  deleteTag(id: number): Promise<boolean>;
   
   // Asset operations
   getAsset(id: number): Promise<Asset | undefined>;

@@ -1,4 +1,5 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb, primaryKey } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -29,6 +30,7 @@ export const users = pgTable("users", {
   avatarUrl: text("avatar_url"),
   bannerUrl: text("banner_url"),
   socialLinks: text("social_links"), // JSON string containing social media links
+  canPublish: boolean("can_publish").default(false).notNull(), // New: Permission to directly publish articles
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -49,6 +51,23 @@ export const assets = pgTable("assets", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Categories table
+export const categories = pgTable("categories", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  slug: text("slug").notNull().unique(),
+  description: text("description"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Tags table
+export const tags = pgTable("tags", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  slug: text("slug").notNull().unique(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Articles table
 export const articles = pgTable("articles", {
   id: serial("id").primaryKey(),
@@ -61,9 +80,42 @@ export const articles = pgTable("articles", {
     .notNull(),
   published: boolean("published").default(false).notNull(),
   featuredImage: text("featured_image"),
+  
+  // SEO fields
+  metaTitle: text("meta_title"),
+  metaDescription: text("meta_description"),
+  keywords: jsonb("keywords").default([]),
+  
+  // Statistics
+  viewCount: integer("view_count").default(0).notNull(),
+  
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
+
+// Article-Category relation (many-to-many)
+export const articleCategories = pgTable("article_categories", {
+  articleId: integer("article_id").references(() => articles.id).notNull(),
+  categoryId: integer("category_id").references(() => categories.id).notNull(),
+}, (t) => ({
+  pk: primaryKey({ columns: [t.articleId, t.categoryId] }),
+}));
+
+// Article-Tag relation (many-to-many)
+export const articleTags = pgTable("article_tags", {
+  articleId: integer("article_id").references(() => articles.id).notNull(),
+  tagId: integer("tag_id").references(() => tags.id).notNull(),
+}, (t) => ({
+  pk: primaryKey({ columns: [t.articleId, t.tagId] }),
+}));
+
+// Article-CoAuthor relation (many-to-many)
+export const articleCoAuthors = pgTable("article_co_authors", {
+  articleId: integer("article_id").references(() => articles.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+}, (t) => ({
+  pk: primaryKey({ columns: [t.articleId, t.userId] }),
+}));
 
 // Define user insert schema
 export const insertUserSchema = createInsertSchema(users).omit({
@@ -127,14 +179,130 @@ export const searchAssetsSchema = z.object({
   limit: z.number().optional(),
 });
 
+// Define relationships between tables
+export const usersRelations = relations(users, ({ many }) => ({
+  articles: many(articles, { relationName: "userArticles" }),
+  coAuthoredArticles: many(articleCoAuthors, { relationName: "userCoAuthoredArticles" }),
+  assets: many(assets, { relationName: "userAssets" }),
+}));
+
+export const articlesRelations = relations(articles, ({ one, many }) => ({
+  author: one(users, {
+    fields: [articles.authorId],
+    references: [users.id],
+    relationName: "userArticles",
+  }),
+  categories: many(articleCategories, { relationName: "articleCategoriesRelation" }),
+  tags: many(articleTags, { relationName: "articleTagsRelation" }),
+  coAuthors: many(articleCoAuthors, { relationName: "articleCoAuthorsRelation" }),
+}));
+
+export const categoriesRelations = relations(categories, ({ many }) => ({
+  articles: many(articleCategories, { relationName: "categoryArticlesRelation" }),
+}));
+
+export const tagsRelations = relations(tags, ({ many }) => ({
+  articles: many(articleTags, { relationName: "tagArticlesRelation" }),
+}));
+
+export const articleCategoriesRelations = relations(articleCategories, ({ one }) => ({
+  article: one(articles, {
+    fields: [articleCategories.articleId],
+    references: [articles.id],
+    relationName: "articleCategoriesRelation",
+  }),
+  category: one(categories, {
+    fields: [articleCategories.categoryId],
+    references: [categories.id],
+    relationName: "categoryArticlesRelation",
+  }),
+}));
+
+export const articleTagsRelations = relations(articleTags, ({ one }) => ({
+  article: one(articles, {
+    fields: [articleTags.articleId],
+    references: [articles.id],
+    relationName: "articleTagsRelation",
+  }),
+  tag: one(tags, {
+    fields: [articleTags.tagId],
+    references: [tags.id],
+    relationName: "tagArticlesRelation",
+  }),
+}));
+
+export const articleCoAuthorsRelations = relations(articleCoAuthors, ({ one }) => ({
+  article: one(articles, {
+    fields: [articleCoAuthors.articleId],
+    references: [articles.id],
+    relationName: "articleCoAuthorsRelation",
+  }),
+  user: one(users, {
+    fields: [articleCoAuthors.userId],
+    references: [users.id],
+    relationName: "userCoAuthoredArticles",
+  }),
+}));
+
+export const assetsRelations = relations(assets, ({ one }) => ({
+  user: one(users, {
+    fields: [assets.userId],
+    references: [users.id],
+    relationName: "userAssets",
+  }),
+}));
+
+// Define category and tag schemas
+export const insertCategorySchema = createInsertSchema(categories).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const updateCategorySchema = z.object({
+  name: z.string().min(2).optional(),
+  slug: z.string().min(2).optional(),
+  description: z.string().optional(),
+});
+
+export const insertTagSchema = createInsertSchema(tags).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Updated article schemas with relations
+export const extendedArticleSchema = insertArticleSchema.extend({
+  categoryIds: z.array(z.number()).optional(),
+  tagIds: z.array(z.number()).optional(),
+  coAuthorIds: z.array(z.number()).optional(),
+  keywords: z.array(z.string()).optional(),
+  metaTitle: z.string().optional(),
+  metaDescription: z.string().max(160, "Meta description should be at most 160 characters").optional(),
+});
+
+export const updateExtendedArticleSchema = updateArticleSchema.extend({
+  categoryIds: z.array(z.number()).optional(),
+  tagIds: z.array(z.number()).optional(),
+  coAuthorIds: z.array(z.number()).optional(),
+  keywords: z.array(z.string()).optional(),
+  metaTitle: z.string().optional(),
+  metaDescription: z.string().max(160, "Meta description should be at most 160 characters").optional(),
+});
+
 // Type definitions based on schema
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type UpdateUserProfile = z.infer<typeof updateUserProfileSchema>;
 export type LoginUser = z.infer<typeof loginUserSchema>;
 export type InsertArticle = z.infer<typeof insertArticleSchema>;
+export type ExtendedInsertArticle = z.infer<typeof extendedArticleSchema>;
 export type UpdateArticle = z.infer<typeof updateArticleSchema>;
+export type ExtendedUpdateArticle = z.infer<typeof updateExtendedArticleSchema>;
 export type Article = typeof articles.$inferSelect;
+export type Category = typeof categories.$inferSelect;
+export type InsertCategory = z.infer<typeof insertCategorySchema>;
+export type UpdateCategory = z.infer<typeof updateCategorySchema>;
+export type Tag = typeof tags.$inferSelect;
+export type InsertTag = z.infer<typeof insertTagSchema>;
 export type Asset = typeof assets.$inferSelect;
 export type InsertAsset = z.infer<typeof insertAssetSchema>;
 export type UpdateAsset = z.infer<typeof updateAssetSchema>;
