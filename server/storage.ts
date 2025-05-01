@@ -24,7 +24,10 @@ import {
   type InsertTag,
   articleCategories,
   articleTags,
-  articleCoAuthors
+  articleCoAuthors,
+  notifications,
+  type Notification,
+  type InsertNotification
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, or, desc, sql, asc, inArray, type SQL } from "drizzle-orm";
