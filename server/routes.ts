@@ -12,6 +12,11 @@ import {
   insertUserSchema, 
   updateUserProfileSchema,
   updateArticleSchema,
+  extendedArticleSchema,
+  updateExtendedArticleSchema,
+  insertCategorySchema,
+  updateCategorySchema,
+  insertTagSchema,
   UserRole,
   ArticleStatus,
   insertArticleSchema,
@@ -265,13 +270,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Authentication required" });
       }
       
-      const validatedData = insertArticleSchema.parse({
-        ...req.body,
-        authorId: req.user.id
-      });
-      
-      const article = await storage.createArticle(validatedData);
-      return res.status(201).json(article);
+      // Check if extended data is present (categories, tags, etc.)
+      if (req.body.categoryIds || req.body.tagIds || req.body.coAuthorIds || 
+          req.body.keywords || req.body.metaTitle || req.body.metaDescription) {
+        // Use extended schema and create method
+        const validatedData = extendedArticleSchema.parse({
+          ...req.body,
+          authorId: req.user.id
+        });
+        
+        const article = await storage.createExtendedArticle(validatedData);
+        return res.status(201).json(article);
+      } else {
+        // Use regular schema if no extended data
+        const validatedData = insertArticleSchema.parse({
+          ...req.body,
+          authorId: req.user.id
+        });
+        
+        const article = await storage.createArticle(validatedData);
+        return res.status(201).json(article);
+      }
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ 
@@ -306,10 +325,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "You don't have permission to update this article" });
       }
       
-      const validatedData = updateArticleSchema.parse(req.body);
-      const updatedArticle = await storage.updateArticle(articleId, validatedData);
-      
-      return res.json(updatedArticle);
+      // Check if extended data is present (categories, tags, etc.)
+      if (req.body.categoryIds || req.body.tagIds || req.body.coAuthorIds || 
+          req.body.keywords || req.body.metaTitle || req.body.metaDescription) {
+        // Use extended schema and update method
+        const validatedData = updateExtendedArticleSchema.parse(req.body);
+        const updatedArticle = await storage.updateExtendedArticle(articleId, validatedData);
+        return res.json(updatedArticle);
+      } else {
+        // Use regular schema if no extended data
+        const validatedData = updateArticleSchema.parse(req.body);
+        const updatedArticle = await storage.updateArticle(articleId, validatedData);
+        return res.json(updatedArticle);
+      }
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ 
@@ -354,6 +382,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updatedArticle = await storage.updateArticleStatus(articleId, status);
       
       return res.json(updatedArticle);
+    } catch (error) {
+      return res.status(500).json({ message: "Server error" });
+    }
+  });
+  
+  // Get article with relations
+  app.get("/api/articles/:id/full", authenticateToken, requireAuth, async (req: AuthRequest, res) => {
+    try {
+      if (!req.user?.id) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      
+      const articleId = parseInt(req.params.id);
+      if (isNaN(articleId)) {
+        return res.status(400).json({ message: "Invalid article ID" });
+      }
+      
+      const articleWithRelations = await storage.getArticleWithRelations(articleId);
+      
+      if (!articleWithRelations) {
+        return res.status(404).json({ message: "Article not found" });
+      }
+      
+      // Check if user has access to this article
+      // If article is not published, only author, co-authors or admin can see it
+      const { article } = articleWithRelations;
+      if (!article.published && 
+          article.authorId !== req.user.id && 
+          req.user.role !== UserRole.ADMIN &&
+          !articleWithRelations.coAuthors.some(author => author.id === req.user.id)) {
+        return res.status(403).json({ message: "You don't have permission to access this article" });
+      }
+      
+      return res.json(articleWithRelations);
     } catch (error) {
       return res.status(500).json({ message: "Server error" });
     }
@@ -580,6 +642,147 @@ export async function registerRoutes(app: Express): Promise<Server> {
           errors: error.errors 
         });
       }
+      return res.status(500).json({ message: "Server error" });
+    }
+  });
+  
+  // Category routes
+  // Get all categories
+  app.get("/api/categories", async (req, res) => {
+    try {
+      const categories = await storage.getAllCategories();
+      return res.json(categories);
+    } catch (error) {
+      return res.status(500).json({ message: "Server error" });
+    }
+  });
+  
+  // Create category (admin only)
+  app.post("/api/categories", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const validatedData = insertCategorySchema.parse(req.body);
+      const category = await storage.createCategory(validatedData);
+      return res.status(201).json(category);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Validation error", 
+          errors: error.errors 
+        });
+      }
+      return res.status(500).json({ message: "Server error" });
+    }
+  });
+  
+  // Update category (admin only)
+  app.patch("/api/categories/:id", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const categoryId = parseInt(req.params.id);
+      if (isNaN(categoryId)) {
+        return res.status(400).json({ message: "Invalid category ID" });
+      }
+      
+      const validatedData = updateCategorySchema.parse(req.body);
+      const updatedCategory = await storage.updateCategory(categoryId, validatedData);
+      
+      if (!updatedCategory) {
+        return res.status(404).json({ message: "Category not found" });
+      }
+      
+      return res.json(updatedCategory);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Validation error", 
+          errors: error.errors 
+        });
+      }
+      return res.status(500).json({ message: "Server error" });
+    }
+  });
+  
+  // Delete category (admin only)
+  app.delete("/api/categories/:id", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const categoryId = parseInt(req.params.id);
+      if (isNaN(categoryId)) {
+        return res.status(400).json({ message: "Invalid category ID" });
+      }
+      
+      const success = await storage.deleteCategory(categoryId);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Category not found or could not be deleted" });
+      }
+      
+      return res.status(204).send();
+    } catch (error) {
+      return res.status(500).json({ message: "Server error" });
+    }
+  });
+  
+  // Tag routes
+  // Get all tags
+  app.get("/api/tags", async (req, res) => {
+    try {
+      const tags = await storage.getAllTags();
+      return res.json(tags);
+    } catch (error) {
+      return res.status(500).json({ message: "Server error" });
+    }
+  });
+  
+  // Create tag (admin only)
+  app.post("/api/tags", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const validatedData = insertTagSchema.parse(req.body);
+      const tag = await storage.createTag(validatedData);
+      return res.status(201).json(tag);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Validation error", 
+          errors: error.errors 
+        });
+      }
+      return res.status(500).json({ message: "Server error" });
+    }
+  });
+  
+  // Delete tag (admin only)
+  app.delete("/api/tags/:id", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    try {
+      const tagId = parseInt(req.params.id);
+      if (isNaN(tagId)) {
+        return res.status(400).json({ message: "Invalid tag ID" });
+      }
+      
+      const success = await storage.deleteTag(tagId);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Tag not found or could not be deleted" });
+      }
+      
+      return res.status(204).send();
+    } catch (error) {
+      return res.status(500).json({ message: "Server error" });
+    }
+  });
+  
+  // User routes for author selection
+  // Get all authors
+  app.get("/api/users/authors", authenticateToken, requireAuth, async (req: AuthRequest, res) => {
+    try {
+      const users = await storage.getUsers(UserRole.AUTHOR);
+      
+      // Return users without their password
+      const usersWithoutPassword = users.map(user => {
+        const { password, ...userWithoutPassword } = user;
+        return userWithoutPassword;
+      });
+      
+      return res.json(usersWithoutPassword);
+    } catch (error) {
       return res.status(500).json({ message: "Server error" });
     }
   });
