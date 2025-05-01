@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { Separator } from '@/components/ui/separator';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/hooks/use-auth';
 
 interface ViewBlogProps {}
 
@@ -23,7 +23,8 @@ const ViewBlog: React.FC<ViewBlogProps> = () => {
   const params = useParams<{ id: string }>();
   const articleId = parseInt(params.id);
   const [, navigate] = useLocation();
-  const { isAuthenticated, user } = useAuth();
+  const { user } = useAuth();
+  const isAuthenticated = !!user;
   
   // Fetch the article data
   const { data, isLoading, error } = useQuery<ArticleWithRelations>({

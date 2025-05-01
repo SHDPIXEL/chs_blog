@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'wouter';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/hooks/use-auth';
 import {
   LayoutDashboard,
   Users,
@@ -31,7 +31,7 @@ interface AdminLayoutProps {
 
 const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const [location] = useLocation();
-  const { user, logout, isLoading } = useAuth();
+  const { user, logoutMutation } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navigation = [
@@ -82,7 +82,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     : 'AD';
 
   const handleLogout = () => {
-    logout();
+    logoutMutation.mutate();
   };
 
   const closeMobileMenu = () => {
@@ -198,7 +198,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                   variant="ghost"
                   size="icon"
                   onClick={handleLogout}
-                  disabled={isLoading}
+                  disabled={logoutMutation.isPending}
                 >
                   <LogOut className="h-5 w-5" />
                 </Button>
