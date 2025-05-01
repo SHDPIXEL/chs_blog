@@ -2,6 +2,7 @@ import React, { useCallback, useState } from 'react';
 import { useEditor, EditorContent, BubbleMenu } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
+import { NodeViewWrapper, NodeViewContent, ReactNodeViewRenderer } from '@tiptap/react';
 import Link from '@tiptap/extension-link';
 import Underline from '@tiptap/extension-underline';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -41,6 +42,165 @@ interface RichTextEditorProps {
   readOnly?: boolean;
 }
 
+// Resizable Image Component
+const ResizableImageComponent = ({ node, updateAttributes }: any) => {
+  const [size, setSize] = useState({
+    width: node.attrs.width || 'auto',
+    height: node.attrs.height || 'auto',
+  });
+
+  const [resizeDirection, setResizeDirection] = useState<string | null>(null);
+  const [startPoint, setStartPoint] = useState({ x: 0, y: 0 });
+  const [startSize, setStartSize] = useState({ width: 0, height: 0 });
+  const [imageNaturalSize, setImageNaturalSize] = useState({ width: 0, height: 0 });
+  const imageRef = React.useRef<HTMLImageElement>(null);
+
+  // Get natural size of image on load
+  const handleImageLoad = () => {
+    if (imageRef.current) {
+      setImageNaturalSize({
+        width: imageRef.current.naturalWidth,
+        height: imageRef.current.naturalHeight,
+      });
+      
+      // Set initial size if not already set
+      if (size.width === 'auto') {
+        const initialWidth = Math.min(600, imageRef.current.naturalWidth);
+        const aspectRatio = imageRef.current.naturalHeight / imageRef.current.naturalWidth;
+        setSize({
+          width: `${initialWidth}px`,
+          height: `${initialWidth * aspectRatio}px`,
+        });
+        
+        // Update attributes in the node
+        updateAttributes({
+          width: `${initialWidth}px`,
+          height: `${initialWidth * aspectRatio}px`,
+        });
+      }
+    }
+  };
+
+  // Start resizing
+  const handleResizeStart = (e: React.MouseEvent, direction: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const container = e.currentTarget.parentElement;
+    if (!container) return;
+    
+    // Get the current size
+    const rect = container.getBoundingClientRect();
+    setStartPoint({ x: e.clientX, y: e.clientY });
+    setStartSize({ width: rect.width, height: rect.height });
+    setResizeDirection(direction);
+    
+    // Add event listeners to document
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  };
+
+  // Handle mouse movement while resizing
+  const handleMouseMove = (e: MouseEvent) => {
+    if (!resizeDirection) return;
+    
+    e.preventDefault();
+    
+    // Calculate how much the mouse has moved
+    const deltaX = e.clientX - startPoint.x;
+    const deltaY = e.clientY - startPoint.y;
+    let newWidth = startSize.width;
+    let newHeight = startSize.height;
+    const aspectRatio = startSize.height / startSize.width;
+    
+    if (resizeDirection === 'right' || resizeDirection === 'bottom-right') {
+      newWidth = Math.max(100, startSize.width + deltaX);
+    }
+    
+    if (resizeDirection === 'bottom' || resizeDirection === 'bottom-right') {
+      newHeight = Math.max(50, startSize.height + deltaY);
+    }
+    
+    // Maintain aspect ratio for bottom-right corner drag
+    if (resizeDirection === 'bottom-right') {
+      // Use the larger of the two deltas to determine sizing
+      if (Math.abs(deltaX) > Math.abs(deltaY)) {
+        newHeight = newWidth * aspectRatio;
+      } else {
+        newWidth = newHeight / aspectRatio;
+      }
+    } else if (resizeDirection === 'right') {
+      // For right handle, maintain aspect ratio based on width
+      newHeight = newWidth * aspectRatio;
+    } else if (resizeDirection === 'bottom') {
+      // For bottom handle, maintain aspect ratio based on height
+      newWidth = newHeight / aspectRatio;
+    }
+    
+    setSize({
+      width: `${newWidth}px`,
+      height: `${newHeight}px`,
+    });
+  };
+  
+  // End resizing
+  const handleMouseUp = () => {
+    if (!resizeDirection) return;
+    
+    setResizeDirection(null);
+    
+    // Update the node attributes with the new size
+    updateAttributes({
+      width: size.width,
+      height: size.height,
+    });
+    
+    // Remove event listeners
+    document.removeEventListener('mousemove', handleMouseMove);
+    document.removeEventListener('mouseup', handleMouseUp);
+  };
+
+  // Clean up event listeners on unmount
+  React.useEffect(() => {
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, []);
+
+  return (
+    <NodeViewWrapper className="relative my-4">
+      <div 
+        className={`relative inline-block ${resizeDirection ? 'select-none' : ''}`}
+        style={{ width: size.width, height: size.height }}
+      >
+        <img
+          ref={imageRef}
+          src={node.attrs.src}
+          alt=""
+          onLoad={handleImageLoad}
+          className="max-w-full h-auto object-contain rounded-md"
+          style={{ width: '100%', height: '100%' }}
+        />
+        
+        {/* Resize handles */}
+        <div
+          className="absolute top-0 right-0 w-3 h-full cursor-ew-resize opacity-0 hover:opacity-100 hover:bg-primary/20"
+          onMouseDown={(e) => handleResizeStart(e, 'right')}
+        />
+        <div
+          className="absolute bottom-0 left-0 w-full h-3 cursor-ns-resize opacity-0 hover:opacity-100 hover:bg-primary/20"
+          onMouseDown={(e) => handleResizeStart(e, 'bottom')}
+        />
+        <div
+          className="absolute bottom-0 right-0 w-6 h-6 cursor-nwse-resize opacity-0 hover:opacity-100 hover:bg-primary/20"
+          onMouseDown={(e) => handleResizeStart(e, 'bottom-right')}
+        />
+      </div>
+    </NodeViewWrapper>
+  );
+};
+
 const RichTextEditor: React.FC<RichTextEditorProps> = ({
   value,
   onChange,
@@ -52,10 +212,28 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const [showImagePopover, setShowImagePopover] = useState<boolean>(false);
   const [imageUrl, setImageUrl] = useState<string>('');
 
+  // Set up custom image extension
+  const CustomImage = Image.extend({
+    addNodeView() {
+      return ReactNodeViewRenderer(ResizableImageComponent);
+    },
+    addAttributes() {
+      return {
+        ...this.parent?.(),
+        width: {
+          default: 'auto',
+        },
+        height: {
+          default: 'auto',
+        },
+      };
+    },
+  });
+
   const editor = useEditor({
     extensions: [
       StarterKit,
-      Image,
+      CustomImage,
       Link.configure({
         openOnClick: false,
       }),
