@@ -80,7 +80,7 @@ const BlogDetail: React.FC = () => {
     );
   }
 
-  const { article: articleData, categories = [], tags = [] } = article;
+  const { article: articleData, categories = [], tags = [], coAuthors = [] } = article;
 
   return (
     <PublicLayout>
@@ -120,10 +120,35 @@ const BlogDetail: React.FC = () => {
               <AvatarFallback>{articleData.author?.name ? getInitials(articleData.author.name) : 'A'}</AvatarFallback>
             </Avatar>
             <div>
-              <p className="font-medium">{articleData.author?.name || 'Anonymous'}</p>
-              <p className="text-sm text-gray-500">
-                {formatDate(articleData.createdAt.toString())} • {Math.ceil(articleData.content.length / 1000)} min read
-              </p>
+              <div className="flex items-center gap-2">
+                <p className="font-medium">{articleData.author?.name || 'Anonymous'}</p>
+                {coAuthors.length > 0 && (
+                  <div className="flex -space-x-2 ml-2">
+                    {coAuthors.slice(0, 3).map((coAuthor: any, index: number) => (
+                      <Avatar key={index} className="h-6 w-6 border-2 border-white">
+                        <AvatarImage src={coAuthor.avatarUrl} alt={coAuthor.name} />
+                        <AvatarFallback className="text-xs">{getInitials(coAuthor.name)}</AvatarFallback>
+                      </Avatar>
+                    ))}
+                    {coAuthors.length > 3 && (
+                      <div className="h-6 w-6 rounded-full bg-gray-200 flex items-center justify-center text-xs border-2 border-white">
+                        +{coAuthors.length - 3}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+              <div className="flex items-center text-sm text-gray-500">
+                <span>{formatDate(articleData.createdAt.toString())}</span>
+                <span className="mx-2">•</span>
+                <span>{Math.ceil(articleData.content.length / 1000)} min read</span>
+                {coAuthors.length > 0 && (
+                  <>
+                    <span className="mx-2">•</span>
+                    <span>{coAuthors.length + 1} authors</span>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -185,7 +210,10 @@ const BlogDetail: React.FC = () => {
           
           {/* Author info */}
           <div className="mt-12">
-            <Card>
+            <h2 className="text-2xl font-bold mb-6">About the {coAuthors.length > 0 ? 'Authors' : 'Author'}</h2>
+            
+            {/* Main Author Card */}
+            <Card className="mb-6">
               <CardContent className="p-6">
                 <div className="flex flex-col sm:flex-row gap-6">
                   <Avatar className="h-20 w-20">
@@ -193,7 +221,10 @@ const BlogDetail: React.FC = () => {
                     <AvatarFallback className="text-lg">{articleData.author?.name ? getInitials(articleData.author.name) : 'A'}</AvatarFallback>
                   </Avatar>
                   <div>
-                    <h3 className="text-xl font-bold mb-2">{articleData.author?.name || 'Anonymous'}</h3>
+                    <div className="flex items-center gap-2 mb-2">
+                      <h3 className="text-xl font-bold">{articleData.author?.name || 'Anonymous'}</h3>
+                      <Badge variant="secondary" className="bg-blue-100 text-blue-800">Main Author</Badge>
+                    </div>
                     <p className="text-gray-700 mb-4">
                       {articleData.author?.bio || 'Academic researcher and writer specializing in philosophy and ethics.'}
                     </p>
@@ -202,6 +233,32 @@ const BlogDetail: React.FC = () => {
                 </div>
               </CardContent>
             </Card>
+            
+            {/* Co-authors Cards */}
+            {coAuthors.length > 0 && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold mb-2">Co-Authors</h3>
+                {coAuthors.map((coAuthor: any) => (
+                  <Card key={coAuthor.id} className="bg-gray-50">
+                    <CardContent className="p-6">
+                      <div className="flex flex-col sm:flex-row gap-6">
+                        <Avatar className="h-16 w-16">
+                          <AvatarImage src={coAuthor.avatarUrl} alt={coAuthor.name} />
+                          <AvatarFallback>{getInitials(coAuthor.name)}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <h3 className="text-lg font-bold mb-2">{coAuthor.name}</h3>
+                          <p className="text-gray-700 text-sm mb-4">
+                            {coAuthor.bio || 'Contributor to this article'}
+                          </p>
+                          <Button variant="outline" size="sm">View Profile</Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </div>
           
           {/* Related articles would go here */}
