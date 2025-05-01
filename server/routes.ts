@@ -476,22 +476,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Article not found" });
       }
       
-      // Update article status and add remarks
-      const updatedArticle = await storage.updateArticle(articleId, {
+      // Prepare update data with status and review information
+      const updateData: any = {
         status,
         reviewRemarks: remarks || null,
         reviewedBy: req.user.id,
         reviewedAt: new Date().toISOString()
-      });
+      };
+      
+      // If scheduledPublishAt is provided, add it to the update data
+      if (scheduledPublishAt) {
+        console.log('Setting scheduled publish date:', scheduledPublishAt);
+        updateData.scheduledPublishAt = scheduledPublishAt;
+        
+        // When scheduling a post, we want status=published but published=false
+        // The scheduler will set published=true when the time comes
+        if (status === ArticleStatus.PUBLISHED) {
+          updateData.published = false;
+        }
+      } else if (status === ArticleStatus.PUBLISHED) {
+        // If no schedule is set but status is published, ensure it's published immediately
+        updateData.published = true;
+        updateData.publishedAt = new Date().toISOString();
+      }
+      
+      console.log('Updating article with data:', updateData);
+      const updatedArticle = await storage.updateArticle(articleId, updateData);
       
       // Create a notification for the author
       if (status === ArticleStatus.PUBLISHED) {
         try {
+          const notificationMessage = scheduledPublishAt 
+            ? `Your article "${article.title}" has been approved and scheduled to publish on ${new Date(scheduledPublishAt).toLocaleString()}.`
+            : `Your article "${article.title}" has been approved and published.`;
+            
           await storage.createNotification({
             userId: article.authorId,
             type: NotificationType.ARTICLE_APPROVED,
-            title: "Article Approved",
-            message: `Your article "${article.title}" has been approved and published.`,
+            title: scheduledPublishAt ? "Article Scheduled" : "Article Approved",
+            message: notificationMessage,
             articleId: article.id,
             read: false
           });
@@ -1292,7 +1315,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Authentication required" });
       }
       
-      const { ids, status } = req.body;
+      const { ids, status, scheduledPublishAt } = req.body;
+      
+      console.log('Bulk article status update request:', { status, scheduledPublishAt, articleCount: ids?.length });
       
       if (!Array.isArray(ids) || ids.length === 0) {
         return res.status(400).json({ message: "Invalid or empty article IDs" });
@@ -1312,18 +1337,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
               return { id, success: false };
             }
             
-            // Update the article status
-            const updatedArticle = await storage.updateArticleStatus(id, status);
+            // Prepare update data with status
+            let updatedArticle;
+            
+            if (scheduledPublishAt && status === ArticleStatus.PUBLISHED) {
+              // Use updateArticle for scheduled publishing
+              updatedArticle = await storage.updateArticle(id, {
+                status,
+                scheduledPublishAt,
+                published: false, // Will be set to true by the scheduler
+                reviewedBy: req.user.id,
+                reviewedAt: new Date().toISOString()
+              });
+            } else {
+              // Regular status update (immediate publishing or other statuses)
+              updatedArticle = await storage.updateArticleStatus(id, status);
+            }
             
             // Create notifications based on status change
             if (updatedArticle) {
               if (status === ArticleStatus.PUBLISHED) {
                 try {
+                  const notificationMessage = scheduledPublishAt 
+                    ? `Your article "${article.title}" has been approved and scheduled to publish on ${new Date(scheduledPublishAt).toLocaleString()}.`
+                    : `Your article "${article.title}" has been approved and published.`;
+                    
                   await storage.createNotification({
                     userId: article.authorId,
                     type: NotificationType.ARTICLE_APPROVED,
-                    title: "Article Approved",
-                    message: `Your article "${article.title}" has been approved and published.`,
+                    title: scheduledPublishAt ? "Article Scheduled" : "Article Approved",
+                    message: notificationMessage,
                     articleId: article.id,
                     read: false
                   });
