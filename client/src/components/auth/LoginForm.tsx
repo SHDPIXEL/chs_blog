@@ -32,11 +32,11 @@ const LoginForm: React.FC = () => {
 
   // Redirect to appropriate dashboard if already logged in
   React.useEffect(() => {
-    if (user) {
-      const redirectPath = user.role === 'admin' ? '/admin/dashboard' : '/author/dashboard';
+    if (auth.user) {
+      const redirectPath = auth.user.role === 'admin' ? '/admin/dashboard' : '/author/dashboard';
       setLocation(redirectPath);
     }
-  }, [user, setLocation]);
+  }, [auth.user, setLocation]);
 
   const form = useForm<z.infer<typeof loginFormSchema>>({
     resolver: zodResolver(loginFormSchema),
@@ -54,7 +54,7 @@ const LoginForm: React.FC = () => {
         password: values.password,
       };
       
-      await loginMutation.mutateAsync(loginData);
+      await auth.login(loginData);
       // Redirect is handled in the useEffect
     } catch (error) {
       // Error is handled in the auth context
@@ -126,20 +126,20 @@ const LoginForm: React.FC = () => {
           </div>
         </div>
 
-        {loginMutation.isError && loginMutation.error instanceof Error && (
+        {auth.error && (
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Error</AlertTitle>
-            <AlertDescription>{loginMutation.error.message}</AlertDescription>
+            <AlertDescription>{auth.error}</AlertDescription>
           </Alert>
         )}
 
         <Button 
           type="submit" 
           className="w-full" 
-          disabled={loginMutation.isPending}
+          disabled={auth.isLoading}
         >
-          {loginMutation.isPending ? (
+          {auth.isLoading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Processing...
