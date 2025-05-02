@@ -1467,6 +1467,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/uploads", express.static(uploadsFolder));
 
   // Admin routes
+  // Admin profile
+  app.get(
+    "/api/admin/profile",
+    authenticateToken,
+    requireAdmin,
+    async (req: AuthRequest, res) => {
+      try {
+        if (!req.user?.id) {
+          return res.status(401).json({ message: "Authentication required" });
+        }
+
+        const user = await storage.getUser(req.user.id);
+        if (!user) {
+          return res.status(404).json({ message: "User not found" });
+        }
+
+        // Return user without password
+        const { password, ...userWithoutPassword } = user;
+        return res.json(userWithoutPassword);
+      } catch (error) {
+        return res.status(500).json({ message: "Server error" });
+      }
+    },
+  );
+
+  // Update admin profile
+  app.patch(
+    "/api/admin/profile",
+    authenticateToken,
+    requireAdmin,
+    async (req: AuthRequest, res) => {
+      try {
+        if (!req.user?.id) {
+          return res.status(401).json({ message: "Authentication required" });
+        }
+
+        const validatedData = updateUserProfileSchema.parse(req.body);
+        const updatedUser = await storage.updateUserProfile(
+          req.user.id,
+          validatedData,
+        );
+
+        if (!updatedUser) {
+          return res.status(404).json({ message: "User not found" });
+        }
+
+        // Return updated user without password
+        const { password, ...userWithoutPassword } = updatedUser;
+        return res.json(userWithoutPassword);
+      } catch (error) {
+        return res.status(500).json({ message: "Server error" });
+      }
+    },
+  );
+
   // Dashboard stats
   app.get(
     "/api/admin/dashboard",
