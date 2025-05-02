@@ -26,18 +26,21 @@ export function ContentRenderer({
       // 1. First check for images with direct link attribute in the img tag
       //    These may come from older content
       allImages.forEach((img, index) => {
+        // Cast img to HTMLImageElement to access style property
+        const imgElement = img as HTMLImageElement;
+        
         console.log(`Processing image ${index + 1}:`, {
-          src: img.getAttribute("src"),
-          link: img.getAttribute("link"),
-          width: img.getAttribute("width"),
-          height: img.getAttribute("height"),
-          isInAnchor: img.parentElement?.tagName.toLowerCase() === "a",
-          parentElement: img.parentElement?.tagName,
+          src: imgElement.getAttribute("src"),
+          link: imgElement.getAttribute("link"),
+          width: imgElement.getAttribute("width"),
+          height: imgElement.getAttribute("height"),
+          isInAnchor: imgElement.parentElement?.tagName.toLowerCase() === "a",
+          parentElement: imgElement.parentElement?.tagName,
         });
         
         // If image has a link but is not in an anchor
-        const imgLink = img.getAttribute("link");
-        if (imgLink && img.parentElement?.tagName.toLowerCase() !== "a") {
+        const imgLink = imgElement.getAttribute("link");
+        if (imgLink && imgElement.parentElement?.tagName.toLowerCase() !== "a") {
           console.log(`Image ${index + 1} has link attribute but no anchor parent, creating anchor`);
           
           // Create a wrapper with proper styling
@@ -48,11 +51,11 @@ export function ContentRenderer({
           wrapper.className = "inline-block relative cursor-pointer hover:opacity-95 transition-all";
           
           // Apply some styling to indicate it's a linked image
-          img.classList.add("rounded-md");
+          imgElement.classList.add("rounded-md");
           
           // Get image dimensions from attributes
-          const width = img.getAttribute("width");
-          const height = img.getAttribute("height");
+          const width = imgElement.getAttribute("width");
+          const height = imgElement.getAttribute("height");
           
           // Apply dimensions to wrapper
           if (width) {
@@ -61,19 +64,19 @@ export function ContentRenderer({
           }
           
           if (height) {
-            img.style.height = height.includes('px') ? height : `${height}px`;
+            imgElement.style.height = height.includes('px') ? height : `${height}px`;
           }
           
           // Make sure the image fills the container
-          img.style.maxWidth = '100%';
-          img.style.objectFit = 'contain';
+          imgElement.style.maxWidth = '100%';
+          imgElement.style.objectFit = 'contain';
           
           // Replace the image with wrapped version
-          img.parentNode?.insertBefore(wrapper, img);
-          wrapper.appendChild(img);
+          imgElement.parentNode?.insertBefore(wrapper, imgElement);
+          wrapper.appendChild(imgElement);
           
           // Remove the link attribute as it's now implemented as an anchor
-          img.removeAttribute("link");
+          imgElement.removeAttribute("link");
           
           // Add indicator that this is a link
           const indicator = document.createElement("div");
@@ -83,56 +86,60 @@ export function ContentRenderer({
         }
       });
       
-      // 2. Handle images inside anchors (new pattern from editor)
-      const linkedImages = contentRef.current.querySelectorAll("a > img");
-      console.log(`Found ${linkedImages.length} images already inside anchor tags`);
+      // 2. Fetch anchors again after previous modifications
+      const anchors = contentRef.current.querySelectorAll("a");
+      console.log(`Found ${anchors.length} anchors in content`);
       
-      linkedImages.forEach((img, index) => {
-        const anchor = img.parentElement as HTMLAnchorElement;
+      anchors.forEach((anchor, index) => {
+        // Cast to HTMLAnchorElement to access style property
+        const anchorElement = anchor as HTMLAnchorElement;
         
-        console.log(`Processing linked image ${index + 1}:`, {
-          src: img.getAttribute("src"),
-          anchorHref: anchor.href,
-          width: img.getAttribute("width"),
-          height: img.getAttribute("height"),
-          hasLinkIndicator: anchor.querySelector(".bg-blue-500") !== null,
+        // Check if the anchor has an image as a direct child
+        const imgElement = anchorElement.querySelector("img") as HTMLImageElement;
+        if (!imgElement) return; // Skip anchors without images
+        
+        console.log(`Processing anchor with image ${index + 1}:`, {
+          href: anchorElement.href,
+          hasImage: !!imgElement,
+          imageSource: imgElement?.getAttribute("src"),
+          width: imgElement?.getAttribute("width"),
+          height: imgElement?.getAttribute("height"),
+          hasLinkIndicator: anchorElement.querySelector(".bg-blue-500") !== null,
         });
         
-        if (anchor && anchor.tagName.toLowerCase() === "a") {
-          // Style the anchor element if it doesn't already have the class
-          if (!anchor.className.includes("inline-block")) {
-            anchor.className = "inline-block relative cursor-pointer hover:opacity-95 transition-all";
-            
-            // Apply some styling to indicate it's a linked image
-            img.classList.add("rounded-md");
-            
-            // Get image dimensions from attributes
-            const width = img.getAttribute('width');
-            const height = img.getAttribute('height');
-            
-            // Apply dimensions to both the image and anchor if they exist
-            if (width) {
-              // Set the anchor container width to match the image width
-              anchor.style.width = width.includes('px') ? width : `${width}px`;
-              anchor.style.display = 'block'; // Make sure it takes up the full width
-            }
-            
-            if (height) {
-              // Set the image height 
-              img.style.height = height.includes('px') ? height : `${height}px`;
-            }
-            
-            // Make sure the image fills the container
-            img.style.maxWidth = '100%';
-            img.style.objectFit = 'contain';
-            
-            // Add indicator that this is a link if not already present
-            if (!anchor.querySelector(".bg-blue-500")) {
-              const indicator = document.createElement("div");
-              indicator.className = "absolute top-2 right-2 bg-blue-500 text-white px-2 py-1 rounded-md shadow-md text-xs flex items-center";
-              indicator.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3 w-3 mr-1"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg><span class="hidden sm:inline">Link</span>';
-              anchor.appendChild(indicator);
-            }
+        // Style the anchor element if it doesn't already have the class
+        if (!anchorElement.className.includes("inline-block")) {
+          anchorElement.className = "inline-block relative cursor-pointer hover:opacity-95 transition-all";
+          
+          // Apply some styling to indicate it's a linked image
+          imgElement.classList.add("rounded-md");
+          
+          // Get image dimensions from attributes
+          const width = imgElement.getAttribute('width');
+          const height = imgElement.getAttribute('height');
+          
+          // Apply dimensions to both the image and anchor if they exist
+          if (width) {
+            // Set the anchor container width to match the image width
+            anchorElement.style.width = width.includes('px') ? width : `${width}px`;
+            anchorElement.style.display = 'block'; // Make sure it takes up the full width
+          }
+          
+          if (height) {
+            // Set the image height 
+            imgElement.style.height = height.includes('px') ? height : `${height}px`;
+          }
+          
+          // Make sure the image fills the container
+          imgElement.style.maxWidth = '100%';
+          imgElement.style.objectFit = 'contain';
+          
+          // Add indicator that this is a link if not already present
+          if (!anchorElement.querySelector(".bg-blue-500")) {
+            const indicator = document.createElement("div");
+            indicator.className = "absolute top-2 right-2 bg-blue-500 text-white px-2 py-1 rounded-md shadow-md text-xs flex items-center";
+            indicator.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3 w-3 mr-1"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg><span class="hidden sm:inline">Link</span>';
+            anchorElement.appendChild(indicator);
           }
         }
       });
@@ -143,17 +150,22 @@ export function ContentRenderer({
       
       imageContainers.forEach((container, index) => {
         const link = container.getAttribute("data-link");
-        const img = container.querySelector("img");
+        const imgElement = container.querySelector("img") as HTMLImageElement;
+        
+        if (!imgElement) {
+          console.log(`Image container ${index + 1} has no image, skipping`);
+          return;
+        }
         
         console.log(`Processing image container ${index + 1}:`, {
           dataLink: link,
-          hasImage: !!img,
-          width: img?.getAttribute("width"),
-          height: img?.getAttribute("height"),
-          isImgInAnchor: img?.parentElement?.tagName.toLowerCase() === "a",
+          hasImage: !!imgElement,
+          width: imgElement.getAttribute("width"),
+          height: imgElement.getAttribute("height"),
+          isImgInAnchor: imgElement.parentElement?.tagName.toLowerCase() === "a",
         });
         
-        if (link && img && img.parentElement?.tagName.toLowerCase() !== "a") {
+        if (link && imgElement && imgElement.parentElement?.tagName.toLowerCase() !== "a") {
           // Create a wrapper with proper styling
           const wrapper = document.createElement("a");
           wrapper.href = link;
@@ -162,11 +174,11 @@ export function ContentRenderer({
           wrapper.className = "inline-block relative cursor-pointer hover:opacity-95 transition-all";
           
           // Apply some styling to indicate it's a linked image
-          img.classList.add("rounded-md");
+          imgElement.classList.add("rounded-md");
           
           // Get image dimensions from attributes
-          const width = img.getAttribute("width");
-          const height = img.getAttribute("height");
+          const width = imgElement.getAttribute("width");
+          const height = imgElement.getAttribute("height");
           
           // Apply dimensions to wrapper
           if (width) {
@@ -175,16 +187,16 @@ export function ContentRenderer({
           }
           
           if (height) {
-            img.style.height = height.includes('px') ? height : `${height}px`;
+            imgElement.style.height = height.includes('px') ? height : `${height}px`;
           }
           
           // Make sure the image fills the container
-          img.style.maxWidth = '100%';
-          img.style.objectFit = 'contain';
+          imgElement.style.maxWidth = '100%';
+          imgElement.style.objectFit = 'contain';
           
           // Replace the image with wrapped version
-          img.parentNode?.insertBefore(wrapper, img);
-          wrapper.appendChild(img);
+          imgElement.parentNode?.insertBefore(wrapper, imgElement);
+          wrapper.appendChild(imgElement);
           
           // Add indicator that this is a link
           const indicator = document.createElement("div");
