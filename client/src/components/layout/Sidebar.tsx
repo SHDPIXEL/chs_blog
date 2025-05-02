@@ -31,7 +31,7 @@ interface NavItem {
 
 const Sidebar: React.FC<SidebarProps> = ({ role }) => {
   const [location] = useLocation();
-  const { user, logoutMutation } = useAuth();
+  const { user, logout } = useAuth();
 
   // Define navigation items based on role
   const adminNavItems: NavItem[] = [
@@ -54,7 +54,7 @@ const Sidebar: React.FC<SidebarProps> = ({ role }) => {
   const navItems = role === 'admin' ? adminNavItems : authorNavItems;
   
   const handleLogout = () => {
-    logoutMutation.mutate();
+    logout();
   };
 
   return (

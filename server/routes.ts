@@ -223,6 +223,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     },
   );
+  
+  // Admin profile
+  app.get(
+    "/api/admin/profile",
+    authenticateToken,
+    requireAdmin,
+    async (req: AuthRequest, res) => {
+      try {
+        if (!req.user?.id) {
+          return res.status(401).json({ message: "Authentication required" });
+        }
+
+        const user = await storage.getUser(req.user.id);
+        if (!user) {
+          return res.status(404).json({ message: "User not found" });
+        }
+
+        // Return user without password
+        const { password, ...userWithoutPassword } = user;
+        return res.json(userWithoutPassword);
+      } catch (error) {
+        console.error("Error fetching admin profile:", error);
+        return res.status(500).json({ message: "Server error" });
+      }
+    },
+  );
 
   // Update author profile
   app.patch(
@@ -255,6 +281,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
             errors: error.errors,
           });
         }
+        return res.status(500).json({ message: "Server error" });
+      }
+    },
+  );
+
+  // Update admin profile
+  app.patch(
+    "/api/admin/profile",
+    authenticateToken,
+    requireAdmin,
+    async (req: AuthRequest, res) => {
+      try {
+        if (!req.user?.id) {
+          return res.status(401).json({ message: "Authentication required" });
+        }
+
+        const validatedData = updateUserProfileSchema.parse(req.body);
+        const updatedUser = await storage.updateUserProfile(
+          req.user.id,
+          validatedData,
+        );
+
+        if (!updatedUser) {
+          return res.status(404).json({ message: "User not found" });
+        }
+
+        // Return user without password
+        const { password, ...userWithoutPassword } = updatedUser;
+        return res.json(userWithoutPassword);
+      } catch (error) {
+        if (error instanceof z.ZodError) {
+          return res.status(400).json({
+            message: "Validation error",
+            errors: error.errors,
+          });
+        }
+        console.error("Error updating admin profile:", error);
         return res.status(500).json({ message: "Server error" });
       }
     },
