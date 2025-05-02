@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import AuthorLayout from '@/components/layout/AuthorLayout';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { Article } from '@shared/schema';
 import { useToast } from '@/hooks/use-toast';
@@ -10,9 +10,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Pencil, Clock, Eye, MessageSquare, Trash2, FileText, Plus } from 'lucide-react';
+import { Pencil, Clock, Eye, MessageSquare, Trash2, FileText, Plus, Loader2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ArticleStatusType } from '@shared/schema';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 type ArticleStatusFilter = 'all' | ArticleStatusType;
 
@@ -145,6 +153,33 @@ interface BlogItemProps {
 }
 
 const BlogItem: React.FC<BlogItemProps> = ({ article }) => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  
+  // Delete blog mutation
+  const deleteBlogMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest('DELETE', `/api/articles/${article.id}`);
+      return res;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/author/articles'] });
+      setDeleteDialogOpen(false);
+      toast({
+        title: 'Blog deleted',
+        description: 'The blog post has been deleted successfully',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Delete failed',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  });
+
   return (
     <div className="border rounded-lg overflow-hidden hover:border-gray-300 transition-colors">
       <div className="flex flex-col md:flex-row">
@@ -184,11 +219,11 @@ const BlogItem: React.FC<BlogItemProps> = ({ article }) => {
               <>
                 <span className="mx-2">•</span>
                 <Eye className="mr-1 h-4 w-4" />
-                <span>243 views</span>
+                <span>{article.viewCount || 0} views</span>
                 
                 <span className="mx-2">•</span>
                 <MessageSquare className="mr-1 h-4 w-4" />
-                <span>5 comments</span>
+                <span>0 comments</span>
               </>
             )}
           </div>
@@ -199,7 +234,11 @@ const BlogItem: React.FC<BlogItemProps> = ({ article }) => {
                 <Pencil className="mr-1 h-4 w-4" /> Edit
               </Link>
             </Button>
-            <Button variant="outline" size="sm">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setDeleteDialogOpen(true)}
+            >
               <Trash2 className="mr-1 h-4 w-4" /> Delete
             </Button>
             <Button 
@@ -214,6 +253,38 @@ const BlogItem: React.FC<BlogItemProps> = ({ article }) => {
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Delete</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete "{article.title}"? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => deleteBlogMutation.mutate()}
+              disabled={deleteBlogMutation.isPending}
+            >
+              {deleteBlogMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : "Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
