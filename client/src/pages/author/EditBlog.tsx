@@ -1023,12 +1023,7 @@ const EditBlogPage: React.FC = () => {
                       </AlertDialogContent>
                     </AlertDialog>
                     
-                    {article?.article?.status === ArticleStatus.PUBLISHED && (
-                      <Button variant="outline" type="button" onClick={handleViewArticle}>
-                        <Eye className="mr-2 h-4 w-4" />
-                        View Blog
-                      </Button>
-                    )}
+                    {/* View Blog button removed */}
                   </div>
                   
                   <div className="flex space-x-2">

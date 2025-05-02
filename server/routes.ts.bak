@@ -428,8 +428,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           errors: error.errors 
         });
       }
-      console.error("Error updating article:", error);
-      return res.status(500).json({ message: "Server error", details: error instanceof Error ? error.message : String(error) });
+      return res.status(500).json({ message: "Server error" });
     }
   });
   
