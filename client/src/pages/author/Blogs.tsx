@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Pencil, Clock, Eye, MessageSquare, Trash2, FileText, Plus, Loader2 } from 'lucide-react';
+import { Pencil, Clock, Eye, MessageSquare, Trash2, FileText, Plus, Loader2, Calendar } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ArticleStatusType } from '@shared/schema';
 import {
@@ -198,9 +198,16 @@ const BlogItem: React.FC<BlogItemProps> = ({ article }) => {
         <div className={`p-4 ${article.featuredImage ? 'md:w-3/4' : 'w-full'}`}>
           <div className="flex justify-between items-start mb-2">
             <h3 className="text-lg font-semibold text-gray-900">{article.title}</h3>
-            <Badge variant={getStatusBadgeVariant(article.status as ArticleStatusType)} className="capitalize">
-              {article.status}
-            </Badge>
+            {article.status === 'published' && !article.published && article.scheduledPublishAt ? (
+              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-300 hover:bg-blue-100 flex items-center">
+                <Calendar className="h-3 w-3 mr-1" />
+                Scheduled
+              </Badge>
+            ) : (
+              <Badge variant={getStatusBadgeVariant(article.status as ArticleStatusType)} className="capitalize">
+                {article.status}
+              </Badge>
+            )}
           </div>
           
           {article.excerpt && (

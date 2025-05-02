@@ -236,9 +236,16 @@ export class DatabaseStorage implements IStorage {
       delete articleData.scheduledPublishAt;
     }
     
-    // Set publishedAt timestamp if article is published
-    if (articleData.published) {
+    // Set publishedAt timestamp if article is published (but not scheduled)
+    if (articleData.published && !articleData.scheduledPublishAt) {
       articleData.publishedAt = new Date();
+    }
+    
+    // If it's scheduled (status published but published flag is false), ensure it's not immediately published
+    if (articleData.scheduledPublishAt && articleData.status === 'published' && articleData.published === false) {
+      console.log('Scheduling article for future publication:', articleData.scheduledPublishAt);
+      // Ensure we don't set publishedAt yet - this will be set by the scheduler when published
+      articleData.publishedAt = null;
     }
     
     const [article] = await db.insert(articles).values(articleData).returning();
