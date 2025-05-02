@@ -37,6 +37,10 @@ import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import PageHeader from '@/components/ui/PageHeader';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { format } from 'date-fns';
+import BlogPreviewDialog from '@/components/blog/BlogPreviewDialog';
 import { 
   ArrowLeft, 
   ImagePlus, 
@@ -45,7 +49,10 @@ import {
   Tags, 
   Users, 
   Save, 
-  Eye 
+  Eye,
+  Calendar,
+  Clock,
+  CheckCircle
 } from 'lucide-react';
 
 // Custom article schema for admin (simplified options)
@@ -143,17 +150,52 @@ const NewBlog: React.FC = () => {
     }
   });
 
+  // Preview functionality
+  const handlePreview = () => {
+    const formValues = form.getValues();
+    if (editorRef.current) {
+      // Get latest content from editor
+      formValues.content = editorRef.current.getHTML();
+    }
+    setPreviewOpen(true);
+  };
+
+  // Modified submit to handle scheduling
   const onSubmit = (values: z.infer<typeof adminArticleSchema>) => {
     // Get the content from Tiptap editor
     if (editorRef.current) {
       values.content = editorRef.current.getHTML();
     }
     
-    createArticleMutation.mutate(values);
+    // Add scheduling data if needed
+    const articleData = {
+      ...values,
+      authorId: user?.id,
+      featuredImage,
+      // For admin, published is set based on status
+      published: values.status === ArticleStatus.PUBLISHED && !useScheduling,
+      // Convert customTags to the expected tags format for the API
+      tags: values.customTags,
+    };
+    
+    // Add scheduling information if enabled
+    if (useScheduling && scheduledPublishAt && values.status === ArticleStatus.PUBLISHED) {
+      articleData.scheduledPublishAt = scheduledPublishAt;
+      // When scheduling, status is published but published flag is false
+      articleData.published = false;
+    }
+    
+    // Remove customTags as it's not in the API schema
+    delete (articleData as any).customTags;
+    
+    createArticleMutation.mutate(articleData);
   };
 
   const [keywordInput, setKeywordInput] = useState<string>('');
   const [tagInput, setTagInput] = useState<string>('');
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [useScheduling, setUseScheduling] = useState(false);
+  const [scheduledPublishAt, setScheduledPublishAt] = useState<string | undefined>(undefined);
   
   // Handle adding a keyword
   const addKeyword = () => {
