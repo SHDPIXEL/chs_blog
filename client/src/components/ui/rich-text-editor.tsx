@@ -398,9 +398,49 @@ export const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>
     }
   }, [editor, value]);
   
+  // Process HTML before returning
+  const processHTML = (htmlContent: string) => {
+    // Use DOM parser to manipulate HTML
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlContent, 'text/html');
+    
+    // Find all image containers
+    const imageContainers = doc.querySelectorAll('div[data-type="image"]');
+    
+    imageContainers.forEach(container => {
+      const link = container.getAttribute('data-link');
+      const img = container.querySelector('img');
+      
+      if (link && img) {
+        // Create an anchor element
+        const anchor = doc.createElement('a');
+        anchor.href = link;
+        anchor.target = "_blank";
+        anchor.rel = "noopener noreferrer";
+        
+        // Move the img into the anchor
+        const imgClone = img.cloneNode(true);
+        anchor.appendChild(imgClone);
+        
+        // Replace the img with the anchor
+        img.parentNode?.replaceChild(anchor, img);
+      }
+    });
+    
+    return doc.body.innerHTML;
+  };
+
   // Expose methods via ref
   useImperativeHandle(ref, () => ({
-    getHTML: () => editor ? editor.getHTML() : ''
+    getHTML: () => {
+      if (!editor) return '';
+      
+      // Get HTML from editor
+      const html = editor.getHTML();
+      
+      // Process HTML to wrap linked images in anchor tags
+      return processHTML(html);
+    }
   }), [editor]);
 
   const setLink = useCallback(() => {
