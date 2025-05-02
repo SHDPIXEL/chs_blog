@@ -468,14 +468,14 @@ const NewBlogPage: React.FC = () => {
                               <SelectItem value={ArticleStatus.REVIEW}>
                                 Submit for Review
                               </SelectItem>
-                              {user?.canPublish && (
+                              {canPublish && (
                                 <SelectItem value={ArticleStatus.PUBLISHED}>
                                   Publish
                                 </SelectItem>
                               )}
                             </SelectContent>
                           </Select>
-                          {!user?.canPublish && (
+                          {!canPublish && (
                             <FormDescription className="mt-2 text-amber-500">
                               Note: You don't have direct publishing rights. Submit for review to have an admin publish your post.
                             </FormDescription>
