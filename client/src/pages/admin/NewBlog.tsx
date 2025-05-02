@@ -122,6 +122,7 @@ const NewBlog: React.FC = () => {
       title: "",
       content: "",
       excerpt: "",
+      slug: "", // Add default slug
       status: ArticleStatus.DRAFT,
       categoryIds: [],
       tagIds: [],
@@ -188,10 +189,28 @@ const NewBlog: React.FC = () => {
       values.content = editorRef.current.getHTML();
     }
 
+    // Make sure we have a user ID for the author
+    if (!user?.id) {
+      toast({
+        title: "Error",
+        description: "Unable to get user ID. Please try logging in again.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Create a slug from the title if not provided
+    if (!values.slug && values.title) {
+      values.slug = values.title
+        .toLowerCase()
+        .replace(/[^\w\s]/gi, '')
+        .replace(/\s+/g, '-');
+    }
+    
     // Add scheduling data if needed
     const articleData = {
       ...values,
-      authorId: user?.id,
+      authorId: user.id, // Now guaranteed to be defined
       featuredImage,
       // For admin, published is set based on status
       published: values.status === ArticleStatus.PUBLISHED && !useScheduling,
@@ -263,6 +282,12 @@ const NewBlog: React.FC = () => {
       currentTags.filter((t) => t !== tag),
     );
   };
+
+  // Add this to debug form validation errors
+  console.log("Form errors:", form.formState.errors);
+  console.log("Form is valid:", form.formState.isValid);
+  console.log("Form is submitting:", form.formState.isSubmitting);
+  console.log("Form is dirty:", form.formState.isDirty);
 
   return (
     <AdminLayout>
@@ -1000,8 +1025,17 @@ const NewBlog: React.FC = () => {
 
                     {/* Save button */}
                     <Button
-                      type="submit"
+                      type="button"
                       variant="default"
+                      onClick={() => {
+                        console.log("Save button clicked");
+                        // Get the content from Tiptap editor
+                        if (editorRef.current) {
+                          form.setValue("content", editorRef.current.getHTML());
+                        }
+                        // Force form submission
+                        form.handleSubmit(onSubmit)();
+                      }}
                       disabled={createArticleMutation.isPending}
                       className="gap-2"
                     >
