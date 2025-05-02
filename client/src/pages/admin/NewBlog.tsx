@@ -246,7 +246,12 @@ const NewBlog: React.FC = () => {
     ) {
       articleData.scheduledPublishAt = scheduledPublishAt;
       // When scheduling, status is published but published flag is false
+      // This is crucial for the scheduler to know it needs to publish this later
       articleData.published = false;
+      
+      // Log to confirm scheduling data
+      console.log('Scheduling article for:', scheduledPublishAt);
+      console.log('Published flag set to:', articleData.published);
     }
 
     // Remove customTags as it's not in the API schema
