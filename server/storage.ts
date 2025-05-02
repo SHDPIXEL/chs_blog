@@ -236,37 +236,12 @@ export class DatabaseStorage implements IStorage {
       delete articleData.scheduledPublishAt;
     }
     
-    // Set publishedAt timestamp if article is published (but not scheduled)
-    if (articleData.published && !articleData.scheduledPublishAt) {
+    // Set publishedAt timestamp if article is published
+    if (articleData.published) {
       articleData.publishedAt = new Date();
     }
     
-    // If it's scheduled (status published but published flag is false), ensure it's not immediately published
-    if (articleData.scheduledPublishAt && articleData.status === 'published' && articleData.published === false) {
-      console.log('Scheduling article for future publication:', articleData.scheduledPublishAt);
-      // Ensure we don't set publishedAt yet - this will be set by the scheduler when published
-      articleData.publishedAt = null;
-    }
-    
-    // Convert to expected format and handle type issues
-    const insertData = {
-      title: articleData.title,
-      slug: articleData.slug,
-      content: articleData.content,
-      excerpt: articleData.excerpt || "",
-      featuredImage: articleData.featuredImage || null,
-      status: articleData.status,
-      published: !!articleData.published,
-      authorId: articleData.authorId,
-      metaTitle: articleData.metaTitle || null,
-      metaDescription: articleData.metaDescription || null,
-      keywords: articleData.keywords || [],
-      scheduledPublishAt: articleData.scheduledPublishAt || null,
-      publishedAt: articleData.publishedAt || null,
-      viewCount: articleData.viewCount || 0,
-    };
-    
-    const [article] = await db.insert(articles).values(insertData).returning();
+    const [article] = await db.insert(articles).values(articleData).returning();
     return article;
   }
 
@@ -325,34 +300,17 @@ export class DatabaseStorage implements IStorage {
   }
   
   async updateArticleStatus(id: number, status: ArticleStatusType): Promise<Article | undefined> {
-    // First get the current article to check if it's scheduled
-    const currentArticle = await this.getArticle(id);
-    if (!currentArticle) {
-      return undefined;
-    }
-    
     // Default update fields
     const updateFields: any = {
       status,
       updatedAt: new Date(),
+      // Set published flag based on status
+      published: status === 'published'
     };
     
-    // Only set published flag if this isn't a scheduled post
-    if (!currentArticle.scheduledPublishAt) {
-      updateFields.published = status === 'published';
-      
-      // If we're publishing the article immediately, also set publishedAt to now
-      if (status === 'published') {
-        updateFields.publishedAt = new Date();
-      }
-    } else {
-      // For a scheduled post, don't change published status when changing to 'published'
-      // We want to keep published=false until the scheduled date
-      console.log('Not changing published flag for scheduled article:', currentArticle.scheduledPublishAt);
-      // Only update published flag if we're changing to a non-published status
-      if (status !== 'published') {
-        updateFields.published = false;
-      }
+    // If we're publishing the article, also set publishedAt to now
+    if (status === 'published') {
+      updateFields.publishedAt = new Date();
     }
     
     const [article] = await db.update(articles)
@@ -681,15 +639,6 @@ export class DatabaseStorage implements IStorage {
     // Handle scheduledPublishAt field if it's a string or undefined
     if (typeof articleData.scheduledPublishAt === 'string' && articleData.scheduledPublishAt) {
       articleData.scheduledPublishAt = new Date(articleData.scheduledPublishAt);
-      
-      // For scheduled articles, ensure published flag is false while status is 'published'
-      if (articleData.status === 'published' && articleData.published === false) {
-        console.log('Extended article creation: Scheduling for future publication:', articleData.scheduledPublishAt);
-        // Ensure the publish flag is false for scheduled posts 
-        articleData.published = false;
-        // Make sure publishedAt is not set yet
-        articleData.publishedAt = null;
-      }
     } else if (articleData.scheduledPublishAt === undefined) {
       // Remove undefined values to avoid database type errors
       delete (articleData as any).scheduledPublishAt;
@@ -744,15 +693,6 @@ export class DatabaseStorage implements IStorage {
     // Handle scheduledPublishAt field if it's a string
     if (typeof articleData.scheduledPublishAt === 'string' && articleData.scheduledPublishAt) {
       articleData.scheduledPublishAt = new Date(articleData.scheduledPublishAt);
-      
-      // For scheduled articles, ensure published flag is false while status is 'published'
-      if (articleData.status === 'published' && articleData.published === false) {
-        console.log('Extended article update: Scheduling for future publication:', articleData.scheduledPublishAt);
-        // Ensure the publish flag is false for scheduled posts 
-        articleData.published = false;
-        // Make sure publishedAt is not set yet
-        articleData.publishedAt = null;
-      }
     } else if (articleData.scheduledPublishAt === null) {
       // If explicitly set to null, maintain it as null
       articleData.scheduledPublishAt = null;

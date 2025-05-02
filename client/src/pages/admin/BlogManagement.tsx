@@ -517,11 +517,6 @@ const BlogManagement: React.FC = () => {
                           <TableCell>
                             {blog.published ? (
                               <Badge>Published</Badge>
-                            ) : blog.status === ArticleStatus.PUBLISHED && blog.scheduledPublishAt ? (
-                              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-300 hover:bg-blue-100">
-                                <CalendarIcon className="h-3 w-3 mr-1" />
-                                Scheduled
-                              </Badge>
                             ) : blog.status === ArticleStatus.REVIEW ? (
                               <Badge variant="outline">In Review</Badge>
                             ) : (
