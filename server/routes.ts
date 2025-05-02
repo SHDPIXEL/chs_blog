@@ -350,6 +350,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`Attempting to update article ${articleId}:`, JSON.stringify(req.body).substring(0, 200));
       
+      // Special case for keywords field to ensure it's an array
+      if (req.body.keywords === null || req.body.keywords === undefined) {
+        req.body.keywords = [];
+      } else if (!Array.isArray(req.body.keywords)) {
+        try {
+          // Try to parse if it's a JSON string
+          if (typeof req.body.keywords === 'string') {
+            req.body.keywords = JSON.parse(req.body.keywords);
+          }
+          // If parsing fails or it's still not an array, make it an empty array
+          if (!Array.isArray(req.body.keywords)) {
+            req.body.keywords = [];
+          }
+        } catch (e) {
+          console.warn('Error parsing keywords, defaulting to empty array:', e);
+          req.body.keywords = [];
+        }
+      }
+      
       // Check if article exists and belongs to the author
       const article = await storage.getArticle(articleId);
       
