@@ -42,7 +42,7 @@ interface RichTextEditorProps {
 }
 
 // Resizable Image Component
-const ResizableImageComponent = ({ node, updateAttributes }: any) => {
+const ResizableImageComponent = ({ node, updateAttributes, getPos, editor }: any) => {
   const [size, setSize] = useState({
     width: node.attrs.width || 'auto',
     height: node.attrs.height || 'auto',
@@ -52,7 +52,10 @@ const ResizableImageComponent = ({ node, updateAttributes }: any) => {
   const [startPoint, setStartPoint] = useState({ x: 0, y: 0 });
   const [startSize, setStartSize] = useState({ width: 0, height: 0 });
   const [imageNaturalSize, setImageNaturalSize] = useState({ width: 0, height: 0 });
+  const [showLinkInput, setShowLinkInput] = useState(false);
+  const [linkUrl, setLinkUrl] = useState(node.attrs.link || '');
   const imageRef = React.useRef<HTMLImageElement>(null);
+  const containerRef = React.useRef<HTMLDivElement>(null);
 
   // Get natural size of image on load
   const handleImageLoad = () => {
@@ -77,6 +80,20 @@ const ResizableImageComponent = ({ node, updateAttributes }: any) => {
           height: `${initialWidth * aspectRatio}px`,
         });
       }
+    }
+  };
+
+  // Handle image click - this will be used for following links
+  const handleImageClick = (e: React.MouseEvent) => {
+    // If we have a link and are not in the middle of resizing, open the link
+    if (node.attrs.link && !resizeDirection) {
+      // Check if we should override default behavior with cmd/ctrl clicked
+      if (!(e.ctrlKey || e.metaKey)) {
+        // Only prevent default if we're not holding ctrl/cmd to open in new tab
+        e.preventDefault();
+      }
+      // Open the link in a new tab
+      window.open(node.attrs.link, '_blank', 'noopener,noreferrer');
     }
   };
 
@@ -159,6 +176,21 @@ const ResizableImageComponent = ({ node, updateAttributes }: any) => {
     document.removeEventListener('mouseup', handleMouseUp);
   };
 
+  // Handle setting a link on the image
+  const handleSetLink = () => {
+    if (linkUrl === '') {
+      // Remove link
+      updateAttributes({ link: null });
+    } else {
+      // Add https:// if it doesn't exist
+      const url = linkUrl.startsWith('http') ? linkUrl : `https://${linkUrl}`;
+      // Set link
+      updateAttributes({ link: url });
+    }
+    // Close link input
+    setShowLinkInput(false);
+  };
+
   // Clean up event listeners on unmount
   React.useEffect(() => {
     return () => {
@@ -170,17 +202,70 @@ const ResizableImageComponent = ({ node, updateAttributes }: any) => {
   return (
     <NodeViewWrapper className="relative my-4">
       <div 
+        ref={containerRef}
         className={`relative inline-block ${resizeDirection ? 'select-none' : ''}`}
         style={{ width: size.width, height: size.height }}
       >
-        <img
-          ref={imageRef}
-          src={node.attrs.src}
-          alt=""
-          onLoad={handleImageLoad}
-          className="max-w-full h-auto object-contain rounded-md"
-          style={{ width: '100%', height: '100%' }}
-        />
+        {/* Image with optional link styling */}
+        <div 
+          className={`w-full h-full group ${node.attrs.link ? 'cursor-pointer hover:opacity-95 transition-all' : ''}`}
+          onClick={handleImageClick}
+        >
+          <div className={`relative w-full h-full ${node.attrs.link ? 'ring-2 ring-blue-500 ring-opacity-30 hover:ring-opacity-80 rounded-md transition-all' : ''}`}>
+            <img
+              ref={imageRef}
+              src={node.attrs.src}
+              alt=""
+              onLoad={handleImageLoad}
+              className="max-w-full h-auto object-contain rounded-md"
+              style={{ width: '100%', height: '100%' }}
+            />
+            
+            {/* Link indicator - show when image has a link */}
+            {node.attrs.link && (
+              <div className="absolute top-2 right-2 bg-blue-500 text-white px-2 py-1 rounded-md shadow-md text-xs flex items-center">
+                <LinkIcon className="h-3 w-3 mr-1" />
+                <span className="hidden sm:inline">Visit Link</span>
+              </div>
+            )}
+            
+            {/* Hover overlay with link URL */}
+            {node.attrs.link && (
+              <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-md">
+                <div className="bg-white px-3 py-2 rounded-md max-w-[90%] truncate text-sm">
+                  <LinkIcon className="h-3 w-3 inline-block mr-1" />
+                  <span>{node.attrs.link}</span>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+        
+        {/* Context menu for adding/editing links */}
+        {showLinkInput && (
+          <div className="absolute -top-12 left-0 z-50 bg-white border rounded-md shadow-md p-3 flex items-center gap-2">
+            <Input
+              type="text"
+              placeholder="Enter URL..."
+              value={linkUrl}
+              onChange={(e) => setLinkUrl(e.target.value)}
+              className="text-sm w-60"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleSetLink();
+                } else if (e.key === 'Escape') {
+                  setShowLinkInput(false);
+                }
+              }}
+            />
+            <Button variant="ghost" size="sm" onClick={() => setShowLinkInput(false)}>
+              <X className="h-4 w-4" />
+            </Button>
+            <Button size="sm" onClick={handleSetLink}>
+              {node.attrs.link ? 'Update' : 'Add'}
+            </Button>
+          </div>
+        )}
         
         {/* Resize handles */}
         <div
@@ -195,6 +280,31 @@ const ResizableImageComponent = ({ node, updateAttributes }: any) => {
           className="absolute bottom-0 right-0 w-6 h-6 cursor-nwse-resize opacity-0 hover:opacity-100 hover:bg-primary/20"
           onMouseDown={(e) => handleResizeStart(e, 'bottom-right')}
         />
+        
+        {/* Link button */}
+        <div
+          className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 hover:opacity-100 bg-white shadow-md rounded-md cursor-pointer transition-all transform hover:scale-105"
+          onClick={() => setShowLinkInput(!showLinkInput)}
+        >
+          <Button 
+            variant={node.attrs.link ? "default" : "outline"} 
+            size="sm" 
+            type="button" 
+            className="h-8 px-2"
+          >
+            {node.attrs.link ? (
+              <span className="flex items-center text-xs text-white">
+                <LinkIcon className="h-3 w-3 mr-1" />
+                Edit Link
+              </span>
+            ) : (
+              <span className="flex items-center text-xs">
+                <LinkIcon className="h-3 w-3 mr-1" />
+                Add Link
+              </span>
+            )}
+          </Button>
+        </div>
       </div>
     </NodeViewWrapper>
   );
@@ -229,6 +339,9 @@ export const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>
         },
         height: {
           default: 'auto',
+        },
+        link: {
+          default: null,
         },
       };
     },
