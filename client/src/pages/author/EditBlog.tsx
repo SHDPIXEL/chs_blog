@@ -1035,6 +1035,14 @@ const EditBlogPage: React.FC = () => {
                     <Button variant="outline" type="button" onClick={() => navigate('/author/blogs')}>
                       Cancel
                     </Button>
+                    <Button 
+                      variant="outline" 
+                      type="button" 
+                      onClick={() => setIsPreviewOpen(true)}
+                    >
+                      <Eye className="mr-2 h-4 w-4" />
+                      Preview
+                    </Button>
                     <Button type="submit" disabled={updateBlogMutation.isPending}>
                       {updateBlogMutation.isPending ? (
                         <>
@@ -1055,6 +1063,21 @@ const EditBlogPage: React.FC = () => {
           </Card>
         </div>
       </div>
+      
+      {/* Blog Preview Dialog */}
+      <BlogPreviewDialog
+        isOpen={isPreviewOpen}
+        onClose={() => setIsPreviewOpen(false)}
+        title={form.watch('title')}
+        content={form.watch('content')}
+        author={{ name: user?.name || 'Anonymous' }}
+        date={new Date().toLocaleDateString()}
+        categories={categories
+          .filter(c => form.watch('categoryIds').includes(c.id))
+          .map(c => c.name)}
+        tags={form.watch('customTags')}
+        featuredImage={featuredImagePreview || undefined}
+      />
     </AuthorLayout>
   );
 };
