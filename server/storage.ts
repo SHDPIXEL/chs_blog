@@ -173,7 +173,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getArticlesByAuthor(authorId: number): Promise<Article[]> {
-    return await db.select().from(articles).where(eq(articles.authorId, authorId));
+    return await db.select()
+      .from(articles)
+      .where(eq(articles.authorId, authorId))
+      .orderBy(desc(articles.createdAt));
   }
   
   async getArticlesByStatus(authorId: number, status: ArticleStatusType): Promise<Article[]> {
@@ -182,11 +185,15 @@ export class DatabaseStorage implements IStorage {
       .where(and(
         eq(articles.authorId, authorId),
         eq(articles.status, status)
-      ));
+      ))
+      .orderBy(desc(articles.createdAt));
   }
 
   async getPublishedArticles(): Promise<Article[]> {
-    return await db.select().from(articles).where(eq(articles.published, true));
+    return await db.select()
+      .from(articles)
+      .where(eq(articles.published, true))
+      .orderBy(desc(articles.createdAt));
   }
   
   async getCoAuthoredArticles(userId: number, status?: ArticleStatusType): Promise<Article[]> {
@@ -216,7 +223,8 @@ export class DatabaseStorage implements IStorage {
     return await db
       .select()
       .from(articles)
-      .where(and(...conditions));
+      .where(and(...conditions))
+      .orderBy(desc(articles.createdAt));
   }
 
   async createArticle(insertArticle: InsertArticle): Promise<Article> {
