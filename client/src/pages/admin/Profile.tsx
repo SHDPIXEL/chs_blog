@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { AssetPickerButton } from "@/components/assets";
 import { Helmet } from "react-helmet-async";
+import SocialLinksEditor, { SocialLinksDisplay } from "@/components/ui/social-links-editor";
 
 type ProfileData = {
   id: number;
@@ -132,39 +133,15 @@ const AdminProfilePage = () => {
     );
   }
 
-  // Social links display component
+  // Using the SocialLinksDisplay component from our UI kit
   const SocialLinks = () => {
     if (!profile?.socialLinks) return null;
-
-    try {
-      const socialData = JSON.parse(profile.socialLinks) as Record<
-        string,
-        string
-      >;
-
-      const links: React.ReactNode[] = [];
-
-      Object.entries(socialData).forEach(([platform, url]) => {
-        if (!url) return;
-
-        links.push(
-          <a
-            key={platform}
-            href={url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-500 hover:text-blue-700"
-          >
-            <LinkIcon className="h-5 w-5" />
-            <span className="sr-only">{platform}</span>
-          </a>,
-        );
-      });
-
-      return <div className="flex space-x-4 mt-2">{links}</div>;
-    } catch (e) {
-      return null;
-    }
+    
+    // We import and use the new SocialLinksDisplay component from our UI kit
+    // This is now handled by the separate component
+    return (
+      <SocialLinksDisplay value={profile.socialLinks} className="mt-2" />
+    );
   };
 
   // Helper function to get initials from name
@@ -364,22 +341,12 @@ const AdminProfilePage = () => {
                         </div>
                       </div>
 
-                      <div className="space-y-2">
-                        <Label htmlFor="socialLinks">
-                          Social Links (JSON format)
-                        </Label>
-                        <Textarea
-                          id="socialLinks"
-                          name="socialLinks"
-                          value={formData.socialLinks}
-                          onChange={handleChange}
-                          placeholder='{"twitter": "https://twitter.com/yourusername", "github": "https://github.com/yourusername"}'
-                          rows={3}
-                        />
-                        <p className="text-xs text-gray-500">
-                          Enter your social links in JSON format
-                        </p>
-                      </div>
+                      <SocialLinksEditor
+                        value={formData.socialLinks}
+                        onChange={(value) => 
+                          setFormData(prev => ({ ...prev, socialLinks: value }))
+                        }
+                      />
                     </CardContent>
                     <CardFooter className="flex justify-between">
                       <Button
