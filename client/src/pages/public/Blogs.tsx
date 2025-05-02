@@ -198,7 +198,7 @@ const Blogs: React.FC = () => {
                 {filteredArticles.length > 1 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {filteredArticles.slice(1).map((article: any) => (
-                      <Link key={article.id} href={`/blogs/${article.id}`}>
+                      <Link key={article.id} href={`/blogs/${article.slug || article.id}`}>
                         <Card className="overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-300 h-full group">
                           <div className="h-48 overflow-hidden">
                             <img 

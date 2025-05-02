@@ -22,8 +22,9 @@ const demoImages = [
 ];
 
 const BlogDetail: React.FC = () => {
-  const [, params] = useRoute("/blogs/:id");
-  const articleId = params?.id ? parseInt(params.id) : 0;
+  const [, params] = useRoute("/blogs/:identifier");
+  const articleId = !isNaN(Number(params?.identifier)) ? parseInt(params?.identifier) : 0;
+  const articleSlug = isNaN(Number(params?.identifier)) ? params?.identifier : '';
   const [readingProgress, setReadingProgress] = useState(0);
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -111,10 +112,10 @@ const BlogDetail: React.FC = () => {
     isLoading,
     error,
   } = useQuery({
-    queryKey: [`/api/articles/${articleId}/public`],
+    queryKey: [`/api/articles/${articleSlug || articleId}/public`],
     queryFn: async () => {
       try {
-        const res = await fetch(`/api/articles/${articleId}/public`);
+        const res = await fetch(`/api/articles/${articleSlug || articleId}/public`);
         if (!res.ok) throw new Error("Failed to fetch article");
         return await res.json();
       } catch (error) {

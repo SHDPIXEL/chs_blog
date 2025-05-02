@@ -132,26 +132,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({ message: "Server error" });
     }
   });
-  
+
   // User permissions API - dedicated endpoint for checking user permissions
   app.get("/api/auth/permissions", authenticateToken, async (req: AuthRequest, res) => {
     try {
       if (!req.user?.id) {
         return res.status(401).json({ message: "Authentication required" });
       }
-      
+
       const user = await storage.getUser(req.user.id);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
-      
+
       // Return only the permissions data, not the full user object
       const permissions = {
         canPublish: user.canPublish || user.role === 'admin',
         isAdmin: user.role === 'admin',
         role: user.role
       };
-      
+
       return res.status(200).json(permissions);
     } catch (error) {
       console.error('Error fetching user permissions:', error);
@@ -249,7 +249,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     },
   );
-  
+
   // Admin profile
   app.get(
     "/api/admin/profile",
@@ -858,14 +858,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Public endpoint for a single article with all its relations
-  app.get("/api/articles/:id/public", async (req, res) => {
+  app.get("/api/articles/:identifier/public", async (req, res) => {
     try {
-      const articleId = parseInt(req.params.id);
-      if (isNaN(articleId)) {
-        return res.status(400).json({ message: "Invalid article ID" });
+      let article;
+      const { identifier } = req.params;
+
+      if (!isNaN(Number(identifier))) {
+        article = await storage.getArticle(parseInt(identifier));
+      } else {
+        article = await storage.getArticleBySlug(identifier);
       }
 
-      const article = await storage.getArticle(articleId);
       if (!article) {
         return res.status(404).json({ message: "Article not found" });
       }
@@ -877,12 +880,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Increment view count asynchronously - no need to await
       const viewCount = (article.viewCount || 0) + 1;
-      storage.updateArticle(articleId, { viewCount }).catch((err) => {
+      storage.updateArticle(article.id, { viewCount }).catch((err) => {
         console.error("Failed to update view count:", err);
       });
 
       // Get full article with relations
-      const fullArticle = await storage.getArticleWithRelations(articleId);
+      const fullArticle = await storage.getArticleWithRelations(article.id);
       if (!fullArticle) {
         return res.status(404).json({ message: "Article not found" });
       }
@@ -1973,7 +1976,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         const results = [];
-        
+
         // Delete each article one by one
         for (const id of ids) {
           console.log(`Starting transaction to delete article ${id}`);
@@ -2061,7 +2064,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     async (req: AuthRequest, res) => {
       try {
         if (!req.user?.id) {
-          return res.status(401).json({ message: "Authentication required" });
+          return res.status(401).json({ message:"Authentication required" });
         }
 
         const id = parseInt(req.params.id);
