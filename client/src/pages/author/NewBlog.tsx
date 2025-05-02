@@ -5,6 +5,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
+import { usePermissions } from "@/hooks/use-permissions";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -115,10 +116,14 @@ const NewBlogPage: React.FC = () => {
   const { toast } = useToast();
   const { user } = useAuth();
 
-  // Check if user has publishing rights
-  const canPublish = user?.canPublish || user?.role === "admin";
+  // Use the permissions hook to get real-time permission data
+  const { canPublish, refreshPermissions } = usePermissions();
 
-  console.log("User:", user);
+  // Also keep the permissions consistency with data refreshing
+  useEffect(() => {
+    // Refresh permissions data whenever component is mounted
+    refreshPermissions();
+  }, [refreshPermissions]);
 
   const [featuredImagePreview, setFeaturedImagePreview] = useState<
     string | null

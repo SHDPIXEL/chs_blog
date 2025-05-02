@@ -5,6 +5,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
+import { usePermissions } from '@/hooks/use-permissions';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -63,8 +64,13 @@ const EditBlogPage: React.FC = () => {
   const [keywordInput, setKeywordInput] = useState<string>('');
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   
-  // Check if user has publishing rights
-  const canPublish = user?.canPublish || user?.role === 'admin';
+  // Use the permissions hook to get real-time permission data
+  const { canPublish, refreshPermissions } = usePermissions();
+  
+  // Refresh permissions when component mounts
+  useEffect(() => {
+    refreshPermissions();
+  }, [refreshPermissions]);
   
   // Fetch the article data
   const { data: article, isLoading: isArticleLoading, error: articleError } = useQuery<any>({

@@ -147,7 +147,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Return only the permissions data, not the full user object
       const permissions = {
-        canPublish: user.can_publish || user.role === 'admin',
+        canPublish: user.canPublish || user.role === 'admin',
         isAdmin: user.role === 'admin',
         role: user.role
       };
