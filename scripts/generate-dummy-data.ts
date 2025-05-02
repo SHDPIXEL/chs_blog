@@ -895,7 +895,7 @@ By implementing these optimization techniques, you can significantly improve the
       console.log(`Creating blog post: ${blog.title}`);
       
       const published = blog.status === ArticleStatus.PUBLISHED;
-      const publishedAt = published ? new Date().toISOString() : null;
+      const publishedAt = published ? new Date() : null;
       
       const [newArticle] = await db.insert(articles).values({
         title: blog.title,
