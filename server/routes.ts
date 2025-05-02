@@ -431,34 +431,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(201).json(article);
         } else {
           // Use regular schema if no extended data
-      // Special handling for problematic article #3
-      if (articleId === 3) {
-        console.log('Special handling for article #3');
-        try {
-          // Sanitize all fields for article #3
-          const safeData = {
-            title: req.body.title || '',
-            content: req.body.content || '',
-            excerpt: req.body.excerpt || '',
-            status: req.body.status || 'draft',
-            featured: !!req.body.featured,
-            keywords: [],
-            categoryIds: Array.isArray(req.body.categoryIds) ? req.body.categoryIds : [],
-            metaTitle: req.body.metaTitle || '',
-            metaDescription: req.body.metaDescription || ''
-          };
-          
-          // Update with minimal safe data
-          const updatedArticle = await storage.updateArticle(articleId, safeData);
-          return res.json(updatedArticle);
-        } catch (specificError) {
-          console.error('Error in special handling for article #3:', specificError);
-          return res.status(500).json({ 
-            message: 'Article #3 special handling error', 
-            details: specificError instanceof Error ? specificError.message : String(specificError) 
-          });
-        }
-      }
           const validatedData = insertArticleSchema.parse({
             ...req.body,
             authorId: req.user.id,
