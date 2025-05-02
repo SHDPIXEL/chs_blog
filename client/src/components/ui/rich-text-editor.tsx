@@ -368,116 +368,35 @@ export const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>
 
   const editor = useEditor({
     extensions: [
-      StarterKit.configure({
-        // Better error handling for position references
-        history: {
-          depth: 100,
-          newGroupDelay: 500
-        }
-      }),
+      StarterKit,
       CustomImage,
       Link.configure({
-        openOnClick: true, // Make links clickable
+        openOnClick: true, // Change to true to make links clickable
         HTMLAttributes: {
           class: 'text-blue-500 hover:text-blue-700 underline cursor-pointer',
-          target: '_blank',
-          rel: 'noopener noreferrer',
         },
-        validate: href => /^https?:\/\//.test(href),
       }),
       Underline,
       Placeholder.configure({
         placeholder,
-        showOnlyWhenEditable: true,
       }),
       TextAlign.configure({
         types: ['heading', 'paragraph'],
-        defaultAlignment: 'left',
       }),
     ],
-    editorProps: {
-      attributes: {
-        class: "prose prose-sm sm:prose-base dark:prose-invert focus:outline-none min-h-[200px]",
-        spellcheck: "true",
-      },
-      handleDOMEvents: {
-        // Prevent editor position errors on keyboard events
-        keydown: (view, event) => {
-          // Just let default handling work but catch any errors
-          try {
-            return false;
-          } catch (err) {
-            console.error("Keydown error:", err);
-            return true;
-          }
-        }
-      },
-      handlePaste: (view, event) => {
-        // Intercept paste events to prevent position errors
-        try {
-          // Let the default paste handler work
-          return false;
-        } catch (err) {
-          console.error("Paste error:", err);
-          // If an error occurs, block the paste
-          return true;
-        }
-      }
-    },
-    // Initialize with empty editor, we'll set content separately
-    content: '',
+    content: value,
     editable: !readOnly,
     onUpdate: ({ editor }) => {
-      try {
-        // Use try-catch to safely update content
-        if (editor) {
-          onChange(editor.getHTML());
-        }
-      } catch (err) {
-        console.error("Error updating content:", err);
-      }
+      onChange(editor.getHTML());
     },
-    onFocus: ({ editor }) => {
-      // When editor gets focus, make sure selection is valid
-      try {
-        const { from, to } = editor.state.selection;
-        if (from > editor.state.doc.content.size || to > editor.state.doc.content.size) {
-          editor.commands.focus('end');
-        }
-      } catch (err) {
-        console.error("Focus error:", err);
-        editor.commands.focus('end');
-      }
-    }
   });
   
-  // Update content when the editor is initialized, not on every value change
+  // Update content when value prop changes
   React.useEffect(() => {
-    if (editor && editor.isEmpty && value) {
-      try {
-        // First clear any existing content
-        editor.commands.clearContent(false);
-        
-        // Wait for the next tick to ensure editor is ready
-        setTimeout(() => {
-          try {
-            editor.commands.setContent(value, false);
-          } catch (err) {
-            console.error("Error setting editor content:", err);
-            // If error occurs, try with sanitized content
-            const sanitized = value
-              .replace(/<([a-z][a-z0-9]*)[^>]*?(\/?)>/gi, '<$1$2>')  // Remove attributes
-              .replace(/<(?!\/?(p|br|div|h1|h2|h3|img|ul|ol|li|blockquote|pre|code|span|strong|em|u|a)\b)[^>]+>/gi, ''); // Keep only basic tags
-            
-            editor.commands.setContent(sanitized || '<p></p>', false);
-          }
-        }, 50);
-      } catch (err) {
-        console.error("Critical error in editor:", err);
-        editor.commands.clearContent(false);
-      }
+    if (editor && value !== editor.getHTML()) {
+      editor.commands.setContent(value);
     }
-  }, [editor]);
+  }, [editor, value]);
   
   // Expose methods via ref
   useImperativeHandle(ref, () => ({
@@ -891,28 +810,16 @@ export const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>
         </BubbleMenu>
       )}
       
-      <div className="relative">
-        <EditorContent 
-          editor={editor} 
-          className={cn(
-            "prose max-w-none p-4 focus:outline-none min-h-[300px]",
-            "prose-headings:font-bold prose-h1:text-3xl prose-h2:text-2xl prose-h3:text-xl",
-            "prose-p:my-2 prose-a:text-primary prose-blockquote:border-l-4 prose-blockquote:border-primary/30 prose-blockquote:pl-4 prose-blockquote:py-0.5 prose-blockquote:italic",
-            "prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:rounded-md prose-code:before:content-none prose-code:after:content-none",
-            "prose-img:rounded-md prose-img:mx-auto"
-          )}
-        />
-        
-        {/* Error recovery UI - show when editor has initialization problems */}
-        {editor && editor.isEmpty && value && value.length > 0 && (
-          <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-white/90 z-10 pointer-events-none">
-            <div className="text-center p-4 max-w-md">
-              <p className="text-blue-500 font-medium mb-2">Fixing content format...</p>
-              <p className="text-sm text-gray-600">Please wait while we optimize the editor.</p>
-            </div>
-          </div>
+      <EditorContent 
+        editor={editor} 
+        className={cn(
+          "prose max-w-none p-4 focus:outline-none min-h-[300px]",
+          "prose-headings:font-bold prose-h1:text-3xl prose-h2:text-2xl prose-h3:text-xl",
+          "prose-p:my-2 prose-a:text-primary prose-blockquote:border-l-4 prose-blockquote:border-primary/30 prose-blockquote:pl-4 prose-blockquote:py-0.5 prose-blockquote:italic",
+          "prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:rounded-md prose-code:before:content-none prose-code:after:content-none",
+          "prose-img:rounded-md prose-img:mx-auto"
         )}
-      </div>
+      />
     </div>
   );
 });
