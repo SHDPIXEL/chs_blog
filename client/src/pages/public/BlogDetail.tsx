@@ -23,8 +23,10 @@ const demoImages = [
 
 const BlogDetail: React.FC = () => {
   const [, params] = useRoute("/blogs/:identifier");
-  const articleId = !isNaN(Number(params?.identifier)) ? parseInt(params?.identifier) : 0;
-  const articleSlug = isNaN(Number(params?.identifier)) ? params?.identifier : '';
+  const articleId = !isNaN(Number(params?.identifier))
+    ? parseInt(params?.identifier)
+    : 0;
+  const articleSlug = isNaN(Number(params?.slug)) ? params?.identifier : "";
   const [readingProgress, setReadingProgress] = useState(0);
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -112,10 +114,10 @@ const BlogDetail: React.FC = () => {
     isLoading,
     error,
   } = useQuery({
-    queryKey: [`/api/articles/${articleSlug || articleId}/public`],
+    queryKey: [`/api/articles/${articleId}/public`],
     queryFn: async () => {
       try {
-        const res = await fetch(`/api/articles/${articleSlug || articleId}/public`);
+        const res = await fetch(`/api/articles/${articleId}/public`);
         if (!res.ok) throw new Error("Failed to fetch article");
         return await res.json();
       } catch (error) {
@@ -242,7 +244,9 @@ const BlogDetail: React.FC = () => {
             </Avatar>
             <div>
               <div className="flex items-center gap-2">
-                <Link href={`/authors/${articleData.author?.id}`}>
+                <Link
+                  href={`/authors/${articleData.author?.id}?name=${articleData.author?.name}`}
+                >
                   <p className="font-medium hover:text-blue-600 transition-colors cursor-pointer">
                     {articleData.author?.name || "Anonymous"}
                   </p>
@@ -318,7 +322,7 @@ const BlogDetail: React.FC = () => {
 
         {/* Article content */}
         <div className="max-w-4xl mx-auto" ref={contentRef}>
-          <ContentRenderer 
+          <ContentRenderer
             content={articleData.content}
             className="prose prose-lg max-w-none prose-headings:text-gray-900 prose-p:text-gray-700"
           />
@@ -394,7 +398,9 @@ const BlogDetail: React.FC = () => {
                       {articleData.author?.bio ||
                         "Academic researcher and writer specializing in philosophy and ethics."}
                     </p>
-                    <Link href={`/authors/${articleData.author?.id}`}>
+                    <Link
+                      href={`/authors/${articleData.author?.id}?name=${articleData.author?.name}`}
+                    >
                       <Button variant="outline">View Profile</Button>
                     </Link>
                   </div>
@@ -426,7 +432,9 @@ const BlogDetail: React.FC = () => {
                           <p className="text-gray-700 text-sm mb-4">
                             {coAuthor.bio || "Contributor to this article"}
                           </p>
-                          <Link href={`/authors/${coAuthor.id}`}>
+                          <Link
+                            href={`/authors/${coAuthor.id}?name=${coAuthor.name}`}
+                          >
                             <Button variant="outline" size="sm">
                               View Profile
                             </Button>

@@ -155,7 +155,7 @@ const Blogs: React.FC = () => {
                 {filteredArticles.length > 0 && (
                   <div className="mb-10">
                     <Link
-                      href={`/blogs/${filteredArticles[0].id}/${filteredArticles[0].slug}`}
+                      href={`/blogs/${filteredArticles[0].id}?title=${filteredArticles[0].slug}`}
                     >
                       <Card className="overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-300 group">
                         <div className="md:flex">
@@ -239,7 +239,7 @@ const Blogs: React.FC = () => {
                     {filteredArticles.slice(1).map((article: any) => (
                       <Link
                         key={article.id}
-                        href={`/blogs/${article.id}/${article.slug}`}
+                        href={`/blogs/${article.id}?title=${article.slug}`}
                       >
                         <Card className="overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-300 h-full group">
                           <div className="h-48 overflow-hidden">

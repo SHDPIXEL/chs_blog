@@ -43,7 +43,7 @@ function Router() {
       <Route path="/auth/login" component={Login} />
       <Route path="/auth/register" component={Register} />
       <Route path="/blog/:id" component={ViewBlog} />
-      
+
       <Route path="/blogs" component={Blogs} />
       <Route path="/blogs/:id" component={BlogDetail} />
       <Route path="/authors/:id" component={PublicAuthorProfile} />
