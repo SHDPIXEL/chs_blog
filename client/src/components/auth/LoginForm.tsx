@@ -28,7 +28,7 @@ const loginFormSchema = z.object({
 
 const LoginForm: React.FC = () => {
   const [location, setLocation] = useLocation();
-  const { loginMutation, user } = useAuth();
+  const auth = useAuth();
 
   // Redirect to appropriate dashboard if already logged in
   React.useEffect(() => {
@@ -126,7 +126,7 @@ const LoginForm: React.FC = () => {
           </div>
         </div>
 
-        {loginMutation.error && (
+        {loginMutation.isError && loginMutation.error instanceof Error && (
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Error</AlertTitle>

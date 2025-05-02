@@ -48,7 +48,7 @@ interface RegisterFormProps {
 }
 
 const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess }) => {
-  const { registerMutation } = useAuth();
+  const auth = useAuth();
 
   const form = useForm<z.infer<typeof registerFormSchema>>({
     resolver: zodResolver(registerFormSchema),
@@ -71,7 +71,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess }) => {
         role: values.role,
       };
       
-      await registerMutation.mutateAsync(registerData);
+      await auth.register(registerData);
       form.reset();
       if (onSuccess) {
         onSuccess();
@@ -169,20 +169,20 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSuccess }) => {
           )}
         />
 
-        {registerMutation.error && (
+        {auth.error && (
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Error</AlertTitle>
-            <AlertDescription>{registerMutation.error.message}</AlertDescription>
+            <AlertDescription>{auth.error}</AlertDescription>
           </Alert>
         )}
 
         <Button 
           type="submit" 
           className="w-full" 
-          disabled={registerMutation.isPending}
+          disabled={auth.isLoading}
         >
-          {registerMutation.isPending ? (
+          {auth.isLoading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Processing...
