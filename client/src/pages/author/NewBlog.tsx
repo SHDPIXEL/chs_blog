@@ -4,6 +4,7 @@ import AuthorLayout from "@/components/layout/AuthorLayout";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -112,6 +113,7 @@ type BlogFormValues = z.infer<typeof blogFormSchema>;
 const NewBlogPage: React.FC = () => {
   const [, navigate] = useLocation();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [featuredImagePreview, setFeaturedImagePreview] = useState<
     string | null
   >(null);
@@ -463,11 +465,18 @@ const NewBlogPage: React.FC = () => {
                               <SelectItem value={ArticleStatus.REVIEW}>
                                 Submit for Review
                               </SelectItem>
-                              <SelectItem value={ArticleStatus.PUBLISHED}>
-                                Publish
-                              </SelectItem>
+                              {user?.canPublish && (
+                                <SelectItem value={ArticleStatus.PUBLISHED}>
+                                  Publish
+                                </SelectItem>
+                              )}
                             </SelectContent>
                           </Select>
+                          {!user?.canPublish && (
+                            <FormDescription className="mt-2 text-amber-500">
+                              Note: You don't have direct publishing rights. Submit for review to have an admin publish your post.
+                            </FormDescription>
+                          )}
 
                           <FormMessage />
                         </FormItem>
@@ -482,8 +491,10 @@ const NewBlogPage: React.FC = () => {
                         Publication Scheduling
                       </h3>
                       <p className="text-sm text-muted-foreground mt-1 mb-2">
-                        Schedule your blog post to be published automatically at
-                        a future date and time
+                        {user?.canPublish 
+                          ? "Schedule your blog post to be published automatically at a future date and time"
+                          : "Schedule your blog post for review at a future date and time"
+                        }
                       </p>
                     </div>
 
@@ -498,8 +509,10 @@ const NewBlogPage: React.FC = () => {
                               Schedule Publication
                             </FormLabel>
                             <FormDescription>
-                              Automatically publish your blog post at a
-                              scheduled date and time
+                              {user?.canPublish 
+                                ? "Automatically publish your blog post at a scheduled date and time"
+                                : "Submit your blog post for review at a scheduled date and time"
+                              }
                             </FormDescription>
                           </div>
                           <FormControl>
