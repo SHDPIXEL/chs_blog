@@ -1,51 +1,106 @@
-import React, { useState, useEffect } from 'react';
-import { useLocation } from 'wouter';
-import AuthorLayout from '@/components/layout/AuthorLayout';
-import { useMutation, useQuery } from '@tanstack/react-query';
-import { apiRequest, queryClient } from '@/lib/queryClient';
-import { useToast } from '@/hooks/use-toast';
-import { z } from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import PageHeader from '@/components/ui/PageHeader';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft, Save, Eye, ImagePlus, Layout, Search, Tags, Users, Calendar } from 'lucide-react';
-import { ArticleStatus, Asset, Category, Tag, User } from '@shared/schema';
-import { AssetPickerButton } from '@/components/assets';
-import { RichTextEditor } from '@/components/ui/rich-text-editor';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Checkbox } from '@/components/ui/checkbox';
-import { format } from 'date-fns';
-import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Switch } from '@/components/ui/switch';
+import React, { useState, useEffect } from "react";
+import { useLocation } from "wouter";
+import AuthorLayout from "@/components/layout/AuthorLayout";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import PageHeader from "@/components/ui/PageHeader";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import {
+  ArrowLeft,
+  Save,
+  Eye,
+  ImagePlus,
+  Layout,
+  Search,
+  Tags,
+  Users,
+  Calendar,
+} from "lucide-react";
+import { ArticleStatus, Asset, Category, Tag, User } from "@shared/schema";
+import { AssetPickerButton } from "@/components/assets";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Checkbox } from "@/components/ui/checkbox";
+import { format } from "date-fns";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Switch } from "@/components/ui/switch";
 
 // Define form schema using zod
 const blogFormSchema = z.object({
-  title: z.string().min(5, 'Title must be at least 5 characters').max(100, 'Title cannot exceed 100 characters'),
-  content: z.string().min(50, 'Content must be at least 50 characters'),
-  excerpt: z.string().max(200, 'Excerpt cannot exceed 200 characters').optional(),
-  status: z.enum([ArticleStatus.DRAFT, ArticleStatus.REVIEW, ArticleStatus.PUBLISHED]),
-  featuredImage: z.string().optional().or(z.literal('')),
+  title: z
+    .string()
+    .min(5, "Title must be at least 5 characters")
+    .max(100, "Title cannot exceed 100 characters"),
+  content: z.string().min(50, "Content must be at least 50 characters"),
+  excerpt: z
+    .string()
+    .max(200, "Excerpt cannot exceed 200 characters")
+    .optional(),
+  status: z.enum([
+    ArticleStatus.DRAFT,
+    ArticleStatus.REVIEW,
+    ArticleStatus.PUBLISHED,
+  ]),
+  featuredImage: z.string().optional().or(z.literal("")),
   slug: z.string().optional(),
-  
+
   // Publishing options
   useScheduling: z.boolean().default(false),
   scheduledPublishAt: z.string().optional(),
-  
+
   // SEO Fields
-  metaTitle: z.string().max(70, 'Meta title should be at most 70 characters').optional(),
-  metaDescription: z.string().max(160, 'Meta description should be at most 160 characters').optional(),
-  canonicalUrl: z.string().url('Must be a valid URL').optional().or(z.literal('')),
+  metaTitle: z
+    .string()
+    .max(70, "Meta title should be at most 70 characters")
+    .optional(),
+  metaDescription: z
+    .string()
+    .max(160, "Meta description should be at most 160 characters")
+    .optional(),
+  canonicalUrl: z
+    .string()
+    .url("Must be a valid URL")
+    .optional()
+    .or(z.literal("")),
   keywords: z.array(z.string()).default([]),
-  
+
   // Relationships
   categoryIds: z.array(z.number()).default([]),
   customTags: z.array(z.string()).default([]),
@@ -57,75 +112,80 @@ type BlogFormValues = z.infer<typeof blogFormSchema>;
 const NewBlogPage: React.FC = () => {
   const [, navigate] = useLocation();
   const { toast } = useToast();
-  const [featuredImagePreview, setFeaturedImagePreview] = useState<string | null>(null);
-  const [keywordInput, setKeywordInput] = useState<string>('');
-  
+  const [featuredImagePreview, setFeaturedImagePreview] = useState<
+    string | null
+  >(null);
+  const [keywordInput, setKeywordInput] = useState<string>("");
+
   // Fetch categories
   const { data: categories = [] } = useQuery<Category[]>({
-    queryKey: ['/api/categories'],
+    queryKey: ["/api/categories"],
     queryFn: async () => {
-      const res = await apiRequest('GET', '/api/categories');
+      const res = await apiRequest("GET", "/api/categories");
       return res.json();
-    }
+    },
   });
-  
+
   // Fetch tags
   const { data: tags = [] } = useQuery<Tag[]>({
-    queryKey: ['/api/tags'],
+    queryKey: ["/api/tags"],
     queryFn: async () => {
-      const res = await apiRequest('GET', '/api/tags');
+      const res = await apiRequest("GET", "/api/tags");
       return res.json();
-    }
+    },
   });
-  
+
   // Fetch other authors (for co-author selection)
   const { data: authors = [] } = useQuery<User[]>({
-    queryKey: ['/api/users/authors'],
+    queryKey: ["/api/users/authors"],
     queryFn: async () => {
-      const res = await apiRequest('GET', '/api/users/authors');
+      const res = await apiRequest("GET", "/api/users/authors");
       return res.json();
-    }
+    },
   });
-  
+
   // Set up form with default values
   const form = useForm<BlogFormValues>({
     resolver: zodResolver(blogFormSchema),
     defaultValues: {
-      title: '',
-      content: '',
-      excerpt: '',
+      title: "",
+      content: "",
+      excerpt: "",
       status: ArticleStatus.DRAFT,
-      featuredImage: '',
-      metaTitle: '',
-      metaDescription: '',
-      canonicalUrl: '',
+      featuredImage: "",
+      metaTitle: "",
+      metaDescription: "",
+      canonicalUrl: "",
       keywords: [],
       categoryIds: [],
       customTags: [],
       coAuthorIds: [],
       useScheduling: false,
       scheduledPublishAt: undefined,
-      slug: '',
+      slug: "",
     },
   });
-  
+
   // Handle adding a keyword
   const addKeyword = () => {
     if (keywordInput.trim()) {
-      const currentKeywords = form.getValues('keywords') || [];
+      const currentKeywords = form.getValues("keywords") || [];
       if (!currentKeywords.includes(keywordInput.trim())) {
-        form.setValue('keywords', [...currentKeywords, keywordInput.trim()]);
+        form.setValue("keywords", [...currentKeywords, keywordInput.trim()]);
       }
-      setKeywordInput('');
+      setKeywordInput("");
     }
   };
-  
+
   // Handle removing a keyword
   const removeKeyword = (keyword: string) => {
-    const currentKeywords = form.getValues('keywords') || [];
-    form.setValue('keywords', currentKeywords.filter(k => k !== keyword));
+    const currentKeywords = form.getValues("keywords") || [];
+    form.setValue(
+      "keywords",
+      currentKeywords.filter((k) => k !== keyword),
+    );
   };
-  
+
   // Submit mutation
   const createBlogMutation = useMutation({
     mutationFn: async (data: BlogFormValues) => {
@@ -135,45 +195,45 @@ const NewBlogPage: React.FC = () => {
         tags: data.customTags, // Send as plain string array for the server to process
         published: data.status === ArticleStatus.PUBLISHED,
       };
-      
+
       // Remove customTags as it's not in the API schema
       delete (formattedData as any).customTags;
-      
+
       // Handle scheduling - only include scheduledPublishAt if useScheduling is true
       if (!formattedData.useScheduling) {
         formattedData.scheduledPublishAt = undefined;
       }
-      
+
       // Always delete the useScheduling field as it's only for UI control
       delete (formattedData as any).useScheduling;
-      
-      const res = await apiRequest('POST', '/api/articles', formattedData);
+
+      const res = await apiRequest("POST", "/api/articles", formattedData);
       return await res.json();
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/author/articles'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/author/articles"] });
       toast({
-        title: 'Blog created',
+        title: "Blog created",
         description: `Your blog "${data.title}" has been created successfully`,
       });
-      navigate('/author/blogs');
+      navigate("/author/blogs");
     },
     onError: (error: Error) => {
       toast({
-        title: 'Failed to create blog',
+        title: "Failed to create blog",
         description: error.message,
-        variant: 'destructive',
+        variant: "destructive",
       });
     },
   });
-  
+
   // Generate slug from title
   const generateSlug = (title: string): string => {
     return title
       .toLowerCase()
-      .replace(/[^\w\s-]/g, '') // Remove special characters
-      .replace(/\s+/g, '-') // Replace spaces with hyphens
-      .replace(/-+/g, '-') // Replace multiple hyphens with single hyphen
+      .replace(/[^\w\s-]/g, "") // Remove special characters
+      .replace(/\s+/g, "-") // Replace spaces with hyphens
+      .replace(/-+/g, "-") // Replace multiple hyphens with single hyphen
       .trim(); // Trim leading/trailing spaces
   };
 
@@ -184,7 +244,7 @@ const NewBlogPage: React.FC = () => {
       ...data,
       slug: data.slug || generateSlug(data.title),
     };
-    
+
     createBlogMutation.mutate(formattedData);
   };
 
@@ -192,21 +252,21 @@ const NewBlogPage: React.FC = () => {
   const handleAssetSelect = (asset: Asset | Asset[]) => {
     const selectedAsset = Array.isArray(asset) ? asset[0] : asset;
     if (selectedAsset && selectedAsset.url) {
-      form.setValue('featuredImage', selectedAsset.url);
+      form.setValue("featuredImage", selectedAsset.url);
       setFeaturedImagePreview(selectedAsset.url);
     }
   };
-  
+
   return (
     <AuthorLayout>
       <div className="py-6 px-4 sm:px-6 lg:px-8">
-        <PageHeader 
-          title="Create New Blog" 
+        <PageHeader
+          title="Create New Blog"
           buttonText="Back to Blogs"
           buttonIcon={ArrowLeft}
-          onButtonClick={() => navigate('/author/blogs')}
+          onButtonClick={() => navigate("/author/blogs")}
         />
-        
+
         <div className="mt-6">
           <Card>
             <CardHeader>
@@ -215,7 +275,7 @@ const NewBlogPage: React.FC = () => {
                 Create a new blog post to share your knowledge and insights
               </CardDescription>
             </CardHeader>
-            
+
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)}>
                 <Tabs defaultValue="content" className="space-y-4">
@@ -232,11 +292,13 @@ const NewBlogPage: React.FC = () => {
                       <Search className="w-4 h-4 mr-2" />
                       SEO
                     </TabsTrigger>
-                    <TabsTrigger 
+                    <TabsTrigger
                       value="categories"
                       onClick={() => {
                         // Refresh categories list when switching to this tab
-                        queryClient.invalidateQueries({ queryKey: ['/api/categories'] });
+                        queryClient.invalidateQueries({
+                          queryKey: ["/api/categories"],
+                        });
                       }}
                     >
                       <Tags className="w-4 h-4 mr-2" />
@@ -247,7 +309,7 @@ const NewBlogPage: React.FC = () => {
                       Co-Authors
                     </TabsTrigger>
                   </TabsList>
-                  
+
                   {/* Content Tab */}
                   <TabsContent value="content" className="space-y-6 px-4">
                     {/* Title field */}
@@ -258,19 +320,20 @@ const NewBlogPage: React.FC = () => {
                         <FormItem>
                           <FormLabel>Title</FormLabel>
                           <FormControl>
-                            <Input 
-                              placeholder="Enter a compelling title" 
-                              {...field} 
+                            <Input
+                              placeholder="Enter a compelling title"
+                              {...field}
                             />
                           </FormControl>
                           <FormDescription>
-                            A clear and engaging title that summarizes your blog post
+                            A clear and engaging title that summarizes your blog
+                            post
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                    
+
                     {/* Featured image field */}
                     <FormField
                       control={form.control}
@@ -282,18 +345,18 @@ const NewBlogPage: React.FC = () => {
                             <div className="flex flex-col items-center justify-center border-2 border-dashed border-border rounded-lg p-4 h-40 relative">
                               {featuredImagePreview || field.value ? (
                                 <>
-                                  <img 
-                                    src={featuredImagePreview || field.value} 
-                                    alt="Featured image preview" 
+                                  <img
+                                    src={featuredImagePreview || field.value}
+                                    alt="Featured image preview"
                                     className="w-full h-full object-contain"
                                   />
-                                  <Button 
+                                  <Button
                                     type="button"
                                     size="sm"
                                     variant="secondary"
                                     className="absolute bottom-2 right-2 opacity-80 hover:opacity-100"
                                     onClick={() => {
-                                      field.onChange('');
+                                      field.onChange("");
                                       setFeaturedImagePreview(null);
                                     }}
                                   >
@@ -303,12 +366,14 @@ const NewBlogPage: React.FC = () => {
                               ) : (
                                 <div className="flex flex-col items-center justify-center text-muted-foreground h-full">
                                   <ImagePlus className="h-12 w-12 mb-2 opacity-50" />
-                                  <p className="text-sm text-center">No image selected</p>
+                                  <p className="text-sm text-center">
+                                    No image selected
+                                  </p>
                                 </div>
                               )}
                             </div>
                             <div className="flex flex-col justify-center">
-                              <AssetPickerButton 
+                              <AssetPickerButton
                                 onSelect={handleAssetSelect}
                                 accept="image"
                                 variant="outline"
@@ -317,7 +382,8 @@ const NewBlogPage: React.FC = () => {
                                 Choose Featured Image
                               </AssetPickerButton>
                               <FormDescription className="mt-2">
-                                Select a high-quality image that represents the content of your blog post
+                                Select a high-quality image that represents the
+                                content of your blog post
                               </FormDescription>
                             </div>
                           </div>
@@ -325,7 +391,7 @@ const NewBlogPage: React.FC = () => {
                         </FormItem>
                       )}
                     />
-                    
+
                     {/* Content field with Rich Text Editor */}
                     <FormField
                       control={form.control}
@@ -342,13 +408,14 @@ const NewBlogPage: React.FC = () => {
                             />
                           </FormControl>
                           <FormDescription>
-                            Use the toolbar to format your content, add links and images
+                            Use the toolbar to format your content, add links
+                            and images
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                    
+
                     {/* Excerpt field */}
                     <FormField
                       control={form.control}
@@ -357,21 +424,22 @@ const NewBlogPage: React.FC = () => {
                         <FormItem>
                           <FormLabel>Excerpt</FormLabel>
                           <FormControl>
-                            <Textarea 
-                              placeholder="A brief summary of your blog post" 
+                            <Textarea
+                              placeholder="A brief summary of your blog post"
                               className="resize-none"
                               rows={3}
-                              {...field} 
+                              {...field}
                             />
                           </FormControl>
                           <FormDescription>
-                            A short description that appears in blog listings (max 200 characters)
+                            A short description that appears in blog listings
+                            (max 200 characters)
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                    
+
                     {/* Status field */}
                     <FormField
                       control={form.control}
@@ -379,8 +447,8 @@ const NewBlogPage: React.FC = () => {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Status</FormLabel>
-                          <Select 
-                            onValueChange={field.onChange} 
+                          <Select
+                            onValueChange={field.onChange}
                             defaultValue={field.value}
                           >
                             <FormControl>
@@ -389,33 +457,36 @@ const NewBlogPage: React.FC = () => {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value={ArticleStatus.DRAFT}>Draft</SelectItem>
-                              <SelectItem value={ArticleStatus.REVIEW}>Submit for Review</SelectItem>
-                              <SelectItem value={ArticleStatus.PUBLISHED}>Publish</SelectItem>
+                              <SelectItem value={ArticleStatus.DRAFT}>
+                                Draft
+                              </SelectItem>
+                              <SelectItem value={ArticleStatus.REVIEW}>
+                                Submit for Review
+                              </SelectItem>
+                              <SelectItem value={ArticleStatus.PUBLISHED}>
+                                Publish
+                              </SelectItem>
                             </SelectContent>
                           </Select>
-                          <FormDescription>
-                            <ul className="list-disc pl-5 space-y-1 mt-1">
-                              <li><span className="font-medium">Draft:</span> Save as work in progress</li>
-                              <li><span className="font-medium">Review:</span> Submit for editorial review</li>
-                              <li><span className="font-medium">Publish:</span> Make this blog post public</li>
-                            </ul>
-                          </FormDescription>
+
                           <FormMessage />
                         </FormItem>
                       )}
                     />
                   </TabsContent>
-                  
+
                   {/* Scheduling Tab */}
                   <TabsContent value="scheduling" className="space-y-6 px-4">
                     <div className="rounded-lg border p-4 bg-muted/30">
-                      <h3 className="text-sm font-medium">Publication Scheduling</h3>
+                      <h3 className="text-sm font-medium">
+                        Publication Scheduling
+                      </h3>
                       <p className="text-sm text-muted-foreground mt-1 mb-2">
-                        Schedule your blog post to be published automatically at a future date and time
+                        Schedule your blog post to be published automatically at
+                        a future date and time
                       </p>
                     </div>
-                    
+
                     {/* Enable scheduling field */}
                     <FormField
                       control={form.control}
@@ -423,9 +494,12 @@ const NewBlogPage: React.FC = () => {
                       render={({ field }) => (
                         <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                           <div className="space-y-0.5">
-                            <FormLabel className="text-base">Schedule Publication</FormLabel>
+                            <FormLabel className="text-base">
+                              Schedule Publication
+                            </FormLabel>
                             <FormDescription>
-                              Automatically publish your blog post at a scheduled date and time
+                              Automatically publish your blog post at a
+                              scheduled date and time
                             </FormDescription>
                           </div>
                           <FormControl>
@@ -437,9 +511,9 @@ const NewBlogPage: React.FC = () => {
                         </FormItem>
                       )}
                     />
-                    
+
                     {/* Scheduled date field */}
-                    {form.watch('useScheduling') && (
+                    {form.watch("useScheduling") && (
                       <FormField
                         control={form.control}
                         name="scheduledPublishAt"
@@ -462,16 +536,25 @@ const NewBlogPage: React.FC = () => {
                                   </Button>
                                 </FormControl>
                               </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0" align="start">
+                              <PopoverContent
+                                className="w-auto p-0"
+                                align="start"
+                              >
                                 <CalendarComponent
                                   mode="single"
-                                  selected={field.value ? new Date(field.value) : undefined}
+                                  selected={
+                                    field.value
+                                      ? new Date(field.value)
+                                      : undefined
+                                  }
                                   onSelect={(date) => {
                                     if (date) {
                                       // Set time to noon by default
                                       const scheduledDate = new Date(date);
                                       scheduledDate.setHours(12, 0, 0, 0);
-                                      field.onChange(scheduledDate.toISOString());
+                                      field.onChange(
+                                        scheduledDate.toISOString(),
+                                      );
                                     } else {
                                       field.onChange(undefined);
                                     }
@@ -489,7 +572,9 @@ const NewBlogPage: React.FC = () => {
                                         variant="ghost"
                                         size="sm"
                                         className="h-auto p-2"
-                                        onClick={() => field.onChange(undefined)}
+                                        onClick={() =>
+                                          field.onChange(undefined)
+                                        }
                                       >
                                         Clear
                                       </Button>
@@ -499,12 +584,27 @@ const NewBlogPage: React.FC = () => {
                                     <Input
                                       type="time"
                                       className="w-full"
-                                      value={field.value ? format(new Date(field.value), "HH:mm") : "12:00"}
+                                      value={
+                                        field.value
+                                          ? format(
+                                              new Date(field.value),
+                                              "HH:mm",
+                                            )
+                                          : "12:00"
+                                      }
                                       onChange={(e) => {
                                         if (field.value && e.target.value) {
-                                          const [hours, minutes] = e.target.value.split(':').map(Number);
+                                          const [hours, minutes] =
+                                            e.target.value
+                                              .split(":")
+                                              .map(Number);
                                           const newDate = new Date(field.value);
-                                          newDate.setHours(hours, minutes, 0, 0);
+                                          newDate.setHours(
+                                            hours,
+                                            minutes,
+                                            0,
+                                            0,
+                                          );
                                           field.onChange(newDate.toISOString());
                                         }
                                       }}
@@ -514,7 +614,8 @@ const NewBlogPage: React.FC = () => {
                               </PopoverContent>
                             </Popover>
                             <FormDescription>
-                              Choose a future date and time when your blog post will be automatically published
+                              Choose a future date and time when your blog post
+                              will be automatically published
                             </FormDescription>
                             <FormMessage />
                           </FormItem>
@@ -522,16 +623,19 @@ const NewBlogPage: React.FC = () => {
                       />
                     )}
                   </TabsContent>
-                  
+
                   {/* SEO Tab */}
                   <TabsContent value="seo" className="space-y-6 px-4">
                     <div className="rounded-lg border p-4 bg-muted/30">
-                      <h3 className="text-sm font-medium">Search Engine Optimization</h3>
+                      <h3 className="text-sm font-medium">
+                        Search Engine Optimization
+                      </h3>
                       <p className="text-sm text-muted-foreground mt-1 mb-2">
-                        Optimize your blog post for search engines to increase visibility
+                        Optimize your blog post for search engines to increase
+                        visibility
                       </p>
                     </div>
-                  
+
                     {/* Meta Title field */}
                     <FormField
                       control={form.control}
@@ -546,16 +650,19 @@ const NewBlogPage: React.FC = () => {
                             />
                           </FormControl>
                           <FormDescription>
-                            Recommended length: 50-60 characters. If left blank, the post title will be used.
+                            Recommended length: 50-60 characters. If left blank,
+                            the post title will be used.
                             <div className="text-xs mt-1">
-                              {field.value ? `${field.value.length}/70 characters` : '0/70 characters'}
+                              {field.value
+                                ? `${field.value.length}/70 characters`
+                                : "0/70 characters"}
                             </div>
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                    
+
                     {/* Meta Description field */}
                     <FormField
                       control={form.control}
@@ -572,16 +679,19 @@ const NewBlogPage: React.FC = () => {
                             />
                           </FormControl>
                           <FormDescription>
-                            Recommended length: 120-160 characters. If left blank, the excerpt will be used.
+                            Recommended length: 120-160 characters. If left
+                            blank, the excerpt will be used.
                             <div className="text-xs mt-1">
-                              {field.value ? `${field.value.length}/160 characters` : '0/160 characters'}
+                              {field.value
+                                ? `${field.value.length}/160 characters`
+                                : "0/160 characters"}
                             </div>
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                    
+
                     {/* Keywords field */}
                     <FormField
                       control={form.control}
@@ -590,18 +700,23 @@ const NewBlogPage: React.FC = () => {
                         <FormItem>
                           <FormLabel>Keywords</FormLabel>
                           <div className="flex flex-wrap gap-2 mb-2">
-                            {field.value && field.value.map((keyword, index) => (
-                              <Badge key={index} variant="secondary" className="px-2 py-1">
-                                {keyword}
-                                <button
-                                  type="button"
-                                  className="ml-2 text-muted-foreground hover:text-foreground"
-                                  onClick={() => removeKeyword(keyword)}
+                            {field.value &&
+                              field.value.map((keyword, index) => (
+                                <Badge
+                                  key={index}
+                                  variant="secondary"
+                                  className="px-2 py-1"
                                 >
-                                  ×
-                                </button>
-                              </Badge>
-                            ))}
+                                  {keyword}
+                                  <button
+                                    type="button"
+                                    className="ml-2 text-muted-foreground hover:text-foreground"
+                                    onClick={() => removeKeyword(keyword)}
+                                  >
+                                    ×
+                                  </button>
+                                </Badge>
+                              ))}
                           </div>
                           <div className="flex gap-2">
                             <Input
@@ -609,34 +724,40 @@ const NewBlogPage: React.FC = () => {
                               value={keywordInput}
                               onChange={(e) => setKeywordInput(e.target.value)}
                               onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
+                                if (e.key === "Enter") {
                                   e.preventDefault();
                                   addKeyword();
                                 }
                               }}
                             />
-                            <Button type="button" variant="secondary" onClick={addKeyword}>
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              onClick={addKeyword}
+                            >
                               Add
                             </Button>
                           </div>
                           <FormDescription>
-                            Add keywords that describe your blog post content. Press Enter or click Add after each keyword.
+                            Add keywords that describe your blog post content.
+                            Press Enter or click Add after each keyword.
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
                   </TabsContent>
-                  
+
                   {/* Categories & Tags Tab */}
                   <TabsContent value="categories" className="space-y-6 px-4">
                     <div className="rounded-lg border p-4 bg-muted/30">
                       <h3 className="text-sm font-medium">Categories & Tags</h3>
                       <p className="text-sm text-muted-foreground mt-1 mb-2">
-                        Organize your content and make it easier for readers to find related articles
+                        Organize your content and make it easier for readers to
+                        find related articles
                       </p>
                     </div>
-                    
+
                     {/* Categories field */}
                     <FormField
                       control={form.control}
@@ -646,17 +767,24 @@ const NewBlogPage: React.FC = () => {
                           <FormLabel>Categories</FormLabel>
                           <div className="border rounded-md p-4 space-y-2 max-h-60 overflow-y-auto">
                             {categories.length === 0 ? (
-                              <p className="text-sm text-muted-foreground">No categories available</p>
+                              <p className="text-sm text-muted-foreground">
+                                No categories available
+                              </p>
                             ) : (
                               categories.map((category) => (
-                                <div key={category.id} className="flex items-center space-x-2">
+                                <div
+                                  key={category.id}
+                                  className="flex items-center space-x-2"
+                                >
                                   <Checkbox
                                     id={`category-${category.id}`}
                                     checked={field.value.includes(category.id)}
                                     onCheckedChange={(checked) => {
                                       const updatedCategories = checked
                                         ? [...field.value, category.id]
-                                        : field.value.filter((id) => id !== category.id);
+                                        : field.value.filter(
+                                            (id) => id !== category.id,
+                                          );
                                       field.onChange(updatedCategories);
                                     }}
                                   />
@@ -677,7 +805,7 @@ const NewBlogPage: React.FC = () => {
                         </FormItem>
                       )}
                     />
-                    
+
                     {/* Custom Tags field - Author can add their own tags */}
                     <FormField
                       control={form.control}
@@ -687,54 +815,75 @@ const NewBlogPage: React.FC = () => {
                           <FormLabel>Tags</FormLabel>
                           <div className="space-y-4">
                             <div className="flex flex-wrap gap-2 mb-2 min-h-8">
-                              {field.value && field.value.map((tag, index) => (
-                                <Badge key={index} variant="secondary" className="px-2 py-1">
-                                  {tag}
-                                  <button
-                                    type="button"
-                                    className="ml-2 text-muted-foreground hover:text-foreground"
-                                    onClick={() => {
-                                      const newTags = [...field.value];
-                                      newTags.splice(index, 1);
-                                      field.onChange(newTags);
-                                    }}
+                              {field.value &&
+                                field.value.map((tag, index) => (
+                                  <Badge
+                                    key={index}
+                                    variant="secondary"
+                                    className="px-2 py-1"
                                   >
-                                    ×
-                                  </button>
-                                </Badge>
-                              ))}
+                                    {tag}
+                                    <button
+                                      type="button"
+                                      className="ml-2 text-muted-foreground hover:text-foreground"
+                                      onClick={() => {
+                                        const newTags = [...field.value];
+                                        newTags.splice(index, 1);
+                                        field.onChange(newTags);
+                                      }}
+                                    >
+                                      ×
+                                    </button>
+                                  </Badge>
+                                ))}
                               {(!field.value || field.value.length === 0) && (
-                                <span className="text-sm text-muted-foreground">No tags added yet</span>
+                                <span className="text-sm text-muted-foreground">
+                                  No tags added yet
+                                </span>
                               )}
                             </div>
                             <div className="flex gap-2">
                               <Input
                                 placeholder="Enter a tag"
                                 value={keywordInput}
-                                onChange={(e) => setKeywordInput(e.target.value)}
+                                onChange={(e) =>
+                                  setKeywordInput(e.target.value)
+                                }
                                 onKeyDown={(e) => {
-                                  if (e.key === 'Enter') {
+                                  if (e.key === "Enter") {
                                     e.preventDefault();
                                     if (keywordInput.trim()) {
                                       const currentTags = field.value || [];
-                                      if (!currentTags.includes(keywordInput.trim())) {
-                                        field.onChange([...currentTags, keywordInput.trim()]);
+                                      if (
+                                        !currentTags.includes(
+                                          keywordInput.trim(),
+                                        )
+                                      ) {
+                                        field.onChange([
+                                          ...currentTags,
+                                          keywordInput.trim(),
+                                        ]);
                                       }
-                                      setKeywordInput('');
+                                      setKeywordInput("");
                                     }
                                   }
                                 }}
                               />
-                              <Button 
-                                type="button" 
-                                variant="secondary" 
+                              <Button
+                                type="button"
+                                variant="secondary"
                                 onClick={() => {
                                   if (keywordInput.trim()) {
                                     const currentTags = field.value || [];
-                                    if (!currentTags.includes(keywordInput.trim())) {
-                                      field.onChange([...currentTags, keywordInput.trim()]);
+                                    if (
+                                      !currentTags.includes(keywordInput.trim())
+                                    ) {
+                                      field.onChange([
+                                        ...currentTags,
+                                        keywordInput.trim(),
+                                      ]);
                                     }
-                                    setKeywordInput('');
+                                    setKeywordInput("");
                                   }
                                 }}
                               >
@@ -743,14 +892,15 @@ const NewBlogPage: React.FC = () => {
                             </div>
                           </div>
                           <FormDescription>
-                            Add your own tags to categorize your blog post. Press Enter or click Add after each tag.
+                            Add your own tags to categorize your blog post.
+                            Press Enter or click Add after each tag.
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
                   </TabsContent>
-                  
+
                   {/* Co-Authors Tab */}
                   <TabsContent value="coauthors" className="space-y-6 px-4">
                     <div className="rounded-lg border p-4 bg-muted/30">
@@ -759,7 +909,7 @@ const NewBlogPage: React.FC = () => {
                         Add other authors who contributed to this content
                       </p>
                     </div>
-                    
+
                     {/* Co-Authors field */}
                     <FormField
                       control={form.control}
@@ -769,17 +919,24 @@ const NewBlogPage: React.FC = () => {
                           <FormLabel>Co-Authors</FormLabel>
                           <div className="border rounded-md p-4 space-y-2 max-h-60 overflow-y-auto">
                             {authors.length === 0 ? (
-                              <p className="text-sm text-muted-foreground">No other authors available</p>
+                              <p className="text-sm text-muted-foreground">
+                                No other authors available
+                              </p>
                             ) : (
                               authors.map((author) => (
-                                <div key={author.id} className="flex items-center space-x-2">
+                                <div
+                                  key={author.id}
+                                  className="flex items-center space-x-2"
+                                >
                                   <Checkbox
                                     id={`author-${author.id}`}
                                     checked={field.value.includes(author.id)}
                                     onCheckedChange={(checked) => {
                                       const updatedAuthors = checked
                                         ? [...field.value, author.id]
-                                        : field.value.filter((id) => id !== author.id);
+                                        : field.value.filter(
+                                            (id) => id !== author.id,
+                                          );
                                       field.onChange(updatedAuthors);
                                     }}
                                   />
@@ -794,7 +951,8 @@ const NewBlogPage: React.FC = () => {
                             )}
                           </div>
                           <FormDescription>
-                            Select one or more co-authors who contributed to this blog post
+                            Select one or more co-authors who contributed to
+                            this blog post
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
@@ -802,34 +960,34 @@ const NewBlogPage: React.FC = () => {
                     />
                   </TabsContent>
                 </Tabs>
-                
+
                 <CardFooter className="flex justify-between mt-4">
-                  <Button 
-                    type="button" 
+                  <Button
+                    type="button"
                     variant="outline"
-                    onClick={() => navigate('/author/blogs')}
+                    onClick={() => navigate("/author/blogs")}
                   >
                     Cancel
                   </Button>
-                  
+
                   <div className="flex space-x-2">
-                    <Button 
+                    <Button
                       type="submit"
                       variant="default"
                       disabled={createBlogMutation.isPending}
                     >
                       <Save className="mr-2 h-4 w-4" />
-                      {createBlogMutation.isPending ? 'Saving...' : 'Save Blog'}
+                      {createBlogMutation.isPending ? "Saving..." : "Save Blog"}
                     </Button>
-                    
-                    <Button 
+
+                    <Button
                       type="button"
                       variant="outline"
                       onClick={() => {
                         // Preview functionality would be implemented here
                         toast({
-                          title: 'Preview',
-                          description: 'Preview functionality coming soon',
+                          title: "Preview",
+                          description: "Preview functionality coming soon",
                         });
                       }}
                     >
