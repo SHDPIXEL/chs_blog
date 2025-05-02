@@ -406,9 +406,13 @@ const NewBlog: React.FC = () => {
                             </div>
                             <div className="flex flex-col justify-center">
                               <AssetPickerButton
-                                onSelect={(asset: Asset) =>
-                                  setFeaturedImage(asset.url)
-                                }
+                                onSelect={(asset) => {
+                                  // Handle both single asset and array of assets
+                                  const selectedAsset = Array.isArray(asset) ? asset[0] : asset;
+                                  if (selectedAsset?.url) {
+                                    setFeaturedImage(selectedAsset.url);
+                                  }
+                                }}
                                 accept="image"
                                 variant="outline"
                                 className="w-full"
@@ -1016,6 +1020,20 @@ const NewBlog: React.FC = () => {
                   </TabsContent>
                 </Tabs>
 
+                {/* Form validation error messages */}
+                {Object.keys(form.formState.errors).length > 0 && (
+                  <div className="mx-6 mb-4 p-3 border border-destructive text-destructive bg-destructive/10 rounded-md">
+                    <p className="font-semibold mb-1">Please fix the following issues:</p>
+                    <ul className="list-disc pl-5 space-y-1">
+                      {Object.entries(form.formState.errors).map(([field, error]) => (
+                        <li key={field}>
+                          {field.charAt(0).toUpperCase() + field.slice(1)}: {error?.message as string}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                
                 <CardFooter className="flex justify-between border-t px-6 py-4 mt-6">
                   <Button
                     type="button"
@@ -1086,9 +1104,9 @@ const NewBlog: React.FC = () => {
                         ? editorRef.current.getHTML()
                         : form.getValues("content")
                     }
-                    excerpt={form.getValues("excerpt")}
-                    image={featuredImage}
-                    author={user?.name || "Admin"}
+                    excerpt={form.getValues("excerpt") || ""}
+                    image={featuredImage || undefined}
+                    author={(user?.name || "Admin") as string}
                     createdAt={new Date().toISOString()}
                   />
                 )}
