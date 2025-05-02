@@ -73,6 +73,7 @@ import {
 } from "lucide-react";
 
 // Custom article schema for admin (simplified options)
+// Custom article schema with strict validation
 const adminArticleSchema = extendedArticleSchema.extend({
   // Admin can only set to draft or published, not review
   status: z
@@ -80,6 +81,18 @@ const adminArticleSchema = extendedArticleSchema.extend({
     .default(ArticleStatus.DRAFT),
   // Custom tags field for dynamic tag entry
   customTags: z.array(z.string()).default([]),
+  // Add more specific validations
+  title: z
+    .string()
+    .min(5, "Title must be at least 5 characters")
+    .max(100, "Title cannot exceed 100 characters"),
+  content: z
+    .string()
+    .min(50, "Content must be at least 50 characters"),
+  excerpt: z
+    .string()
+    .max(200, "Excerpt cannot exceed 200 characters")
+    .optional(),
 });
 
 const NewBlog: React.FC = () => {
