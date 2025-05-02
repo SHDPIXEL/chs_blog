@@ -268,6 +268,33 @@ const BlogManagement: React.FC = () => {
       });
     }
   });
+  
+  // Bulk delete blogs
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async (blogIds: number[]) => {
+      const res = await apiRequest('DELETE', '/api/admin/articles/bulk', {
+        ids: blogIds
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/articles'] });
+      setBulkActionDialogOpen(false);
+      setBulkAction(null);
+      setSelectedBlogs([]);
+      toast({
+        title: 'Bulk delete successful',
+        description: `${selectedBlogs.length} blog posts have been deleted`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Bulk delete failed',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  });
 
   // Filter blogs
   const filteredBlogs = blogs?.filter(blog => {
@@ -332,6 +359,9 @@ const BlogManagement: React.FC = () => {
           blogIds: selectedBlogs, 
           featured: false 
         });
+        break;
+      case 'delete':
+        bulkDeleteMutation.mutate(selectedBlogs);
         break;
       default:
         break;
@@ -456,6 +486,17 @@ const BlogManagement: React.FC = () => {
                           >
                             <Star className="mr-2 h-4 w-4" />
                             Unfeature
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setBulkAction('delete');
+                              setBulkActionDialogOpen(true);
+                            }}
+                            className="text-destructive focus:text-destructive"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete Selected
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
