@@ -675,6 +675,7 @@ const AdminEditBlogPage: React.FC = () => {
         onClose={() => setIsPreviewOpen(false)}
         title={form.watch('title')}
         content={form.watch('content')}
+        excerpt={form.watch('excerpt')}
         author={{ name: user?.name || 'Anonymous' }}
         date={new Date().toLocaleDateString()}
         categories={categories
