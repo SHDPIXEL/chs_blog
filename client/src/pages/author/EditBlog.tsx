@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, Save, Eye, ImagePlus, Layout, Search, Tags, Users, Loader2 } from 'lucide-react';
 import { ArticleStatus, Asset, Category, Tag, User, Article } from '@shared/schema';
 import { AssetPickerButton } from '@/components/assets';
+import BlogPreviewDialog from '@/components/blog/BlogPreviewDialog';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';

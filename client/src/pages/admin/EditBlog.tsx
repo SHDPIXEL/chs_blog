@@ -28,6 +28,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { MultiSelect } from '@/components/ui/multi-select';
 import PageHeader from '@/components/ui/page-header';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
+import BlogPreviewDialog from '@/components/blog/BlogPreviewDialog';
 
 // Define the form values schema
 const blogFormSchema = z.object({
@@ -644,6 +645,14 @@ const AdminEditBlogPage: React.FC = () => {
                     <Button variant="outline" type="button" onClick={() => navigate('/admin/blogs')}>
                       Cancel
                     </Button>
+                    <Button 
+                      variant="outline" 
+                      type="button" 
+                      onClick={() => setIsPreviewOpen(true)}
+                    >
+                      <Eye className="mr-2 h-4 w-4" />
+                      Preview
+                    </Button>
                     <Button type="submit" disabled={updateBlogMutation.isPending}>
                       {updateBlogMutation.isPending ? (
                         <>
@@ -664,6 +673,23 @@ const AdminEditBlogPage: React.FC = () => {
           </Card>
         </div>
       </div>
+      
+      {/* Blog Preview Dialog */}
+      <BlogPreviewDialog
+        isOpen={isPreviewOpen}
+        onClose={() => setIsPreviewOpen(false)}
+        title={form.watch('title')}
+        content={form.watch('content')}
+        author={{ name: user?.name || 'Anonymous' }}
+        date={new Date().toLocaleDateString()}
+        categories={categories
+          .filter(c => form.watch('categoryIds').includes(c.id))
+          .map(c => c.name)}
+        tags={tags
+          .filter(t => form.watch('tagIds').includes(t.id))
+          .map(t => t.name)}
+        featuredImage={featuredImagePreview || undefined}
+      />
     </AdminLayout>
   );
 };
