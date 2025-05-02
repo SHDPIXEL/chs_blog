@@ -11,62 +11,115 @@ export function ContentRenderer({ content, className = '' }: ContentRendererProp
   useEffect(() => {
     // Process images to enhance styling after the content is rendered
     if (contentRef.current) {
-      // 1. Handle images inside anchors (new pattern from editor)
-      const linkedImages = contentRef.current.querySelectorAll('a > img');
+      console.log('ContentRenderer processing content with length:', content.length);
       
-      linkedImages.forEach(img => {
-        const anchor = img.parentElement;
+      // Log image data for debugging
+      const allImages = contentRef.current.querySelectorAll('img');
+      console.log(`Found ${allImages.length} images in content`);
+      
+      // 1. First check for images with data-link directly in the img tag
+      //    These may come from older content
+      allImages.forEach((img, index) => {
+        console.log(`Processing image ${index + 1}:`, {
+          src: img.getAttribute('src'),
+          dataLink: img.getAttribute('data-link'),
+          isInAnchor: img.parentElement?.tagName.toLowerCase() === 'a',
+          parentElement: img.parentElement?.tagName
+        });
         
-        if (anchor && anchor.tagName.toLowerCase() === 'a') {
-          // Style the anchor element
-          anchor.className = "inline-block relative cursor-pointer hover:opacity-95 transition-all";
+        // If image has a data-link but is not in an anchor
+        const imgLink = img.getAttribute('data-link');
+        if (imgLink && img.parentElement?.tagName.toLowerCase() !== 'a') {
+          console.log(`Image ${index + 1} has data-link but no anchor parent, adding anchor`);
+          
+          // Create a wrapper with proper styling
+          const wrapper = document.createElement('a');
+          wrapper.href = imgLink;
+          wrapper.target = "_blank";
+          wrapper.rel = "noopener noreferrer";
+          wrapper.className = "inline-block relative cursor-pointer hover:opacity-95 transition-all";
           
           // Apply some styling to indicate it's a linked image
           img.classList.add('rounded-md');
+          
+          // Replace the image with wrapped version
+          img.parentNode?.insertBefore(wrapper, img);
+          wrapper.appendChild(img);
           
           // Add indicator that this is a link
           const indicator = document.createElement('div');
           indicator.className = 'absolute top-2 right-2 bg-blue-500 text-white px-2 py-1 rounded-md shadow-md text-xs flex items-center';
           indicator.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3 w-3 mr-1"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg><span class="hidden sm:inline">Link</span>';
-          anchor.appendChild(indicator);
+          wrapper.appendChild(indicator);
         }
       });
       
-      // 2. Legacy support - also process div[data-type="image"] with data-link for older content
-      const images = contentRef.current.querySelectorAll('img');
+      // 2. Handle images inside anchors (new pattern from editor)
+      const linkedImages = contentRef.current.querySelectorAll('a > img');
+      console.log(`Found ${linkedImages.length} images already inside anchor tags`);
       
-      images.forEach(img => {
-        // Skip images that are already inside anchor tags
-        if (img.parentElement?.tagName.toLowerCase() === 'a') return;
+      linkedImages.forEach((img, index) => {
+        const anchor = img.parentElement as HTMLAnchorElement;
         
-        // Check if the image is inside a custom linked image container
-        const parentDiv = img.closest('div[data-type="image"]');
+        console.log(`Processing linked image ${index + 1}:`, {
+          src: img.getAttribute('src'),
+          anchorHref: anchor.href,
+          hasLinkIndicator: anchor.querySelector('.bg-blue-500') !== null
+        });
         
-        if (parentDiv) {
-          // Extract link from the data-link attribute if it exists
-          const link = parentDiv.getAttribute('data-link');
-          
-          if (link) {
-            // Create a wrapper with proper styling
-            const wrapper = document.createElement('a');
-            wrapper.href = link;
-            wrapper.target = "_blank";
-            wrapper.rel = "noopener noreferrer";
-            wrapper.className = "inline-block relative cursor-pointer hover:opacity-95 transition-all";
+        if (anchor && anchor.tagName.toLowerCase() === 'a') {
+          // Style the anchor element if it doesn't already have the class
+          if (!anchor.className.includes('inline-block')) {
+            anchor.className = "inline-block relative cursor-pointer hover:opacity-95 transition-all";
             
             // Apply some styling to indicate it's a linked image
             img.classList.add('rounded-md');
             
-            // Replace the image with wrapped version
-            img.parentNode?.insertBefore(wrapper, img);
-            wrapper.appendChild(img);
-            
-            // Add indicator that this is a link
-            const indicator = document.createElement('div');
-            indicator.className = 'absolute top-2 right-2 bg-blue-500 text-white px-2 py-1 rounded-md shadow-md text-xs flex items-center';
-            indicator.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3 w-3 mr-1"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg><span class="hidden sm:inline">Link</span>';
-            wrapper.appendChild(indicator);
+            // Add indicator that this is a link if not already present
+            if (!anchor.querySelector('.bg-blue-500')) {
+              const indicator = document.createElement('div');
+              indicator.className = 'absolute top-2 right-2 bg-blue-500 text-white px-2 py-1 rounded-md shadow-md text-xs flex items-center';
+              indicator.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3 w-3 mr-1"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg><span class="hidden sm:inline">Link</span>';
+              anchor.appendChild(indicator);
+            }
           }
+        }
+      });
+      
+      // 3. Legacy support - also process div[data-type="image"] with data-link for older content
+      const imageContainers = contentRef.current.querySelectorAll('div[data-type="image"]');
+      console.log(`Found ${imageContainers.length} image containers with data-type="image"`);
+      
+      imageContainers.forEach((container, index) => {
+        const link = container.getAttribute('data-link');
+        const img = container.querySelector('img');
+        
+        console.log(`Processing image container ${index + 1}:`, {
+          dataLink: link,
+          hasImage: !!img,
+          isImgInAnchor: img?.parentElement?.tagName.toLowerCase() === 'a'
+        });
+        
+        if (link && img && img.parentElement?.tagName.toLowerCase() !== 'a') {
+          // Create a wrapper with proper styling
+          const wrapper = document.createElement('a');
+          wrapper.href = link;
+          wrapper.target = "_blank";
+          wrapper.rel = "noopener noreferrer";
+          wrapper.className = "inline-block relative cursor-pointer hover:opacity-95 transition-all";
+          
+          // Apply some styling to indicate it's a linked image
+          img.classList.add('rounded-md');
+          
+          // Replace the image with wrapped version
+          img.parentNode?.insertBefore(wrapper, img);
+          wrapper.appendChild(img);
+          
+          // Add indicator that this is a link
+          const indicator = document.createElement('div');
+          indicator.className = 'absolute top-2 right-2 bg-blue-500 text-white px-2 py-1 rounded-md shadow-md text-xs flex items-center';
+          indicator.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-3 w-3 mr-1"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg><span class="hidden sm:inline">Link</span>';
+          wrapper.appendChild(indicator);
         }
       });
     }
