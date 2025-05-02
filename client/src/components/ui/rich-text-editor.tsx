@@ -1,8 +1,8 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useImperativeHandle, forwardRef } from 'react';
 import { useEditor, EditorContent, BubbleMenu } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
-import { NodeViewWrapper, NodeViewContent, ReactNodeViewRenderer } from '@tiptap/react';
+import { NodeViewWrapper, ReactNodeViewRenderer } from '@tiptap/react';
 import Link from '@tiptap/extension-link';
 import Underline from '@tiptap/extension-underline';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -32,7 +32,6 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Input } from '@/components/ui/input';
 import { AssetPickerButton } from '@/components/assets';
 import { Asset } from '@shared/schema';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface RichTextEditorProps {
   value: string;
@@ -201,15 +200,20 @@ const ResizableImageComponent = ({ node, updateAttributes }: any) => {
   );
 };
 
-const RichTextEditor: React.FC<RichTextEditorProps> = ({
-  value,
-  onChange,
-  placeholder = 'Start writing...',
-  className,
-  readOnly = false,
-}) => {
+export interface RichTextEditorRef {
+  getHTML: () => string;
+}
+
+export const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>((props, ref) => {
+  const {
+    value,
+    onChange,
+    placeholder = 'Start writing...',
+    className,
+    readOnly = false,
+  } = props;
+  
   const [linkUrl, setLinkUrl] = useState<string>('');
-  const [showImagePopover, setShowImagePopover] = useState<boolean>(false);
   const [imageUrl, setImageUrl] = useState<string>('');
 
   // Set up custom image extension
@@ -258,6 +262,11 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       editor.commands.setContent(value);
     }
   }, [editor, value]);
+  
+  // Expose methods via ref
+  useImperativeHandle(ref, () => ({
+    getHTML: () => editor ? editor.getHTML() : ''
+  }), [editor]);
 
   const setLink = useCallback(() => {
     if (!editor) return;
@@ -289,7 +298,6 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       .run();
       
     setImageUrl('');
-    setShowImagePopover(false);
   }, [editor]);
 
   if (!editor) {
@@ -466,7 +474,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           
           <div className="w-px h-6 bg-border mx-1"></div>
           
-          {/* Replace popover with direct AssetPickerButton */}
+          {/* Image button */}
           <AssetPickerButton
             accept="image"
             onSelect={(asset) => {
@@ -617,9 +625,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
                     <Button
                       variant="outline"
                       size="sm"
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
+                      onClick={() => {
                         setLinkUrl('');
                         editor.chain().focus().extendMarkRange('link').unsetLink().run();
                       }}
@@ -629,11 +635,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
                     </Button>
                     <Button 
                       size="sm"
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        setLink();
-                      }}
+                      onClick={setLink}
                     >
                       {editor.isActive('link') ? 'Update' : 'Add'}
                     </Button>
@@ -657,6 +659,6 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       />
     </div>
   );
-};
+});
 
-export { RichTextEditor };
+RichTextEditor.displayName = 'RichTextEditor';
