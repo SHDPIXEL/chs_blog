@@ -222,6 +222,8 @@ const ResizableImageComponent = ({ node, updateAttributes, getPos, editor }: any
         ref={containerRef}
         className={`relative inline-block ${resizeDirection ? 'select-none' : ''}`}
         style={{ width: size.width, height: size.height }}
+        data-type="image"
+        data-link={node.attrs.link || undefined}
       >
         {/* Image with optional link styling */}
         <div 

@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, MessageSquare, Share2, Eye } from "lucide-react";
 import PublicLayout from "@/components/layout/PublicLayout";
 import { CommentsList } from "@/components/comments/CommentsList";
+import { ContentRenderer } from "@/components/blog/ContentRenderer";
 import { getInitials } from "@/lib/avatarUtils";
 
 // Demo images for placeholder
@@ -316,9 +317,9 @@ const BlogDetail: React.FC = () => {
 
         {/* Article content */}
         <div className="max-w-4xl mx-auto" ref={contentRef}>
-          <div
+          <ContentRenderer 
+            content={articleData.content}
             className="prose prose-lg max-w-none prose-headings:text-gray-900 prose-p:text-gray-700"
-            dangerouslySetInnerHTML={{ __html: articleData.content }}
           />
 
           {/* Tags */}
