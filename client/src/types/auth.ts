@@ -14,7 +14,7 @@ export interface User {
 }
 
 export interface AuthResponse {
-  user: User;
+  user: User & { can_publish?: boolean }; // Include the snake_case version for backwards compatibility
   token: string;
 }
 

@@ -50,10 +50,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           });
           
           if (response.ok) {
-            const apiUserData = await response.json();
+            // Cast the response to ApiUserResponse to handle both field naming conventions
+            const apiUserData = await response.json() as ApiUserResponse;
             
             // Process user data to ensure correct field naming
-            const userData = {
+            const userData: User = {
               ...apiUserData,
               // Convert can_publish from database to canPublish for frontend
               canPublish: apiUserData.can_publish !== undefined 
@@ -89,13 +90,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const response = await loginUser(data);
       
+      // Cast response.user to ApiUserResponse type to handle both field naming conventions
+      const apiUser = response.user as ApiUserResponse;
+      
       // Ensure canPublish is properly set from can_publish field
-      const userData = {
-        ...response.user,
+      const userData: User = {
+        ...apiUser,
         // Convert can_publish from database to canPublish for frontend
-        canPublish: response.user.can_publish !== undefined 
-          ? response.user.can_publish 
-          : response.user.canPublish
+        canPublish: apiUser.can_publish !== undefined 
+          ? apiUser.can_publish 
+          : apiUser.canPublish
       };
       
       // Remove the snake_case version if it exists to avoid duplication
