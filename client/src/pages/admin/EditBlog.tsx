@@ -1007,7 +1007,7 @@ const AdminEditBlogPage: React.FC = () => {
                           <FormControl>
                             <MultiSelect
                               value={field.value.map(id => id.toString())}
-                              onValueChange={(values) => {
+                              onChange={(values) => {
                                 field.onChange(values.map(val => parseInt(val)));
                               }}
                               options={categories.map((category) => ({
@@ -1034,7 +1034,7 @@ const AdminEditBlogPage: React.FC = () => {
                           <FormControl>
                             <MultiSelect
                               value={field.value.map(id => id.toString())}
-                              onValueChange={(values) => {
+                              onChange={(values) => {
                                 field.onChange(values.map(val => parseInt(val)));
                               }}
                               options={tags.map((tag) => ({
@@ -1064,7 +1064,7 @@ const AdminEditBlogPage: React.FC = () => {
                           <FormControl>
                             <MultiSelect
                               value={field.value.map(id => id.toString())}
-                              onValueChange={(values) => {
+                              onChange={(values) => {
                                 field.onChange(values.map(val => parseInt(val)));
                               }}
                               options={authors
