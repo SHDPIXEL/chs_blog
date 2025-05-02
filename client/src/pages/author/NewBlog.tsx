@@ -491,13 +491,13 @@ const NewBlogPage: React.FC = () => {
                   <TabsContent value="scheduling" className="space-y-6 px-4">
                     <div className="rounded-lg border p-4 bg-muted/30">
                       <h3 className="text-sm font-medium">
-                        {user?.canPublish 
+                        {canPublish 
                           ? "Publication Scheduling" 
                           : "Review Submission Scheduling"
                         }
                       </h3>
                       <p className="text-sm text-muted-foreground mt-1 mb-2">
-                        {user?.canPublish 
+                        {canPublish 
                           ? "Schedule your blog post to be published automatically at a future date and time"
                           : "Schedule your blog post for review at a future date and time"
                         }
@@ -512,13 +512,13 @@ const NewBlogPage: React.FC = () => {
                         <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                           <div className="space-y-0.5">
                             <FormLabel className="text-base">
-                              {user?.canPublish 
+                              {canPublish 
                                 ? "Schedule Publication" 
                                 : "Schedule Review Submission"
                               }
                             </FormLabel>
                             <FormDescription>
-                              {user?.canPublish 
+                              {canPublish 
                                 ? "Automatically publish your blog post at a scheduled date and time"
                                 : "Submit your blog post for review at a scheduled date and time"
                               }
@@ -542,7 +542,7 @@ const NewBlogPage: React.FC = () => {
                         render={({ field }) => (
                           <FormItem className="flex flex-col">
                             <FormLabel>
-                              {user?.canPublish 
+                              {canPublish 
                                 ? "Scheduled Publication Date" 
                                 : "Scheduled Review Date"
                               }
@@ -642,7 +642,7 @@ const NewBlogPage: React.FC = () => {
                             </Popover>
                             <FormDescription>
                               Choose a future date and time when your blog post
-                              {user?.canPublish 
+                              {canPublish 
                                 ? " will be automatically published"
                                 : " will be submitted for review"
                               }
