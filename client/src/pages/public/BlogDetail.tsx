@@ -184,6 +184,41 @@ const BlogDetail: React.FC = () => {
       <Helmet>
         <title>{articleData.title} | BlogCMS</title>
         <meta name="description" content={articleData.excerpt} />
+        <meta name="author" content={articleData.author?.name} />
+        {articleData.keywords && (
+          <meta name="keywords" content={articleData.keywords.join(", ")} />
+        )}
+        <meta property="og:title" content={articleData.title} />
+        <meta property="og:description" content={articleData.excerpt} />
+        <meta property="og:type" content="article" />
+        {articleData.featuredImage && (
+          <meta property="og:image" content={articleData.featuredImage} />
+        )}
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BlogPosting",
+            "headline": articleData.title,
+            "description": articleData.excerpt,
+            "image": articleData.featuredImage,
+            "datePublished": articleData.createdAt,
+            "dateModified": articleData.updatedAt,
+            "author": {
+              "@type": "Person",
+              "name": articleData.author?.name,
+            },
+            "publisher": {
+              "@type": "Organization",
+              "name": "BlogCMS",
+              "logo": {
+                "@type": "ImageObject",
+                "url": "/logo.png"
+              }
+            },
+            "keywords": tags.map(tag => tag.name).join(", "),
+            "articleSection": categories.map(cat => cat.name).join(", ")
+          })}
+        </script>
       </Helmet>
 
       {/* Enhanced Reading Progress Bar - Fixed at the top */}
