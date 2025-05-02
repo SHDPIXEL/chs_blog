@@ -28,6 +28,7 @@ import {
 } from "@shared/schema";
 import { z } from "zod";
 import { authenticateToken, requireAdmin, requireAuthor, requireAuth, type AuthRequest } from "./middleware/auth";
+import { istToUtc, utcToIst, formatIstDate } from "@shared/utils/dateTime";
 
 // JWT Secret
 const JWT_SECRET = process.env.JWT_SECRET || "blog-platform-jwt-secret";
@@ -486,13 +487,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // If scheduledPublishAt is provided, add it to the update data
       if (scheduledPublishAt) {
+        // Convert IST time input to UTC for storage
+        const scheduleDate = istToUtc(scheduledPublishAt);
         console.log('Setting scheduled publish date:', scheduledPublishAt);
-        updateData.scheduledPublishAt = scheduledPublishAt;
+        console.log('Converted from IST to UTC:', scheduleDate?.toISOString());
         
-        // When scheduling a post, we want status=published but published=false
-        // The scheduler will set published=true when the time comes
-        if (status === ArticleStatus.PUBLISHED) {
-          updateData.published = false;
+        if (scheduleDate) {
+          updateData.scheduledPublishAt = scheduleDate.toISOString();
+          
+          // When scheduling a post, we want status=published but published=false
+          // The scheduler will set published=true when the time comes
+          if (status === ArticleStatus.PUBLISHED) {
+            updateData.published = false;
+          }
+        } else {
+          // Log error if conversion failed
+          console.error('Failed to convert IST date to UTC:', scheduledPublishAt);
+          return res.status(400).json({ message: "Invalid scheduled publish date format" });
         }
       } else if (status === ArticleStatus.PUBLISHED) {
         // If no schedule is set but status is published, ensure it's published immediately
@@ -506,8 +517,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create a notification for the author
       if (status === ArticleStatus.PUBLISHED) {
         try {
+          let scheduleTimeDisplay = '';
+          
+          if (scheduledPublishAt) {
+            // Format the IST time for display
+            scheduleTimeDisplay = formatIstDate(scheduledPublishAt);
+          }
+          
           const notificationMessage = scheduledPublishAt 
-            ? `Your article "${article.title}" has been approved and scheduled to publish on ${new Date(scheduledPublishAt).toLocaleString()}.`
+            ? `Your article "${article.title}" has been approved and scheduled to publish on ${scheduleTimeDisplay}.`
             : `Your article "${article.title}" has been approved and published.`;
             
           await storage.createNotification({
@@ -1341,14 +1359,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
             let updatedArticle;
             
             if (scheduledPublishAt && status === ArticleStatus.PUBLISHED) {
-              // Use updateArticle for scheduled publishing
-              updatedArticle = await storage.updateArticle(id, {
-                status,
-                scheduledPublishAt,
-                published: false, // Will be set to true by the scheduler
-                reviewedBy: req.user.id,
-                reviewedAt: new Date().toISOString()
-              });
+              // Convert IST time input to UTC for storage
+              const scheduleDate = istToUtc(scheduledPublishAt);
+              console.log('Setting bulk scheduled publish date:', scheduledPublishAt);
+              console.log('Converted from IST to UTC:', scheduleDate?.toISOString());
+              
+              if (scheduleDate) {
+                // Use updateArticle for scheduled publishing
+                updatedArticle = await storage.updateArticle(id, {
+                  status,
+                  scheduledPublishAt: scheduleDate.toISOString(),
+                  published: false, // Will be set to true by the scheduler
+                  reviewedBy: req.user.id,
+                  reviewedAt: new Date().toISOString()
+                });
+              } else {
+                console.error('Failed to convert IST date to UTC:', scheduledPublishAt);
+                return { id, success: false, error: "Invalid scheduled publish date format" };
+              }
             } else {
               // Regular status update (immediate publishing or other statuses)
               updatedArticle = await storage.updateArticleStatus(id, status);
@@ -1358,8 +1386,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
             if (updatedArticle) {
               if (status === ArticleStatus.PUBLISHED) {
                 try {
+                  let scheduleTimeDisplay = '';
+                  
+                  if (scheduledPublishAt) {
+                    // Format the IST time for display
+                    scheduleTimeDisplay = formatIstDate(scheduledPublishAt);
+                  }
+                  
                   const notificationMessage = scheduledPublishAt 
-                    ? `Your article "${article.title}" has been approved and scheduled to publish on ${new Date(scheduledPublishAt).toLocaleString()}.`
+                    ? `Your article "${article.title}" has been approved and scheduled to publish on ${scheduleTimeDisplay}.`
                     : `Your article "${article.title}" has been approved and published.`;
                     
                   await storage.createNotification({
