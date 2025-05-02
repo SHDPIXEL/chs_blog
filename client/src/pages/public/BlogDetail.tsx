@@ -1,27 +1,27 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { useRoute, Link } from 'wouter';
-import { Helmet } from 'react-helmet-async';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, MessageSquare, Share2, Eye } from 'lucide-react';
-import PublicLayout from '@/components/layout/PublicLayout';
-import { CommentsList } from '@/components/comments/CommentsList';
-import { getInitials } from '@/lib/avatarUtils';
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useRoute, Link } from "wouter";
+import { Helmet } from "react-helmet-async";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import { ArrowLeft, MessageSquare, Share2, Eye } from "lucide-react";
+import PublicLayout from "@/components/layout/PublicLayout";
+import { CommentsList } from "@/components/comments/CommentsList";
+import { getInitials } from "@/lib/avatarUtils";
 
 // Demo images for placeholder
 const demoImages = [
-  '/uploads/96af7ed8-cd23-4f38-b2ed-9e03a54bc72b.png',
-  '/uploads/08a69f11-51da-491a-a8d4-cedebb5f3d90.png',
-  '/uploads/d03cc5f2-2997-4bde-9ebe-80894b10adbd.png',
-  '/uploads/e51dde8b-a72e-4c15-b668-d0e6d9aae7ec.png',
+  "/uploads/96af7ed8-cd23-4f38-b2ed-9e03a54bc72b.png",
+  "/uploads/08a69f11-51da-491a-a8d4-cedebb5f3d90.png",
+  "/uploads/d03cc5f2-2997-4bde-9ebe-80894b10adbd.png",
+  "/uploads/e51dde8b-a72e-4c15-b668-d0e6d9aae7ec.png",
 ];
 
 const BlogDetail: React.FC = () => {
-  const [, params] = useRoute('/blogs/:id');
+  const [, params] = useRoute("/blogs/:id");
   const articleId = params?.id ? parseInt(params.id) : 0;
   const [readingProgress, setReadingProgress] = useState(0);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -42,25 +42,25 @@ const BlogDetail: React.FC = () => {
     // Main calculation logic in a separate function for clarity
     const calculateReadingProgress = () => {
       if (!contentRef.current) return;
-      
+
       const element = contentRef.current;
-      const totalHeight = element.scrollHeight; // Use scrollHeight for better accuracy 
+      const totalHeight = element.scrollHeight; // Use scrollHeight for better accuracy
       const windowHeight = window.innerHeight;
       const scrollTop = window.scrollY || document.documentElement.scrollTop;
       const contentBox = element.getBoundingClientRect();
-      
+
       // More accurate calculation of content start position
       const contentStart = contentBox.top + scrollTop - 100; // Small offset for better UX
-      
+
       // Calculate visible content area
       const contentBottom = contentStart + totalHeight;
       const viewportBottom = scrollTop + windowHeight;
-      
+
       // Calculate reading progress with improved accuracy
       // This handles cases where content is shorter than viewport
       let readableContent = totalHeight;
       let progress = 0;
-      
+
       if (totalHeight > 0) {
         // If we haven't scrolled to the content yet
         if (scrollTop < contentStart) {
@@ -72,13 +72,15 @@ const BlogDetail: React.FC = () => {
         }
         // If we're somewhere in the content
         else {
-          progress = ((scrollTop - contentStart) / (totalHeight - windowHeight + 200)) * 100;
+          progress =
+            ((scrollTop - contentStart) / (totalHeight - windowHeight + 200)) *
+            100;
         }
       }
-      
+
       // Ensure progress is always within valid range with smoother interpolation
       const smoothedProgress = Math.min(Math.max(progress, 0), 100);
-      
+
       // Update state only if the change is significant (reduces unnecessary renders)
       if (Math.abs(smoothedProgress - readingProgress) > 0.5) {
         setReadingProgress(smoothedProgress);
@@ -89,40 +91,44 @@ const BlogDetail: React.FC = () => {
     const handleScroll = throttle(calculateReadingProgress, 16); // ~60fps for smooth animation
 
     // Attach event listeners for different scenarios to make it more responsive
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    window.addEventListener('resize', handleScroll, { passive: true });
-    
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("resize", handleScroll, { passive: true });
+
     // Initial calculation
     calculateReadingProgress();
-    
+
     // Remove event listeners on cleanup
     return () => {
-      window.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('resize', handleScroll);
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", handleScroll);
     };
   }, [readingProgress, throttle]);
 
   // Fetch article details
-  const { data: article, isLoading, error } = useQuery({
+  const {
+    data: article,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: [`/api/articles/${articleId}/public`],
     queryFn: async () => {
       try {
         const res = await fetch(`/api/articles/${articleId}/public`);
-        if (!res.ok) throw new Error('Failed to fetch article');
+        if (!res.ok) throw new Error("Failed to fetch article");
         return await res.json();
       } catch (error) {
-        console.error('Error fetching article:', error);
+        console.error("Error fetching article:", error);
         return null;
       }
-    }
+    },
   });
 
   function formatDate(dateString: string) {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long', 
-      day: 'numeric'
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
   }
 
@@ -144,8 +150,12 @@ const BlogDetail: React.FC = () => {
       <PublicLayout>
         <div className="max-w-4xl mx-auto px-4 sm:px-6 py-12">
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-gray-900">Article not found</h1>
-            <p className="mt-4 text-gray-600">The article you're looking for does not exist or has been removed.</p>
+            <h1 className="text-2xl font-bold text-gray-900">
+              Article not found
+            </h1>
+            <p className="mt-4 text-gray-600">
+              The article you're looking for does not exist or has been removed.
+            </p>
             <Link href="/blogs">
               <Button className="mt-8 bg-rose-600 hover:bg-rose-700">
                 <ArrowLeft className="mr-2 h-4 w-4" />
@@ -158,7 +168,12 @@ const BlogDetail: React.FC = () => {
     );
   }
 
-  const { article: articleData, categories = [], tags = [], coAuthors = [] } = article;
+  const {
+    article: articleData,
+    categories = [],
+    tags = [],
+    coAuthors = [],
+  } = article;
 
   return (
     <PublicLayout>
@@ -166,21 +181,22 @@ const BlogDetail: React.FC = () => {
         <title>{articleData.title} | BlogCMS</title>
         <meta name="description" content={articleData.excerpt} />
       </Helmet>
-      
+
       {/* Enhanced Reading Progress Bar - Fixed at the top */}
       <div className="fixed top-0 left-0 right-0 h-1.5 bg-gray-200 z-50 shadow-sm">
-        <div 
+        <div
           className="h-full bg-gradient-to-r from-rose-600 to-rose-500 transition-all duration-200 ease-in-out will-change-transform"
-          style={{ 
+          style={{
             width: `${readingProgress}%`,
             transform: `translateZ(0)`, // Force hardware acceleration for smoother animations
-            backgroundSize: '200% 100%',
-            boxShadow: readingProgress > 0 ? '0 0 10px rgba(204, 0, 51, 0.5)' : 'none'
+            backgroundSize: "200% 100%",
+            boxShadow:
+              readingProgress > 0 ? "0 0 10px rgba(204, 0, 51, 0.5)" : "none",
           }}
           aria-hidden="true"
         />
       </div>
-      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Back button */}
         <div className="mb-8">
@@ -191,41 +207,62 @@ const BlogDetail: React.FC = () => {
             </Button>
           </Link>
         </div>
-        
+
         {/* Article header */}
         <div className="max-w-4xl mx-auto mb-10">
           <div className="flex items-center gap-3 mb-4">
             {categories.map((category: any) => (
-              <Badge key={category.id} variant="outline" className="bg-gray-100">
+              <Badge
+                key={category.id}
+                variant="outline"
+                className="bg-gray-100"
+              >
                 {category.name}
               </Badge>
             ))}
           </div>
-          
+
           <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">
             {articleData.title}
           </h1>
-          
+
           <div className="flex items-center mb-8">
             <Avatar className="h-12 w-12 mr-4">
-              <AvatarImage src={articleData.author?.avatarUrl} alt={articleData.author?.name} />
-              <AvatarFallback>{articleData.author?.name ? getInitials(articleData.author.name) : 'A'}</AvatarFallback>
+              <AvatarImage
+                src={articleData.author?.avatarUrl}
+                alt={articleData.author?.name}
+              />
+              <AvatarFallback>
+                {articleData.author?.name
+                  ? getInitials(articleData.author.name)
+                  : "A"}
+              </AvatarFallback>
             </Avatar>
             <div>
               <div className="flex items-center gap-2">
                 <Link href={`/authors/${articleData.author?.id}`}>
                   <p className="font-medium hover:text-blue-600 transition-colors cursor-pointer">
-                    {articleData.author?.name || 'Anonymous'}
+                    {articleData.author?.name || "Anonymous"}
                   </p>
                 </Link>
                 {coAuthors.length > 0 && (
                   <div className="flex -space-x-2 ml-2">
-                    {coAuthors.slice(0, 3).map((coAuthor: any, index: number) => (
-                      <Avatar key={index} className="h-6 w-6 border-2 border-white">
-                        <AvatarImage src={coAuthor.avatarUrl} alt={coAuthor.name} />
-                        <AvatarFallback className="text-xs">{getInitials(coAuthor.name)}</AvatarFallback>
-                      </Avatar>
-                    ))}
+                    {coAuthors
+                      .slice(0, 3)
+                      .map((coAuthor: any, index: number) => (
+                        <Avatar
+                          key={index}
+                          className="h-6 w-6 border-2 border-white"
+                        >
+                          <AvatarImage
+                            src={coAuthor.avatarUrl}
+                            alt={coAuthor.name}
+                          />
+                          <AvatarFallback className="text-xs">
+                            {getInitials(coAuthor.name)}
+                          </AvatarFallback>
+                        </Avatar>
+                      ))}
                     {coAuthors.length > 3 && (
                       <div className="h-6 w-6 rounded-full bg-gray-200 flex items-center justify-center text-xs border-2 border-white">
                         +{coAuthors.length - 3}
@@ -237,7 +274,9 @@ const BlogDetail: React.FC = () => {
               <div className="flex items-center text-sm text-gray-500">
                 <span>{formatDate(articleData.createdAt.toString())}</span>
                 <span className="mx-2">•</span>
-                <span>{Math.ceil(articleData.content.length / 1000)} min read</span>
+                <span>
+                  {Math.ceil(articleData.content.length / 1000)} min read
+                </span>
                 {coAuthors.length > 0 && (
                   <>
                     <span className="mx-2">•</span>
@@ -253,18 +292,18 @@ const BlogDetail: React.FC = () => {
             </div>
           </div>
         </div>
-        
+
         {/* Featured image */}
         {articleData.featuredImage && (
-          <div className="max-w-5xl mx-auto mb-12 rounded-lg overflow-hidden">
-            <img 
-              src={articleData.featuredImage} 
-              alt={articleData.title} 
+          <div className="max-w-4xl mx-auto mb-12 rounded-lg overflow-hidden">
+            <img
+              src={articleData.featuredImage}
+              alt={articleData.title}
               className="w-full h-[400px] object-cover"
             />
           </div>
         )}
-        
+
         {/* Excerpt if available */}
         {articleData.excerpt && (
           <div className="max-w-4xl mx-auto mb-8">
@@ -274,14 +313,14 @@ const BlogDetail: React.FC = () => {
             </div>
           </div>
         )}
-        
+
         {/* Article content */}
         <div className="max-w-4xl mx-auto" ref={contentRef}>
-          <div 
+          <div
             className="prose prose-lg max-w-none prose-headings:text-gray-900 prose-p:text-gray-700"
             dangerouslySetInnerHTML={{ __html: articleData.content }}
           />
-          
+
           {/* Tags */}
           {tags.length > 0 && (
             <div className="mt-12 flex flex-wrap gap-2">
@@ -292,14 +331,18 @@ const BlogDetail: React.FC = () => {
               ))}
             </div>
           )}
-          
+
           {/* Article actions */}
           <div className="mt-12 flex justify-between items-center py-4 border-t border-b">
             <div className="flex gap-6">
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 className="flex items-center gap-1"
-                onClick={() => document.getElementById('comments-section')?.scrollIntoView({ behavior: 'smooth' })}
+                onClick={() =>
+                  document
+                    .getElementById("comments-section")
+                    ?.scrollIntoView({ behavior: "smooth" })
+                }
               >
                 <MessageSquare className="h-5 w-5" />
                 <span>Comment</span>
@@ -311,26 +354,43 @@ const BlogDetail: React.FC = () => {
               </Button>
             </div>
           </div>
-          
+
           {/* Author info */}
           <div className="mt-12">
-            <h2 className="text-2xl font-bold mb-6">About the {coAuthors.length > 0 ? 'Authors' : 'Author'}</h2>
-            
+            <h2 className="text-2xl font-bold mb-6">
+              About the {coAuthors.length > 0 ? "Authors" : "Author"}
+            </h2>
+
             {/* Main Author Card */}
             <Card className="mb-6">
               <CardContent className="p-6">
                 <div className="flex flex-col sm:flex-row gap-6">
                   <Avatar className="h-20 w-20">
-                    <AvatarImage src={articleData.author?.avatarUrl} alt={articleData.author?.name} />
-                    <AvatarFallback className="text-lg">{articleData.author?.name ? getInitials(articleData.author.name) : 'A'}</AvatarFallback>
+                    <AvatarImage
+                      src={articleData.author?.avatarUrl}
+                      alt={articleData.author?.name}
+                    />
+                    <AvatarFallback className="text-lg">
+                      {articleData.author?.name
+                        ? getInitials(articleData.author.name)
+                        : "A"}
+                    </AvatarFallback>
                   </Avatar>
                   <div>
                     <div className="flex items-center gap-2 mb-2">
-                      <h3 className="text-xl font-bold">{articleData.author?.name || 'Anonymous'}</h3>
-                      <Badge variant="secondary" className="bg-blue-100 text-blue-800">Main Author</Badge>
+                      <h3 className="text-xl font-bold">
+                        {articleData.author?.name || "Anonymous"}
+                      </h3>
+                      <Badge
+                        variant="secondary"
+                        className="bg-blue-100 text-blue-800"
+                      >
+                        Main Author
+                      </Badge>
                     </div>
                     <p className="text-gray-700 mb-4">
-                      {articleData.author?.bio || 'Academic researcher and writer specializing in philosophy and ethics.'}
+                      {articleData.author?.bio ||
+                        "Academic researcher and writer specializing in philosophy and ethics."}
                     </p>
                     <Link href={`/authors/${articleData.author?.id}`}>
                       <Button variant="outline">View Profile</Button>
@@ -339,7 +399,7 @@ const BlogDetail: React.FC = () => {
                 </div>
               </CardContent>
             </Card>
-            
+
             {/* Co-authors Cards */}
             {coAuthors.length > 0 && (
               <div className="space-y-4">
@@ -349,16 +409,25 @@ const BlogDetail: React.FC = () => {
                     <CardContent className="p-6">
                       <div className="flex flex-col sm:flex-row gap-6">
                         <Avatar className="h-16 w-16">
-                          <AvatarImage src={coAuthor.avatarUrl} alt={coAuthor.name} />
-                          <AvatarFallback>{getInitials(coAuthor.name)}</AvatarFallback>
+                          <AvatarImage
+                            src={coAuthor.avatarUrl}
+                            alt={coAuthor.name}
+                          />
+                          <AvatarFallback>
+                            {getInitials(coAuthor.name)}
+                          </AvatarFallback>
                         </Avatar>
                         <div>
-                          <h3 className="text-lg font-bold mb-2">{coAuthor.name}</h3>
+                          <h3 className="text-lg font-bold mb-2">
+                            {coAuthor.name}
+                          </h3>
                           <p className="text-gray-700 text-sm mb-4">
-                            {coAuthor.bio || 'Contributor to this article'}
+                            {coAuthor.bio || "Contributor to this article"}
                           </p>
                           <Link href={`/authors/${coAuthor.id}`}>
-                            <Button variant="outline" size="sm">View Profile</Button>
+                            <Button variant="outline" size="sm">
+                              View Profile
+                            </Button>
                           </Link>
                         </div>
                       </div>
@@ -368,9 +437,9 @@ const BlogDetail: React.FC = () => {
               </div>
             )}
           </div>
-          
+
           {/* Related articles would go here */}
-          
+
           {/* Comments section */}
           <div id="comments-section" className="mt-16">
             <CommentsList articleId={articleId} />

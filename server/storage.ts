@@ -322,11 +322,43 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteArticle(id: number): Promise<boolean> {
-    const result = await db.delete(articles)
-      .where(eq(articles.id, id))
-      .returning({ id: articles.id });
-    
-    return result.length > 0;
+    try {
+      // Start a transaction for the deletion process
+      return await db.transaction(async (tx) => {
+        console.log(`Starting transaction to delete article ${id}`);
+        
+        // 1. Delete related article-categories records
+        await tx.delete(articleCategories)
+          .where(eq(articleCategories.articleId, id));
+        
+        // 2. Delete related article-tags records
+        await tx.delete(articleTags)
+          .where(eq(articleTags.articleId, id));
+        
+        // 3. Delete related article-co-authors records
+        await tx.delete(articleCoAuthors)
+          .where(eq(articleCoAuthors.articleId, id));
+        
+        // 4. Delete related notifications
+        await tx.delete(notifications)
+          .where(eq(notifications.articleId, id));
+        
+        // 5. Delete related comments
+        await tx.delete(comments)
+          .where(eq(comments.articleId, id));
+        
+        // 6. Finally, delete the article itself
+        const result = await tx.delete(articles)
+          .where(eq(articles.id, id))
+          .returning({ id: articles.id });
+        
+        console.log(`Article ${id} deletion complete:`, result);
+        return result.length > 0;
+      });
+    } catch (error) {
+      console.error(`Error deleting article ${id}:`, error);
+      throw error;
+    }
   }
   
   // Asset methods
