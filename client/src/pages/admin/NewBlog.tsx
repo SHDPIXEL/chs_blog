@@ -403,7 +403,13 @@ const NewBlog: React.FC = () => {
                         <FormItem>
                           <FormLabel>Status</FormLabel>
                           <Select 
-                            onValueChange={field.onChange} 
+                            onValueChange={(value) => {
+                              field.onChange(value);
+                              // Reset scheduling when changing to draft
+                              if (value === ArticleStatus.DRAFT) {
+                                setUseScheduling(false);
+                              }
+                            }} 
                             defaultValue={field.value}
                           >
                             <FormControl>
@@ -426,6 +432,111 @@ const NewBlog: React.FC = () => {
                         </FormItem>
                       )}
                     />
+                    
+                    {/* Scheduling option - only show when status is published */}
+                    {form.watch('status') === ArticleStatus.PUBLISHED && (
+                      <div className="space-y-4 border p-4 rounded-lg bg-muted/30">
+                        <div className="flex items-center justify-between">
+                          <div className="space-y-0.5">
+                            <div className="flex items-center">
+                              <Calendar className="w-4 h-4 mr-2 text-primary" />
+                              <h3 className="text-sm font-medium">Schedule Publication</h3>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              Choose when this blog post should be published
+                            </p>
+                          </div>
+                          <Checkbox
+                            checked={useScheduling}
+                            onCheckedChange={(checked) => {
+                              setUseScheduling(checked === true);
+                              if (checked && !scheduledPublishAt) {
+                                // Set default scheduled time to tomorrow
+                                const tomorrow = new Date();
+                                tomorrow.setDate(tomorrow.getDate() + 1);
+                                tomorrow.setHours(9, 0, 0, 0); // 9:00 AM
+                                setScheduledPublishAt(tomorrow.toISOString());
+                              }
+                            }}
+                          />
+                        </div>
+                        
+                        {useScheduling && (
+                          <div className="pt-2 space-y-3">
+                            <div className="grid gap-2">
+                              <label className="text-xs font-medium">Publication Date & Time</label>
+                              
+                              <div className="flex items-center space-x-2">
+                                {/* Date picker */}
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <Button
+                                      variant={"outline"}
+                                      className="justify-start text-left font-normal flex-1"
+                                      type="button"
+                                    >
+                                      <Calendar className="mr-2 h-4 w-4" />
+                                      {scheduledPublishAt ? (
+                                        format(new Date(scheduledPublishAt), "PPP")
+                                      ) : (
+                                        <span>Pick a date</span>
+                                      )}
+                                    </Button>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-auto p-0" align="start">
+                                    <CalendarComponent
+                                      mode="single"
+                                      initialFocus
+                                      selected={scheduledPublishAt ? new Date(scheduledPublishAt) : undefined}
+                                      onSelect={(date) => {
+                                        if (date) {
+                                          // Keep the time from the existing date if we have one
+                                          const currentDate = scheduledPublishAt ? new Date(scheduledPublishAt) : new Date();
+                                          date.setHours(
+                                            currentDate.getHours(),
+                                            currentDate.getMinutes(),
+                                            0,
+                                            0
+                                          );
+                                          setScheduledPublishAt(date.toISOString());
+                                        }
+                                      }}
+                                    />
+                                  </PopoverContent>
+                                </Popover>
+                                
+                                {/* Time picker */}
+                                <div className="relative">
+                                  <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                  <Input
+                                    type="time"
+                                    className="pl-10"
+                                    value={scheduledPublishAt ? 
+                                      format(new Date(scheduledPublishAt), "HH:mm") : 
+                                      "09:00"
+                                    }
+                                    onChange={(e) => {
+                                      if (e.target.value) {
+                                        const [hours, minutes] = e.target.value.split(':').map(Number);
+                                        const newDate = scheduledPublishAt ? 
+                                          new Date(scheduledPublishAt) : 
+                                          new Date();
+                                        newDate.setHours(hours, minutes, 0, 0);
+                                        setScheduledPublishAt(newDate.toISOString());
+                                      }
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                              
+                              <p className="text-xs text-muted-foreground mt-1">
+                                The blog will be automatically published at the specified date and time (IST).
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </TabsContent>
                   
                   {/* SEO Tab */}
@@ -746,17 +857,59 @@ const NewBlog: React.FC = () => {
                   >
                     Cancel
                   </Button>
+                  
                   <div className="flex gap-2">
+                    {/* Preview button */}
+                    <Button
+                      type="button"
+                      variant="outline" 
+                      onClick={handlePreview}
+                    >
+                      <Eye className="mr-2 h-4 w-4" />
+                      Preview
+                    </Button>
+                    
+                    {/* Save button */}
                     <Button 
                       type="submit"
                       disabled={createArticleMutation.isPending}
                       className="gap-2"
                     >
-                      <Save className="h-4 w-4" />
-                      {createArticleMutation.isPending ? "Creating..." : "Create Blog"}
+                      {createArticleMutation.isPending ? (
+                        "Creating..."
+                      ) : form.watch('status') === ArticleStatus.PUBLISHED && useScheduling ? (
+                        <>
+                          <Calendar className="h-4 w-4" />
+                          Schedule Post
+                        </>
+                      ) : form.watch('status') === ArticleStatus.PUBLISHED ? (
+                        <>
+                          <CheckCircle className="h-4 w-4" />
+                          Publish Now
+                        </>
+                      ) : (
+                        <>
+                          <Save className="h-4 w-4" />
+                          Save Draft
+                        </>
+                      )}
                     </Button>
                   </div>
                 </CardFooter>
+                
+                {/* Preview Dialog */}
+                {previewOpen && (
+                  <BlogPreviewDialog
+                    open={previewOpen}
+                    onOpenChange={setPreviewOpen}
+                    title={form.getValues('title')}
+                    content={editorRef.current ? editorRef.current.getHTML() : form.getValues('content')}
+                    excerpt={form.getValues('excerpt')}
+                    image={featuredImage}
+                    author={user?.name || 'Admin'}
+                    createdAt={new Date().toISOString()}
+                  />
+                )}
               </form>
             </Form>
           </Card>
