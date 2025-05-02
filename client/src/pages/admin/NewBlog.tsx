@@ -147,16 +147,16 @@ const NewBlog: React.FC = () => {
       metaTitle: "",
       metaDescription: "",
       customTags: [],
-      authorId: user?.id, // Set admin's ID as the authorId default value
+      authorId: user?.id ? Number(user.id) : undefined, // Set admin's ID as the authorId default value and ensure it's a number
     },
   });
 
   const createArticleMutation = useMutation({
     mutationFn: async (values: z.infer<typeof adminArticleSchema>) => {
-      // Admin automatically becomes the author
+      // Admin automatically becomes the author - ensure we convert to number
       const articleData = {
         ...values,
-        authorId: user?.id,
+        authorId: user?.id ? Number(user.id) : undefined,
         featuredImage,
         // For admin, published is set based on status
         published: values.status === ArticleStatus.PUBLISHED,
@@ -224,13 +224,13 @@ const NewBlog: React.FC = () => {
         .replace(/\s+/g, '-');
     }
     
-    // Always set the authorId value before validation
-    form.setValue("authorId", user.id);
+    // Always set the authorId value before validation - ensure it's a number
+    form.setValue("authorId", Number(user.id));
     
     // Add scheduling data if needed
     const articleData = {
       ...values,
-      authorId: user.id, // Now guaranteed to be defined - set it explicitly
+      authorId: Number(user.id), // Now guaranteed to be defined - set it explicitly as a number
       featuredImage,
       // For admin, published is set based on status
       published: values.status === ArticleStatus.PUBLISHED && !useScheduling,
@@ -357,7 +357,12 @@ const NewBlog: React.FC = () => {
                       control={form.control}
                       name="authorId"
                       render={({ field }) => (
-                        <input type="hidden" {...field} value={user?.id || 0} />
+                        <input 
+                          type="hidden" 
+                          {...field} 
+                          value={user?.id ? Number(user.id) : 0} 
+                          onChange={(e) => field.onChange(Number(e.target.value))}
+                        />
                       )}
                     />
                     
@@ -977,8 +982,8 @@ const NewBlog: React.FC = () => {
                             <div className="space-y-3">
                               {authors ? (
                                 authors
-                                  .filter((author) => author.id !== user?.id) // Exclude current user
-                                  .map((author) => (
+                                  .filter((author: { id: number }) => author.id !== user?.id) // Exclude current user
+                                  .map((author: { id: number, name: string, email: string }) => (
                                     <div
                                       key={author.id}
                                       className="flex items-start space-x-2"
