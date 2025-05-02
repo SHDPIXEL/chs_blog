@@ -2,6 +2,7 @@ import { db } from '../db';
 import { articles, ArticleStatus } from '@shared/schema';
 import { eq, and, lte, isNotNull, sql } from 'drizzle-orm';
 import { log } from '../vite';
+import { utcToIst, formatIstDate } from '@shared/utils/dateTime';
 
 /**
  * Check for scheduled posts that need to be published
@@ -11,7 +12,8 @@ import { log } from '../vite';
 export async function processScheduledArticles() {
   try {
     const now = new Date();
-    log(`Checking for scheduled articles to publish at ${now.toISOString()}`, 'scheduler');
+    const nowIst = utcToIst(now);
+    log(`Checking for scheduled articles to publish at ${now.toISOString()} (${formatIstDate(now)})`, 'scheduler');
     
     // First, let's get all articles with scheduledPublishAt for debugging
     const allScheduledArticles = await db
@@ -32,7 +34,14 @@ export async function processScheduledArticles() {
     if (allScheduledArticles.length > 0) {
       log(`Debug: Found ${allScheduledArticles.length} articles with scheduledPublishAt dates:`, 'scheduler');
       for (const article of allScheduledArticles) {
-        log(`- Article ID ${article.id}: "${article.title}" status=${article.status}, published=${article.published}, scheduledPublishAt=${article.scheduledPublishAt instanceof Date ? article.scheduledPublishAt.toISOString() : article.scheduledPublishAt}`, 'scheduler');
+        const scheduleTime = article.scheduledPublishAt instanceof Date 
+          ? article.scheduledPublishAt.toISOString() 
+          : article.scheduledPublishAt;
+        const scheduleTimeIst = formatIstDate(article.scheduledPublishAt);
+        
+        log(`- Article ID ${article.id}: "${article.title}" status=${article.status}, published=${article.published}
+           UTC: ${scheduleTime}
+           IST: ${scheduleTimeIst}`, 'scheduler');
       }
     } else {
       log(`Debug: No articles with scheduledPublishAt dates found`, 'scheduler');
@@ -59,7 +68,7 @@ export async function processScheduledArticles() {
       return { success: true, published: 0, message: 'No scheduled articles to publish' };
     }
     
-    log(`Found ${scheduledArticles.length} scheduled article(s) to publish`, 'scheduler');
+    log(`Found ${scheduledArticles.length} scheduled article(s) to publish at ${formatIstDate(now)}`, 'scheduler');
     
     // Update each article to be published
     for (const article of scheduledArticles) {
@@ -71,7 +80,12 @@ export async function processScheduledArticles() {
         })
         .where(eq(articles.id, article.id));
       
-      log(`Published scheduled article: ${article.title} (ID: ${article.id})`, 'scheduler');
+      const scheduledTimeIst = formatIstDate(article.scheduledPublishAt);
+      const publishTimeIst = formatIstDate(now);
+      
+      log(`Published scheduled article: ${article.title} (ID: ${article.id})
+         Scheduled for: ${scheduledTimeIst}
+         Published at: ${publishTimeIst}`, 'scheduler');
     }
     
     return { 
