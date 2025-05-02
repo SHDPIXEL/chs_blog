@@ -72,6 +72,12 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       current: location === '/admin/categories',
     },
     {
+      name: 'Profile',
+      href: '/admin/profile',
+      icon: Users,
+      current: location === '/admin/profile',
+    },
+    {
       name: 'Settings',
       href: '/admin/settings',
       icon: Settings,
@@ -256,6 +262,12 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                 <DropdownMenuContent align="end">
                   <DropdownMenuLabel>My Account</DropdownMenuLabel>
                   <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/admin/profile">
+                      <Users className="mr-2 h-4 w-4" />
+                      Profile
+                    </Link>
+                  </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link href="/admin/settings">
                       <Settings className="mr-2 h-4 w-4" />
