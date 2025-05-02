@@ -132,6 +132,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({ message: "Server error" });
     }
   });
+  
+  // User permissions API - dedicated endpoint for checking user permissions
+  app.get("/api/auth/permissions", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      if (!req.user?.id) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      
+      const user = await storage.getUser(req.user.id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Return only the permissions data, not the full user object
+      const permissions = {
+        canPublish: user.can_publish || user.role === 'admin',
+        isAdmin: user.role === 'admin',
+        role: user.role
+      };
+      
+      return res.status(200).json(permissions);
+    } catch (error) {
+      console.error('Error fetching user permissions:', error);
+      return res.status(500).json({ message: "Server error while retrieving permissions" });
+    }
+  });
 
   // Admin routes
   app.get(

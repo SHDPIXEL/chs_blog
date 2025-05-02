@@ -3,6 +3,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { useAuth } from '@/hooks/use-auth';
+import { usePermissions } from '@/hooks/use-permissions';
 import {
   Card,
   CardContent,
@@ -120,6 +121,9 @@ const AuthorManagement: React.FC = () => {
     }
   });
 
+  // Use the permissions hook for up-to-date permission data
+  const { refreshPermissions } = usePermissions();
+  
   // Update publishing permissions
   const permissionsMutation = useMutation({
     mutationFn: async ({ id, canPublish }: { id: number; canPublish: boolean }) => {
@@ -132,12 +136,18 @@ const AuthorManagement: React.FC = () => {
       
       // If the current user had their permissions updated, refresh their data
       if (user && selectedAuthor && user.id === selectedAuthor.id) {
+        // Refresh both the user data and permissions data
         await refreshUserData();
+        await refreshPermissions();
+        
         toast({
           title: 'Your permissions updated',
           description: 'Your publishing rights have been updated. Changes are now reflected in your account.',
           variant: 'default',
         });
+        
+        // Also invalidate the permissions cache
+        queryClient.invalidateQueries({ queryKey: ['/api/auth/permissions'] });
       } else {
         toast({
           title: 'Permissions updated',
