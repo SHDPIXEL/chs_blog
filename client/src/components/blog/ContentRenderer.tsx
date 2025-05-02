@@ -55,6 +55,7 @@ export function ContentRenderer({
           wrapper.rel = "noopener noreferrer";
           wrapper.className =
             "inline-block relative cursor-pointer hover:opacity-95 transition-all";
+          wrapper.style.maxWidth = "100%";
 
           // Apply some styling to indicate it's a linked image
           imgElement.classList.add("rounded-md");
@@ -109,16 +110,6 @@ export function ContentRenderer({
           "img",
         ) as HTMLImageElement;
         if (!imgElement) return; // Skip anchors without images
-
-        console.log(`Processing anchor with image ${index + 1}:`, {
-          href: anchorElement.href,
-          hasImage: !!imgElement,
-          imageSource: imgElement?.getAttribute("src"),
-          width: imgElement?.getAttribute("width"),
-          height: imgElement?.getAttribute("height"),
-          hasLinkIndicator:
-            anchorElement.querySelector(".bg-blue-500") !== null,
-        });
 
         // Style the anchor element if it doesn't already have the class
         if (!anchorElement.className.includes("inline-block")) {
