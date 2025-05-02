@@ -47,9 +47,9 @@ const BlogPreviewDialog: React.FC<BlogPreviewProps> = ({
       .substring(0, 2);
   };
   
-  // Handle either string or Author object
-  const authorName = typeof author === 'string' ? author : author.name;
-  const authorAvatar = typeof author === 'string' ? undefined : author.avatarUrl;
+  // Handle either string or Author object or undefined
+  const authorName = typeof author === 'string' ? author : (author?.name || 'Anonymous');
+  const authorAvatar = typeof author === 'string' ? undefined : author?.avatarUrl;
   
   // Format date for display
   const formattedDate = new Date(createdAt).toLocaleDateString('en-US', {

@@ -1170,15 +1170,16 @@ const AdminEditBlogPage: React.FC = () => {
       
       {/* Preview Dialog */}
       <BlogPreviewDialog 
-        isOpen={isPreviewOpen} 
+        open={isPreviewOpen} 
         onOpenChange={setIsPreviewOpen}
-        article={{
-          ...article.article,
-          title: form.getValues('title'),
-          content: editorRef.current ? editorRef.current.getHTML() : form.getValues('content'),
-          excerpt: form.getValues('excerpt'),
-          featuredImage: featuredImage,
-        }}
+        title={form.getValues('title')}
+        content={editorRef.current ? editorRef.current.getHTML() : form.getValues('content')}
+        excerpt={form.getValues('excerpt')}
+        author={article?.article?.author || user?.name || 'Anonymous'}
+        createdAt={article?.article?.createdAt || new Date().toISOString()}
+        image={featuredImage}
+        categories={categories?.filter(c => form.getValues('categoryIds').includes(c.id)).map(c => c.name) || []}
+        tags={form.getValues('customTags') || []}
       />
     </AdminLayout>
   );
