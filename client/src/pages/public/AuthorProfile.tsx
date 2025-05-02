@@ -11,6 +11,7 @@ import { ArrowLeft, Calendar, BookOpen, Link as LinkIcon } from 'lucide-react';
 import PublicLayout from '@/components/layout/PublicLayout';
 import { getInitials } from '@/lib/avatarUtils';
 import { format } from 'date-fns';
+import { SocialLinksDisplay } from '@/components/ui/social-links-editor';
 
 const BlogCard = ({ blog }: { blog: any }) => {
   return (
@@ -169,34 +170,8 @@ const AuthorProfile: React.FC = () => {
                 
                 {/* Social Links */}
                 {author.socialLinks && (
-                  <div className="flex gap-3 mt-4">
-                    {(() => {
-                      try {
-                        const socialData = JSON.parse(author.socialLinks) as Record<string, string>;
-                        return Object.entries(socialData).map(([platform, url]) => {
-                          if (!url) return null;
-                          
-                          let icon = <LinkIcon className="h-5 w-5" />;
-                          // You can add platform-specific icons here
-                          
-                          return (
-                            <a
-                              key={platform}
-                              href={url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-500 hover:text-blue-700"
-                              title={platform}
-                            >
-                              {icon}
-                              <span className="sr-only">{platform}</span>
-                            </a>
-                          );
-                        });
-                      } catch (e) {
-                        return null;
-                      }
-                    })()}
+                  <div className="mt-4">
+                    <SocialLinksDisplay value={author.socialLinks} />
                   </div>
                 )}
               </div>

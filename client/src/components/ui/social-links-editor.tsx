@@ -136,7 +136,12 @@ const SocialLinksEditor: React.FC<SocialLinksEditorProps> = ({ value, onChange }
         <Label>Social Links</Label>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button variant="outline" size="sm">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              type="button" 
+              onClick={(e) => e.preventDefault()}
+            >
               <PlusCircleIcon className="h-4 w-4 mr-2" />
               Add Link
             </Button>
@@ -240,7 +245,15 @@ const SocialLinksEditor: React.FC<SocialLinksEditorProps> = ({ value, onChange }
       ) : (
         <div className="text-center p-6 border border-dashed rounded-lg">
           <p className="text-gray-500 mb-2">No social links added yet</p>
-          <Button variant="outline" size="sm" onClick={() => setDialogOpen(true)}>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={(e) => {
+              e.preventDefault(); // Prevent form submission
+              setDialogOpen(true);
+            }}
+            type="button" // Explicitly set button type to prevent form submission
+          >
             <FaPlus className="h-3 w-3 mr-2" /> Add Your First Link
           </Button>
         </div>
