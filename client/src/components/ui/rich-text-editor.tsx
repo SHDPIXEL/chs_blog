@@ -85,6 +85,14 @@ const ResizableImageComponent = ({ node, updateAttributes, getPos, editor }: any
 
   // Handle image click - this will be used for following links
   const handleImageClick = (e: React.MouseEvent) => {
+    console.log("Image clicked:", {
+      hasLink: !!node.attrs.link,
+      link: node.attrs.link,
+      isResizing: !!resizeDirection,
+      ctrlKey: e.ctrlKey,
+      metaKey: e.metaKey
+    });
+    
     // If we have a link and are not in the middle of resizing, open the link
     if (node.attrs.link && !resizeDirection) {
       // Check if we should override default behavior with cmd/ctrl clicked
@@ -92,6 +100,7 @@ const ResizableImageComponent = ({ node, updateAttributes, getPos, editor }: any
         // Only prevent default if we're not holding ctrl/cmd to open in new tab
         e.preventDefault();
       }
+      console.log("Opening link:", node.attrs.link);
       // Open the link in a new tab
       window.open(node.attrs.link, '_blank', 'noopener,noreferrer');
     }
@@ -178,12 +187,20 @@ const ResizableImageComponent = ({ node, updateAttributes, getPos, editor }: any
 
   // Handle setting a link on the image
   const handleSetLink = () => {
+    console.log("Setting image link:", {
+      linkUrl,
+      isEmpty: linkUrl === '',
+      existingLink: node.attrs.link
+    });
+    
     if (linkUrl === '') {
       // Remove link
+      console.log("Removing image link");
       updateAttributes({ link: null });
     } else {
       // Add https:// if it doesn't exist
       const url = linkUrl.startsWith('http') ? linkUrl : `https://${linkUrl}`;
+      console.log("Adding/updating image link to:", url);
       // Set link
       updateAttributes({ link: url });
     }
@@ -671,9 +688,37 @@ export const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>
         <BubbleMenu
           editor={editor}
           tippyOptions={{ duration: 150 }}
-          shouldShow={({ editor, view }) => {
-            // Show the bubble menu only if there's text selected
-            return !editor.isActive('code') && !editor.isActive('codeBlock') && view.state.selection.content().size > 0;
+          shouldShow={({ editor, view, state }) => {
+            // Log selection information for debugging
+            console.log("Selection info:", {
+              selection: state.selection,
+              isImage: editor.isActive('image'),
+              content: view.state.selection.content().size,
+              nodeType: state.selection.$anchor.parent.type.name,
+              hasText: view.state.doc.textBetween(
+                state.selection.from,
+                state.selection.to
+              ).length > 0
+            });
+            
+            // Don't show bubble menu for images - only for text selections
+            // First check if image is active (selected)
+            if (editor.isActive('image')) {
+              console.log('Image is selected, hiding bubble menu');
+              return false;
+            }
+            
+            // Then ensure we have actual text content selected, not just a node selection
+            const hasTextContent = view.state.doc.textBetween(
+              state.selection.from,
+              state.selection.to
+            ).length > 0;
+            
+            // Finally, ensure standard conditions (not in code blocks)
+            return !editor.isActive('code') && 
+                   !editor.isActive('codeBlock') && 
+                   view.state.selection.content().size > 0 &&
+                   hasTextContent;
           }}
         >
           <div className="flex items-center rounded-lg bg-background border shadow-lg overflow-hidden">
