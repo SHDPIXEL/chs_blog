@@ -132,14 +132,16 @@ export function ContentRenderer({
           const width = imgElement.getAttribute("width");
           const height = imgElement.getAttribute("height");
 
+          // Always set max-width 100% on anchor
+          anchorElement.style.maxWidth = "100%";
+          anchorElement.style.display = "block";
+
           // Apply dimensions to both the image and anchor if they exist
           if (width) {
             // Set the anchor container width to match the image width
             anchorElement.style.width = width.includes("px")
               ? width
               : `${width}px`;
-            anchorElement.style.maxWidth = "100%";
-            anchorElement.style.display = "block"; // Make sure it takes up the full width
           }
 
           if (height) {
