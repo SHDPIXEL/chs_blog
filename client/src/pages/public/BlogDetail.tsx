@@ -265,6 +265,16 @@ const BlogDetail: React.FC = () => {
           </div>
         )}
         
+        {/* Excerpt if available */}
+        {articleData.excerpt && (
+          <div className="max-w-4xl mx-auto mb-8">
+            <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
+              <h3 className="text-lg font-semibold mb-2">Excerpt</h3>
+              <p className="text-gray-700 italic">{articleData.excerpt}</p>
+            </div>
+          </div>
+        )}
+        
         {/* Article content */}
         <div className="max-w-4xl mx-auto" ref={contentRef}>
           <div 

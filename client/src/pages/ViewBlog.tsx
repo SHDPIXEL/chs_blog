@@ -198,9 +198,10 @@ const ViewBlog: React.FC<ViewBlogProps> = () => {
         
         {/* Article excerpt if available */}
         {article.excerpt && (
-          <div className="mb-6">
-            <div className="bg-gray-50 rounded-lg p-4 text-gray-700 italic border-l-4 border-primary">
-              {article.excerpt}
+          <div className="mb-8">
+            <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
+              <h3 className="text-lg font-semibold mb-2">Excerpt</h3>
+              <p className="text-gray-700 italic">{article.excerpt}</p>
             </div>
           </div>
         )}
