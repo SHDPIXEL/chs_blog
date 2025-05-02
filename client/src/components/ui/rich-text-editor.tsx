@@ -239,7 +239,10 @@ export const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>
       StarterKit,
       CustomImage,
       Link.configure({
-        openOnClick: false,
+        openOnClick: true, // Change to true to make links clickable
+        HTMLAttributes: {
+          class: 'text-blue-500 hover:text-blue-700 underline cursor-pointer',
+        },
       }),
       Underline,
       Placeholder.configure({
