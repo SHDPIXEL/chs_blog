@@ -688,6 +688,7 @@ const BlogManagement: React.FC = () => {
               {bulkAction === 'draft' && 'Move all selected blog posts to draft?'}
               {bulkAction === 'feature' && 'Feature all selected blog posts?'}
               {bulkAction === 'unfeature' && 'Unfeature all selected blog posts?'}
+              {bulkAction === 'delete' && `Are you sure you want to delete ${selectedBlogs.length} selected blog posts? This action cannot be undone.`}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -695,10 +696,15 @@ const BlogManagement: React.FC = () => {
               Cancel
             </Button>
             <Button 
+              variant={bulkAction === 'delete' ? 'destructive' : 'default'}
               onClick={executeBulkAction}
-              disabled={bulkUpdateStatusMutation.isPending || bulkToggleFeaturedMutation.isPending}
+              disabled={
+                bulkUpdateStatusMutation.isPending || 
+                bulkToggleFeaturedMutation.isPending || 
+                bulkDeleteMutation.isPending
+              }
             >
-              Confirm
+              {bulkDeleteMutation.isPending && bulkAction === 'delete' ? 'Deleting...' : 'Confirm'}
             </Button>
           </DialogFooter>
         </DialogContent>

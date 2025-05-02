@@ -1927,6 +1927,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
+  // Bulk delete articles
+  app.delete(
+    "/api/admin/articles/bulk",
+    authenticateToken,
+    requireAdmin,
+    async (req: AuthRequest, res) => {
+      try {
+        if (!req.user?.id) {
+          return res.status(401).json({ message: "Authentication required" });
+        }
+
+        const { ids } = req.body;
+
+        if (!Array.isArray(ids) || ids.length === 0) {
+          return res
+            .status(400)
+            .json({ message: "Invalid or empty article IDs" });
+        }
+
+        const results = [];
+        
+        // Delete each article one by one
+        for (const id of ids) {
+          console.log(`Starting transaction to delete article ${id}`);
+          try {
+            // Delete article and related records
+            const result = await storage.deleteArticle(id);
+            console.log(`Article ${id} deletion complete:`, result);
+            results.push({ id, success: true });
+          } catch (err) {
+            console.error(`Error deleting article ${id}:`, err);
+            results.push({ id, success: false, error: (err as Error).message });
+          }
+        }
+
+        return res.json({
+          success: true,
+          results
+        });
+      } catch (error) {
+        console.error("Bulk delete error:", error);
+        return res.status(500).json({ message: (error as Error).message });
+      }
+    }
+  );
+
   // Bulk update article featured status
   app.patch(
     "/api/admin/articles/bulk/featured",
