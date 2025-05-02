@@ -14,6 +14,12 @@ import {
 } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
 
+// Define types for handling database response where fields might be in snake_case
+interface ApiUserResponse extends Omit<User, 'canPublish'> {
+  can_publish?: boolean;
+  canPublish?: boolean;
+}
+
 // Create context
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -44,7 +50,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           });
           
           if (response.ok) {
-            const userData = await response.json();
+            const apiUserData = await response.json();
+            
+            // Process user data to ensure correct field naming
+            const userData = {
+              ...apiUserData,
+              // Convert can_publish from database to canPublish for frontend
+              canPublish: apiUserData.can_publish !== undefined 
+                ? apiUserData.can_publish 
+                : apiUserData.canPublish
+            };
+            
+            // Remove the snake_case version if it exists to avoid duplication
+            if ('can_publish' in userData) {
+              delete (userData as any).can_publish;
+            }
+            
             setUser(userData);
             // Update localStorage with fresh user data
             localStorage.setItem('blogcms_user', JSON.stringify(userData));
@@ -67,11 +88,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     try {
       const response = await loginUser(data);
-      setUser(response.user);
+      
+      // Ensure canPublish is properly set from can_publish field
+      const userData = {
+        ...response.user,
+        // Convert can_publish from database to canPublish for frontend
+        canPublish: response.user.can_publish !== undefined 
+          ? response.user.can_publish 
+          : response.user.canPublish
+      };
+      
+      // Remove the snake_case version if it exists to avoid duplication
+      if ('can_publish' in userData) {
+        delete (userData as any).can_publish;
+      }
+      
+      setUser(userData);
       setIsAuthenticated(true);
       toast({
         title: "Logged in successfully",
-        description: `Welcome back, ${response.user.name}!`,
+        description: `Welcome back, ${userData.name}!`,
       });
     } catch (err: any) {
       const message = err.message || 'Login failed. Please try again.';
