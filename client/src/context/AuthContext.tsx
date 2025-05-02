@@ -30,6 +30,48 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [error, setError] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const { toast } = useToast();
+  
+  // Function to refresh user data from the API
+  const refreshUserData = async (): Promise<User | null> => {
+    if (!isAuthenticated || !user) return null;
+    
+    try {
+      const response = await fetch('/api/auth/me', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('blogcms_token')}`
+        }
+      });
+      
+      if (response.ok) {
+        // Cast the response to ApiUserResponse to handle both field naming conventions
+        const apiUserData = await response.json() as ApiUserResponse;
+        
+        // Process user data to ensure correct field naming
+        const userData: User = {
+          ...apiUserData,
+          // Convert can_publish from database to canPublish for frontend
+          canPublish: apiUserData.can_publish !== undefined 
+            ? apiUserData.can_publish 
+            : apiUserData.canPublish
+        };
+        
+        // Remove the snake_case version if it exists to avoid duplication
+        if ('can_publish' in userData) {
+          delete (userData as any).can_publish;
+        }
+        
+        setUser(userData);
+        // Update localStorage with fresh user data
+        localStorage.setItem('blogcms_user', JSON.stringify(userData));
+        
+        return userData;
+      }
+    } catch (error) {
+      console.error('Failed to refresh user data:', error);
+    }
+    
+    return null;
+  };
 
   // Initialize auth state and fetch current user from API if token exists
   useEffect(() => {
@@ -171,6 +213,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     register,
     logout,
     isAuthenticated,
+    refreshUserData, // Expose the refresh function
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

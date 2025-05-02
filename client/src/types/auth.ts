@@ -39,6 +39,7 @@ export interface AuthContextType {
   register: (data: RegisterFormData) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
+  refreshUserData: () => Promise<User | null>; // Add the refresh function
 }
 
 export interface AdminStats {

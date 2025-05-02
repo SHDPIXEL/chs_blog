@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import AdminLayout from '@/components/layouts/AdminLayout';
+import { useAuth } from '@/hooks/use-auth';
 import {
   Card,
   CardContent,
@@ -79,6 +80,7 @@ interface ExtendedUser extends User {
 
 const AuthorManagement: React.FC = () => {
   const { toast } = useToast();
+  const { user, refreshUserData } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [permissionDialogOpen, setPermissionDialogOpen] = useState(false);
   const [selectedAuthor, setSelectedAuthor] = useState<ExtendedUser | null>(null);
@@ -124,14 +126,25 @@ const AuthorManagement: React.FC = () => {
       const res = await apiRequest('PATCH', `/api/admin/authors/${id}/permissions`, { canPublish });
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       setPermissionDialogOpen(false);
       queryClient.invalidateQueries({ queryKey: ['/api/admin/authors'] });
-      toast({
-        title: 'Permissions updated',
-        description: 'Author publishing rights have been updated',
-        variant: 'default',
-      });
+      
+      // If the current user had their permissions updated, refresh their data
+      if (user && selectedAuthor && user.id === selectedAuthor.id) {
+        await refreshUserData();
+        toast({
+          title: 'Your permissions updated',
+          description: 'Your publishing rights have been updated. Changes are now reflected in your account.',
+          variant: 'default',
+        });
+      } else {
+        toast({
+          title: 'Permissions updated',
+          description: 'Author publishing rights have been updated',
+          variant: 'default',
+        });
+      }
     },
     onError: (error: Error) => {
       toast({
