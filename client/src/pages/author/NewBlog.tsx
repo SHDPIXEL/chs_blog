@@ -114,6 +114,9 @@ const NewBlogPage: React.FC = () => {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();
+  
+  // Check if user has publishing rights
+  const canPublish = user?.canPublish || user?.role === 'admin';
   const [featuredImagePreview, setFeaturedImagePreview] = useState<
     string | null
   >(null);
@@ -488,7 +491,10 @@ const NewBlogPage: React.FC = () => {
                   <TabsContent value="scheduling" className="space-y-6 px-4">
                     <div className="rounded-lg border p-4 bg-muted/30">
                       <h3 className="text-sm font-medium">
-                        Publication Scheduling
+                        {user?.canPublish 
+                          ? "Publication Scheduling" 
+                          : "Review Submission Scheduling"
+                        }
                       </h3>
                       <p className="text-sm text-muted-foreground mt-1 mb-2">
                         {user?.canPublish 
@@ -506,7 +512,10 @@ const NewBlogPage: React.FC = () => {
                         <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                           <div className="space-y-0.5">
                             <FormLabel className="text-base">
-                              Schedule Publication
+                              {user?.canPublish 
+                                ? "Schedule Publication" 
+                                : "Schedule Review Submission"
+                              }
                             </FormLabel>
                             <FormDescription>
                               {user?.canPublish 
@@ -532,7 +541,12 @@ const NewBlogPage: React.FC = () => {
                         name="scheduledPublishAt"
                         render={({ field }) => (
                           <FormItem className="flex flex-col">
-                            <FormLabel>Scheduled Publication Date</FormLabel>
+                            <FormLabel>
+                              {user?.canPublish 
+                                ? "Scheduled Publication Date" 
+                                : "Scheduled Review Date"
+                              }
+                            </FormLabel>
                             <Popover>
                               <PopoverTrigger asChild>
                                 <FormControl>
@@ -628,7 +642,10 @@ const NewBlogPage: React.FC = () => {
                             </Popover>
                             <FormDescription>
                               Choose a future date and time when your blog post
-                              will be automatically published
+                              {user?.canPublish 
+                                ? " will be automatically published"
+                                : " will be submitted for review"
+                              }
                             </FormDescription>
                             <FormMessage />
                           </FormItem>
