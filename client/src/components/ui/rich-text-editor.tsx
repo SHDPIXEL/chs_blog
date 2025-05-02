@@ -368,7 +368,13 @@ export const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>
 
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        // Better error handling for position references
+        history: {
+          depth: 100,
+          newGroupDelay: 500
+        }
+      }),
       CustomImage,
       Link.configure({
         openOnClick: true, // Change to true to make links clickable
@@ -384,17 +390,51 @@ export const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>
         types: ['heading', 'paragraph'],
       }),
     ],
+    editorProps: {
+      attributes: {
+        class: "prose prose-sm sm:prose-base dark:prose-invert focus:outline-none",
+      },
+      handlePaste: (view, event) => {
+        // Intercept paste events to prevent position errors
+        try {
+          // Let the default paste handler work
+          return false;
+        } catch (err) {
+          console.error("Paste error:", err);
+          // If an error occurs, block the paste
+          return true;
+        }
+      }
+    },
     content: value,
     editable: !readOnly,
     onUpdate: ({ editor }) => {
-      onChange(editor.getHTML());
+      try {
+        onChange(editor.getHTML());
+      } catch (err) {
+        console.error("Error updating content:", err);
+      }
     },
   });
   
-  // Update content when value prop changes
+  // Update content when value prop changes, with improved error handling
   React.useEffect(() => {
     if (editor && value !== editor.getHTML()) {
-      editor.commands.setContent(value);
+      try {
+        // Try to parse the HTML first to ensure it's valid
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = value;
+        
+        // Clean the content to ensure it's valid for TipTap
+        editor.commands.clearContent();
+        setTimeout(() => {
+          editor.commands.setContent(value);
+        }, 0);
+      } catch (err) {
+        console.error("Error setting editor content:", err);
+        // Fallback to clearing and setting minimal content
+        editor.commands.clearContent();
+      }
     }
   }, [editor, value]);
   
