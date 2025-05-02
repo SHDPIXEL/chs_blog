@@ -338,15 +338,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Update article
   app.patch("/api/articles/:id", authenticateToken, requireAuth, async (req: AuthRequest, res) => {
+    const articleId = parseInt(req.params.id);
     try {
       if (!req.user?.id) {
         return res.status(401).json({ message: "Authentication required" });
       }
       
-      const articleId = parseInt(req.params.id);
       if (isNaN(articleId)) {
         return res.status(400).json({ message: "Invalid article ID" });
       }
+      
+      console.log(`Attempting to update article ${articleId}:`, JSON.stringify(req.body).substring(0, 200));
       
       // Check if article exists and belongs to the author
       const article = await storage.getArticle(articleId);
