@@ -13,29 +13,29 @@ interface Author {
 }
 
 interface BlogPreviewProps {
-  isOpen: boolean;
-  onClose: () => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   title: string;
   content: string;
   excerpt?: string; // Added excerpt support
-  author: Author;
-  date: string;
+  author: Author | string;
+  createdAt: string;
+  image?: string | null;
   categories?: string[];
   tags?: string[];
-  featuredImage?: string;
 }
 
 const BlogPreviewDialog: React.FC<BlogPreviewProps> = ({
-  isOpen,
-  onClose,
+  open,
+  onOpenChange,
   title,
   content,
   excerpt,
   author,
-  date,
+  createdAt,
+  image,
   categories = [],
   tags = [],
-  featuredImage,
 }) => {
   // Function to get initials from name
   const getInitials = (name: string) => {
@@ -46,9 +46,20 @@ const BlogPreviewDialog: React.FC<BlogPreviewProps> = ({
       .toUpperCase()
       .substring(0, 2);
   };
+  
+  // Handle either string or Author object
+  const authorName = typeof author === 'string' ? author : author.name;
+  const authorAvatar = typeof author === 'string' ? undefined : author.avatarUrl;
+  
+  // Format date for display
+  const formattedDate = new Date(createdAt).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl w-full h-[90vh] overflow-auto">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold">Blog Preview</DialogTitle>
@@ -72,17 +83,17 @@ const BlogPreviewDialog: React.FC<BlogPreviewProps> = ({
               
               <div className="flex items-center mb-8">
                 <Avatar className="h-12 w-12 mr-4">
-                  <AvatarImage src={author.avatarUrl} alt={author.name} />
-                  <AvatarFallback>{getInitials(author.name)}</AvatarFallback>
+                  <AvatarImage src={authorAvatar} alt={authorName} />
+                  <AvatarFallback>{getInitials(authorName)}</AvatarFallback>
                 </Avatar>
                 <div>
                   <div className="flex items-center gap-2">
                     <p className="font-medium hover:text-blue-600 transition-colors cursor-pointer">
-                      {author.name || 'Anonymous'}
+                      {authorName || 'Anonymous'}
                     </p>
                   </div>
                   <div className="flex items-center text-sm text-gray-500">
-                    <span>{date}</span>
+                    <span>{formattedDate}</span>
                     <span className="mx-2">•</span>
                     <span>{Math.ceil(content.length / 1000)} min read</span>
                     <span className="mx-2">•</span>
@@ -96,10 +107,10 @@ const BlogPreviewDialog: React.FC<BlogPreviewProps> = ({
             </div>
             
             {/* Featured image */}
-            {featuredImage && (
+            {image && (
               <div className="max-w-5xl mx-auto mb-12 rounded-lg overflow-hidden">
                 <img 
-                  src={featuredImage} 
+                  src={image} 
                   alt={title} 
                   className="w-full h-[400px] object-cover"
                 />
@@ -161,12 +172,12 @@ const BlogPreviewDialog: React.FC<BlogPreviewProps> = ({
                   <CardContent className="p-6">
                     <div className="flex flex-col sm:flex-row gap-6">
                       <Avatar className="h-20 w-20">
-                        <AvatarImage src={author.avatarUrl} alt={author.name} />
-                        <AvatarFallback className="text-lg">{getInitials(author.name)}</AvatarFallback>
+                        <AvatarImage src={authorAvatar} alt={authorName} />
+                        <AvatarFallback className="text-lg">{getInitials(authorName)}</AvatarFallback>
                       </Avatar>
                       <div>
                         <div className="flex items-center gap-2 mb-2">
-                          <h3 className="text-xl font-bold">{author.name || 'Anonymous'}</h3>
+                          <h3 className="text-xl font-bold">{authorName || 'Anonymous'}</h3>
                           <Badge variant="secondary" className="bg-blue-100 text-blue-800">Author</Badge>
                         </div>
                         <p className="text-gray-700 mb-4">

@@ -362,6 +362,7 @@ const NewBlog: React.FC = () => {
                               onChange={field.onChange}
                               placeholder="Write your blog content here..."
                               className="min-h-[400px]"
+                              ref={editorRef}
                             />
                           </FormControl>
                           <FormDescription>
