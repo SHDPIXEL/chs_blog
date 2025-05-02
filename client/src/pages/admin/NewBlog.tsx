@@ -81,6 +81,8 @@ const adminArticleSchema = extendedArticleSchema.extend({
     .default(ArticleStatus.DRAFT),
   // Custom tags field for dynamic tag entry
   customTags: z.array(z.string()).default([]),
+  // Add authorId field to the schema that's required
+  authorId: z.number().optional(), // Make it optional in schema, but we'll add it before submission
   // Add more specific validations
   title: z
     .string()
@@ -129,6 +131,7 @@ const NewBlog: React.FC = () => {
     },
   });
 
+  // Set up form with admin's ID as the authorId
   const form = useForm<z.infer<typeof adminArticleSchema>>({
     resolver: zodResolver(adminArticleSchema),
     defaultValues: {
@@ -144,6 +147,7 @@ const NewBlog: React.FC = () => {
       metaTitle: "",
       metaDescription: "",
       customTags: [],
+      authorId: user?.id, // Set admin's ID as the authorId default value
     },
   });
 
@@ -220,10 +224,13 @@ const NewBlog: React.FC = () => {
         .replace(/\s+/g, '-');
     }
     
+    // Always set the authorId value before validation
+    form.setValue("authorId", user.id);
+    
     // Add scheduling data if needed
     const articleData = {
       ...values,
-      authorId: user.id, // Now guaranteed to be defined
+      authorId: user.id, // Now guaranteed to be defined - set it explicitly
       featuredImage,
       // For admin, published is set based on status
       published: values.status === ArticleStatus.PUBLISHED && !useScheduling,
@@ -345,6 +352,15 @@ const NewBlog: React.FC = () => {
 
                   {/* Content Tab */}
                   <TabsContent value="content" className="space-y-6 px-4">
+                    {/* Hidden authorId field - will be set by the admin's user ID */}
+                    <FormField
+                      control={form.control}
+                      name="authorId"
+                      render={({ field }) => (
+                        <input type="hidden" {...field} value={user?.id || 0} />
+                      )}
+                    />
+                    
                     {/* Title field */}
                     <FormField
                       control={form.control}
@@ -1106,7 +1122,7 @@ const NewBlog: React.FC = () => {
                     }
                     excerpt={form.getValues("excerpt") || ""}
                     image={featuredImage || undefined}
-                    author={(user?.name || "Admin") as string}
+                    author={user?.name || "Admin"} // BlogPreviewDialog accepts string for author
                     createdAt={new Date().toISOString()}
                   />
                 )}
