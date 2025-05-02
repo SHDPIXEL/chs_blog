@@ -249,40 +249,54 @@ export class DatabaseStorage implements IStorage {
     // Create a copy of updateData
     const dataToUpdate: Record<string, any> = { ...updateData };
     
-    // Convert date string fields to Date objects if they exist
-    if (dataToUpdate.reviewedAt) {
-      dataToUpdate.reviewedAt = new Date(dataToUpdate.reviewedAt);
+    try {
+      console.log(`Updating article ${id} with data:`, JSON.stringify(dataToUpdate, null, 2));
+      
+      // Convert date string fields to Date objects if they exist
+      if (dataToUpdate.reviewedAt) {
+        dataToUpdate.reviewedAt = new Date(dataToUpdate.reviewedAt);
+      }
+      
+      // Special handling for scheduled publishing
+      if (dataToUpdate.scheduledPublishAt) {
+        dataToUpdate.scheduledPublishAt = new Date(dataToUpdate.scheduledPublishAt);
+      } else if (dataToUpdate.scheduledPublishAt === null) {
+        // If explicitly set to null, maintain it as null
+        dataToUpdate.scheduledPublishAt = null;
+      } else {
+        // If undefined, remove it from the update to avoid type errors
+        delete dataToUpdate.scheduledPublishAt;
+      }
+      
+      if (dataToUpdate.publishedAt) {
+        dataToUpdate.publishedAt = new Date(dataToUpdate.publishedAt);
+      }
+      
+      // Generate slug from title if title is updated and slug isn't provided
+      if (dataToUpdate.title && !dataToUpdate.slug) {
+        dataToUpdate.slug = this.generateSlug(dataToUpdate.title);
+      }
+      
+      // Handle null or undefined keywords field which might be causing issues
+      if (dataToUpdate.keywords === undefined) {
+        delete dataToUpdate.keywords;
+      } else if (dataToUpdate.keywords === null) {
+        dataToUpdate.keywords = [];
+      }
+      
+      const [article] = await db.update(articles)
+        .set({
+          ...dataToUpdate,
+          updatedAt: new Date()
+        })
+        .where(eq(articles.id, id))
+        .returning();
+      
+      return article;
+    } catch (error) {
+      console.error(`Error in updateArticle for article ${id}:`, error);
+      throw error;
     }
-    
-    // Special handling for scheduled publishing
-    if (dataToUpdate.scheduledPublishAt) {
-      dataToUpdate.scheduledPublishAt = new Date(dataToUpdate.scheduledPublishAt);
-    } else if (dataToUpdate.scheduledPublishAt === null) {
-      // If explicitly set to null, maintain it as null
-      dataToUpdate.scheduledPublishAt = null;
-    } else {
-      // If undefined, remove it from the update to avoid type errors
-      delete dataToUpdate.scheduledPublishAt;
-    }
-    
-    if (dataToUpdate.publishedAt) {
-      dataToUpdate.publishedAt = new Date(dataToUpdate.publishedAt);
-    }
-    
-    // Generate slug from title if title is updated and slug isn't provided
-    if (dataToUpdate.title && !dataToUpdate.slug) {
-      dataToUpdate.slug = this.generateSlug(dataToUpdate.title);
-    }
-    
-    const [article] = await db.update(articles)
-      .set({
-        ...dataToUpdate,
-        updatedAt: new Date()
-      })
-      .where(eq(articles.id, id))
-      .returning();
-    
-    return article;
   }
   
   async updateArticleStatus(id: number, status: ArticleStatusType): Promise<Article | undefined> {
