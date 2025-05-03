@@ -1,4 +1,4 @@
-export type UserRole = 'admin' | 'author';
+export type UserRole = "admin" | "author";
 
 export interface User {
   id: number;
@@ -82,6 +82,7 @@ export interface Article {
   commentCount?: number;
   featuredImage?: string;
   excerpt?: string;
+  slug: string;
 }
 
 export interface AuthorDashboardData {

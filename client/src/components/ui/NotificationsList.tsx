@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Link } from 'wouter';
 import { Card } from './card';
 import { Button } from './button';
 import { Badge } from './badge';
 import { useToast } from '@/hooks/use-toast';
-import { Bell, CheckCheck, RefreshCw } from 'lucide-react';
+import { Bell, CheckCheck, RefreshCw, ExternalLink } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { apiRequest } from '@/lib/queryClient';
 
@@ -16,6 +17,7 @@ interface Notification {
   title: string;
   message: string;
   articleId: number | null;
+  commentId: number | null;
   read: boolean;
   createdAt: string;
 }
@@ -203,9 +205,27 @@ const NotificationsList: React.FC = () => {
                 </Badge>
               </div>
               <p className="text-sm text-gray-600 mb-1">{notification.message}</p>
-              <div className="text-xs text-gray-400 flex justify-between items-center">
-                <span>{formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}</span>
-                {notification.read && <span className="text-green-500 text-xs">Read</span>}
+              <div className="flex justify-between items-center mt-2">
+                <div className="text-xs text-gray-400 flex items-center">
+                  <span>{formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}</span>
+                  {notification.read && <span className="text-green-500 text-xs ml-2">Read</span>}
+                </div>
+                {notification.type === 'comment_received' && notification.articleId && (
+                  <Link 
+                    to={`/blogs/${notification.articleId}`} 
+                    onClick={(e) => {
+                      e.stopPropagation(); // Prevent the parent onClick from firing
+                      // Mark as read when navigating
+                      if (!notification.read) {
+                        markAsReadMutation.mutate(notification.id);
+                      }
+                    }}
+                    className="text-xs flex items-center text-blue-500 hover:text-blue-700"
+                  >
+                    <span className="mr-1">View blog</span>
+                    <ExternalLink size={12} />
+                  </Link>
+                )}
               </div>
             </div>
           ))}

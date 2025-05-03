@@ -514,7 +514,6 @@ const BlogDetail: React.FC = () => {
 
           {/* Comments section */}
           <div id="comments-section" className="mt-16">
-            <h2 className="text-2xl font-bold mb-8">Comments</h2>
             <CommentsList articleId={articleId} />
           </div>
         </div>

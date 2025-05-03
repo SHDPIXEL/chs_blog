@@ -208,7 +208,7 @@ const ArticleItem: React.FC<ArticleItemProps> = ({ article }) => {
               <Button 
                 variant="outline" 
                 size="sm" 
-                onClick={() => navigate(`/blog/${article.id}`)}
+                onClick={() => navigate(`/blogs/${article.id}/${article.slug}`)}
               >
                 <Eye className="h-4 w-4 mr-1" /> View
               </Button>

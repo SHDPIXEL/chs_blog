@@ -1,15 +1,15 @@
-import React, { useState } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { apiRequest, queryClient } from '@/lib/queryClient';
-import AdminLayout from '@/components/layouts/AdminLayout';
-import { Helmet } from 'react-helmet-async';
+import React, { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import AdminLayout from "@/components/layouts/AdminLayout";
+import { Helmet } from "react-helmet-async";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
+} from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -17,7 +17,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,21 +25,21 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle 
-} from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/hooks/use-toast';
-import { format, formatDistanceToNow } from 'date-fns';
+} from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
+import { format, formatDistanceToNow } from "date-fns";
 import {
   MoreHorizontal,
   Eye,
@@ -50,11 +50,15 @@ import {
   AlertCircle,
   Calendar,
   Clock,
-} from 'lucide-react';
-import { Article, ArticleStatus } from '@shared/schema';
-import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Switch } from '@/components/ui/switch';
+} from "lucide-react";
+import { Article, ArticleStatus } from "@shared/schema";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Switch } from "@/components/ui/switch";
 
 interface ExtendedArticle extends Article {
   author: string;
@@ -66,119 +70,156 @@ interface ExtendedArticle extends Article {
 
 const BlogApprovals: React.FC = () => {
   const { toast } = useToast();
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [reviewDialog, setReviewDialog] = useState(false);
   const [selectedBlogId, setSelectedBlogId] = useState<number | null>(null);
-  const [reviewRemarks, setReviewRemarks] = useState('');
-  const [approvalAction, setApprovalAction] = useState<'approve' | 'reject' | 'schedule' | null>(null);
+  const [reviewRemarks, setReviewRemarks] = useState("");
+  const [approvalAction, setApprovalAction] = useState<
+    "approve" | "reject" | "schedule" | null
+  >(null);
   const [useScheduling, setUseScheduling] = useState(false);
-  const [scheduledPublishAt, setScheduledPublishAt] = useState<string | undefined>(undefined);
+  const [scheduledPublishAt, setScheduledPublishAt] = useState<
+    string | undefined
+  >(undefined);
 
   // Fetch blogs in review status
   const { data: reviewBlogs, isLoading } = useQuery<ExtendedArticle[]>({
-    queryKey: ['/api/admin/articles', 'review'],
+    queryKey: ["/api/admin/articles", "review"],
     queryFn: async () => {
-      const res = await apiRequest('GET', '/api/admin/articles?status=review');
+      const res = await apiRequest("GET", "/api/admin/articles?status=review");
       return res.json();
-    }
+    },
   });
 
   // Approve blog mutation
   const approveBlogMutation = useMutation({
-    mutationFn: async ({ blogId, remarks }: { blogId: number; remarks: string }) => {
-      const res = await apiRequest('PATCH', `/api/admin/articles/${blogId}/status`, {
-        status: ArticleStatus.PUBLISHED,
-        remarks
-      });
+    mutationFn: async ({
+      blogId,
+      remarks,
+    }: {
+      blogId: number;
+      remarks: string;
+    }) => {
+      const res = await apiRequest(
+        "PATCH",
+        `/api/admin/articles/${blogId}/status`,
+        {
+          status: ArticleStatus.PUBLISHED,
+          remarks,
+        },
+      );
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/articles', 'review'] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/admin/articles", "review"],
+      });
       closeReviewDialog();
       toast({
-        title: 'Blog approved',
-        description: 'The blog has been approved and published successfully',
+        title: "Blog approved",
+        description: "The blog has been approved and published successfully",
       });
     },
     onError: (error: Error) => {
       toast({
-        title: 'Approval failed',
+        title: "Approval failed",
         description: error.message,
-        variant: 'destructive',
+        variant: "destructive",
       });
-    }
+    },
   });
 
   // Schedule blog mutation
   const scheduleBlogMutation = useMutation({
-    mutationFn: async ({ 
-      blogId, 
-      remarks, 
-      scheduledPublishAt 
-    }: { 
-      blogId: number; 
+    mutationFn: async ({
+      blogId,
+      remarks,
+      scheduledPublishAt,
+    }: {
+      blogId: number;
       remarks: string;
       scheduledPublishAt: string;
     }) => {
-      const res = await apiRequest('PATCH', `/api/admin/articles/${blogId}/status`, {
-        status: ArticleStatus.PUBLISHED,
-        remarks,
-        scheduledPublishAt,
-      });
+      const res = await apiRequest(
+        "PATCH",
+        `/api/admin/articles/${blogId}/status`,
+        {
+          status: ArticleStatus.PUBLISHED,
+          remarks,
+          scheduledPublishAt,
+        },
+      );
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/articles', 'review'] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/admin/articles", "review"],
+      });
       closeReviewDialog();
       toast({
-        title: 'Blog scheduled',
-        description: 'The blog has been approved and scheduled for publication',
+        title: "Blog scheduled",
+        description: "The blog has been approved and scheduled for publication",
       });
     },
     onError: (error: Error) => {
       toast({
-        title: 'Scheduling failed',
+        title: "Scheduling failed",
         description: error.message,
-        variant: 'destructive',
+        variant: "destructive",
       });
-    }
+    },
   });
 
   // Reject blog mutation
   const rejectBlogMutation = useMutation({
-    mutationFn: async ({ blogId, remarks }: { blogId: number; remarks: string }) => {
-      const res = await apiRequest('PATCH', `/api/admin/articles/${blogId}/status`, {
-        status: ArticleStatus.DRAFT,
-        remarks
-      });
+    mutationFn: async ({
+      blogId,
+      remarks,
+    }: {
+      blogId: number;
+      remarks: string;
+    }) => {
+      const res = await apiRequest(
+        "PATCH",
+        `/api/admin/articles/${blogId}/status`,
+        {
+          status: ArticleStatus.DRAFT,
+          remarks,
+        },
+      );
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/articles', 'review'] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/admin/articles", "review"],
+      });
       closeReviewDialog();
       toast({
-        title: 'Blog rejected',
-        description: 'The blog has been rejected and moved back to draft',
+        title: "Blog rejected",
+        description: "The blog has been rejected and moved back to draft",
       });
     },
     onError: (error: Error) => {
       toast({
-        title: 'Rejection failed',
+        title: "Rejection failed",
         description: error.message,
-        variant: 'destructive',
+        variant: "destructive",
       });
-    }
+    },
   });
 
   // Open review dialog
-  const openReviewDialog = (blogId: number, action: 'approve' | 'reject' | 'schedule') => {
+  const openReviewDialog = (
+    blogId: number,
+    action: "approve" | "reject" | "schedule",
+  ) => {
     setSelectedBlogId(blogId);
     setApprovalAction(action);
-    setReviewRemarks('');
-    setUseScheduling(action === 'schedule');
-    
+    setReviewRemarks("");
+    setUseScheduling(action === "schedule");
+
     // Set default scheduled time for scheduling (tomorrow at noon)
-    if (action === 'schedule') {
+    if (action === "schedule") {
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
       tomorrow.setHours(12, 0, 0, 0);
@@ -186,7 +227,7 @@ const BlogApprovals: React.FC = () => {
     } else {
       setScheduledPublishAt(undefined);
     }
-    
+
     setReviewDialog(true);
   };
 
@@ -195,7 +236,7 @@ const BlogApprovals: React.FC = () => {
     setReviewDialog(false);
     setSelectedBlogId(null);
     setApprovalAction(null);
-    setReviewRemarks('');
+    setReviewRemarks("");
     setUseScheduling(false);
     setScheduledPublishAt(undefined);
   };
@@ -205,51 +246,61 @@ const BlogApprovals: React.FC = () => {
     if (!selectedBlogId || !approvalAction) return;
 
     // For rejections, remarks are required
-    if (approvalAction === 'reject' && !reviewRemarks.trim()) {
+    if (approvalAction === "reject" && !reviewRemarks.trim()) {
       toast({
-        title: 'Feedback required',
-        description: 'Please provide feedback to the author explaining why the blog was rejected.',
-        variant: 'destructive',
+        title: "Feedback required",
+        description:
+          "Please provide feedback to the author explaining why the blog was rejected.",
+        variant: "destructive",
       });
       return;
     }
 
     // For scheduling, scheduledPublishAt is required
-    if (approvalAction === 'schedule' && !scheduledPublishAt) {
+    if (approvalAction === "schedule" && !scheduledPublishAt) {
       toast({
-        title: 'Schedule date required',
-        description: 'Please select a date and time for publishing the blog.',
-        variant: 'destructive',
+        title: "Schedule date required",
+        description: "Please select a date and time for publishing the blog.",
+        variant: "destructive",
       });
       return;
     }
 
-    if (approvalAction === 'approve') {
-      approveBlogMutation.mutate({ blogId: selectedBlogId, remarks: reviewRemarks });
-    } else if (approvalAction === 'schedule') {
+    if (approvalAction === "approve") {
+      approveBlogMutation.mutate({
+        blogId: selectedBlogId,
+        remarks: reviewRemarks,
+      });
+    } else if (approvalAction === "schedule") {
       if (scheduledPublishAt) {
-        scheduleBlogMutation.mutate({ 
-          blogId: selectedBlogId, 
+        scheduleBlogMutation.mutate({
+          blogId: selectedBlogId,
           remarks: reviewRemarks,
-          scheduledPublishAt
+          scheduledPublishAt,
         });
       }
     } else {
-      rejectBlogMutation.mutate({ blogId: selectedBlogId, remarks: reviewRemarks });
+      rejectBlogMutation.mutate({
+        blogId: selectedBlogId,
+        remarks: reviewRemarks,
+      });
     }
   };
 
   // Filtered blogs
-  const filteredBlogs = reviewBlogs?.filter(blog => 
-    searchQuery === '' || 
-    blog.title.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredBlogs = reviewBlogs?.filter(
+    (blog) =>
+      searchQuery === "" ||
+      blog.title.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   if (isLoading) {
     return (
       <AdminLayout>
         <Helmet>
-          <title>Blog Approvals | Centre for Human Sciences | Rishihood University</title>
+          <title>
+            Blog Approvals | Centre for Human Sciences | Rishihood University
+          </title>
           <meta name="robots" content="noindex, nofollow" />
         </Helmet>
         <div className="p-6">
@@ -264,7 +315,9 @@ const BlogApprovals: React.FC = () => {
   return (
     <AdminLayout>
       <Helmet>
-        <title>Blog Approvals | Centre for Human Sciences | Rishihood University</title>
+        <title>
+          Blog Approvals | Centre for Human Sciences | Rishihood University
+        </title>
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
       <div className="p-6">
@@ -310,31 +363,42 @@ const BlogApprovals: React.FC = () => {
                     </TableHeader>
                     <TableBody>
                       {filteredBlogs && filteredBlogs.length > 0 ? (
-                        filteredBlogs.map(blog => (
+                        filteredBlogs.map((blog) => (
                           <TableRow key={blog.id}>
-                            <TableCell className="font-medium">{blog.title}</TableCell>
+                            <TableCell className="font-medium">
+                              {blog.title}
+                            </TableCell>
                             <TableCell>{blog.author}</TableCell>
                             <TableCell>
-                              {blog.categories && blog.categories.length > 0 
-                                ? blog.categories.join(', ') 
-                                : 'Uncategorized'}
+                              {blog.categories && blog.categories.length > 0
+                                ? blog.categories.join(", ")
+                                : "Uncategorized"}
                             </TableCell>
                             <TableCell>
-                              {formatDistanceToNow(new Date(blog.updatedAt), { addSuffix: true })}
+                              {formatDistanceToNow(new Date(blog.updatedAt), {
+                                addSuffix: true,
+                              })}
                             </TableCell>
                             <TableCell>
                               <div className="flex items-center space-x-2">
-                                <Button 
-                                  variant="ghost" 
+                                <Button
+                                  variant="ghost"
                                   size="icon"
-                                  onClick={() => window.open(`/blog/${blog.id}`, '_blank')}
+                                  onClick={() =>
+                                    window.open(
+                                      `/preview/blogs/${blog.id}`,
+                                      "_blank",
+                                    )
+                                  }
                                 >
                                   <Eye className="h-4 w-4" />
                                 </Button>
-                                <Button 
-                                  variant="ghost" 
+                                <Button
+                                  variant="ghost"
                                   size="icon"
-                                  onClick={() => openReviewDialog(blog.id, 'approve')}
+                                  onClick={() =>
+                                    openReviewDialog(blog.id, "approve")
+                                  }
                                   className="text-green-600 hover:text-green-800 hover:bg-green-100"
                                 >
                                   <CheckCircle className="h-4 w-4" />
@@ -342,15 +406,19 @@ const BlogApprovals: React.FC = () => {
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  onClick={() => openReviewDialog(blog.id, 'schedule')}
+                                  onClick={() =>
+                                    openReviewDialog(blog.id, "schedule")
+                                  }
                                   className="text-blue-600 hover:text-blue-800 hover:bg-blue-100"
                                 >
                                   <Calendar className="h-4 w-4" />
                                 </Button>
-                                <Button 
-                                  variant="ghost" 
+                                <Button
+                                  variant="ghost"
                                   size="icon"
-                                  onClick={() => openReviewDialog(blog.id, 'reject')}
+                                  onClick={() =>
+                                    openReviewDialog(blog.id, "reject")
+                                  }
                                   className="text-red-600 hover:text-red-800 hover:bg-red-100"
                                 >
                                   <XCircle className="h-4 w-4" />
@@ -362,19 +430,43 @@ const BlogApprovals: React.FC = () => {
                                     </Button>
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent align="end">
-                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                    <DropdownMenuLabel>
+                                      Actions
+                                    </DropdownMenuLabel>
                                     <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={() => window.open(`/blog/${blog.id}`, '_blank')}>
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        window.open(
+                                          `/preview/blogs/${blog.id}`,
+                                          "_blank",
+                                        )
+                                      }
+                                    >
                                       <Eye className="mr-2 h-4 w-4" /> Preview
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => openReviewDialog(blog.id, 'approve')}>
-                                      <CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Approve & Publish
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        openReviewDialog(blog.id, "approve")
+                                      }
+                                    >
+                                      <CheckCircle className="mr-2 h-4 w-4 text-green-500" />{" "}
+                                      Approve & Publish
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => openReviewDialog(blog.id, 'schedule')}>
-                                      <Calendar className="mr-2 h-4 w-4 text-blue-500" /> Accept & Schedule Publish
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        openReviewDialog(blog.id, "schedule")
+                                      }
+                                    >
+                                      <Calendar className="mr-2 h-4 w-4 text-blue-500" />{" "}
+                                      Accept & Schedule Publish
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => openReviewDialog(blog.id, 'reject')}>
-                                      <XCircle className="mr-2 h-4 w-4 text-red-500" /> Reject
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        openReviewDialog(blog.id, "reject")
+                                      }
+                                    >
+                                      <XCircle className="mr-2 h-4 w-4 text-red-500" />{" "}
+                                      Reject
                                     </DropdownMenuItem>
                                   </DropdownMenuContent>
                                 </DropdownMenu>
@@ -404,28 +496,34 @@ const BlogApprovals: React.FC = () => {
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>
-              {approvalAction === 'approve' ? 'Approve Blog' : 
-               approvalAction === 'schedule' ? 'Schedule Blog Publication' : 
-               'Reject Blog'}
+              {approvalAction === "approve"
+                ? "Approve Blog"
+                : approvalAction === "schedule"
+                  ? "Schedule Blog Publication"
+                  : "Reject Blog"}
             </DialogTitle>
             <DialogDescription>
-              {approvalAction === 'approve' 
-                ? 'The blog will be published and available to readers immediately.' 
-                : approvalAction === 'schedule'
-                ? 'The blog will be published automatically at the scheduled date and time.'
-                : 'The blog will be moved back to draft status for the author to revise.'}
+              {approvalAction === "approve"
+                ? "The blog will be published and available to readers immediately."
+                : approvalAction === "schedule"
+                  ? "The blog will be published automatically at the scheduled date and time."
+                  : "The blog will be moved back to draft status for the author to revise."}
             </DialogDescription>
           </DialogHeader>
-          
+
           {/* Scheduling controls */}
-          {approvalAction === 'schedule' && (
+          {approvalAction === "schedule" && (
             <div className="py-4 space-y-4 border-b border-border">
               <div className="flex flex-col space-y-2">
-                <label htmlFor="scheduled-date" className="text-sm font-medium flex items-center">
+                <label
+                  htmlFor="scheduled-date"
+                  className="text-sm font-medium flex items-center"
+                >
                   <Calendar className="mr-2 h-4 w-4" />
-                  Publication Date & Time <span className="text-red-500 ml-1">*</span>
+                  Publication Date & Time{" "}
+                  <span className="text-red-500 ml-1">*</span>
                 </label>
-                
+
                 <div className="grid gap-2">
                   <Popover>
                     <PopoverTrigger asChild>
@@ -445,16 +543,22 @@ const BlogApprovals: React.FC = () => {
                       <CalendarComponent
                         mode="single"
                         initialFocus
-                        selected={scheduledPublishAt ? new Date(scheduledPublishAt) : undefined}
+                        selected={
+                          scheduledPublishAt
+                            ? new Date(scheduledPublishAt)
+                            : undefined
+                        }
                         onSelect={(date) => {
                           if (date) {
                             // Keep the time from the existing date if we have one
-                            const currentDate = scheduledPublishAt ? new Date(scheduledPublishAt) : new Date();
+                            const currentDate = scheduledPublishAt
+                              ? new Date(scheduledPublishAt)
+                              : new Date();
                             date.setHours(
                               currentDate.getHours(),
                               currentDate.getMinutes(),
                               0,
-                              0
+                              0,
                             );
                             setScheduledPublishAt(date.toISOString());
                           }
@@ -468,16 +572,22 @@ const BlogApprovals: React.FC = () => {
                             <Input
                               type="time"
                               className="w-32"
-                              value={scheduledPublishAt ? 
-                                format(new Date(scheduledPublishAt), "HH:mm") : 
-                                "12:00"
+                              value={
+                                scheduledPublishAt
+                                  ? format(
+                                      new Date(scheduledPublishAt),
+                                      "HH:mm",
+                                    )
+                                  : "12:00"
                               }
                               onChange={(e) => {
                                 if (e.target.value) {
-                                  const [hours, minutes] = e.target.value.split(':').map(Number);
-                                  const newDate = scheduledPublishAt ? 
-                                    new Date(scheduledPublishAt) : 
-                                    new Date();
+                                  const [hours, minutes] = e.target.value
+                                    .split(":")
+                                    .map(Number);
+                                  const newDate = scheduledPublishAt
+                                    ? new Date(scheduledPublishAt)
+                                    : new Date();
                                   newDate.setHours(hours, minutes, 0, 0);
                                   setScheduledPublishAt(newDate.toISOString());
                                 }
@@ -489,38 +599,54 @@ const BlogApprovals: React.FC = () => {
                     </PopoverContent>
                   </Popover>
                 </div>
-                
+
                 <p className="text-xs text-muted-foreground">
-                  The blog will remain hidden from readers until this date and time.
+                  The blog will remain hidden from readers until this date and
+                  time.
                 </p>
               </div>
             </div>
           )}
-          
+
           {/* Feedback field */}
           <div className="py-4">
-            <label htmlFor="remarks" className="text-sm font-medium flex items-center mb-2">
+            <label
+              htmlFor="remarks"
+              className="text-sm font-medium flex items-center mb-2"
+            >
               <MessageSquare className="mr-2 h-4 w-4" />
-              Feedback to author {approvalAction === 'reject' && <span className="text-red-500 ml-1">*</span>}
+              Feedback to author{" "}
+              {approvalAction === "reject" && (
+                <span className="text-red-500 ml-1">*</span>
+              )}
             </label>
             <Textarea
               id="remarks"
-              placeholder={approvalAction === 'reject' 
-                ? "Required: Please explain why this blog is being rejected..."
-                : "Optional: Enter any feedback or comments for the author..."}
+              placeholder={
+                approvalAction === "reject"
+                  ? "Required: Please explain why this blog is being rejected..."
+                  : "Optional: Enter any feedback or comments for the author..."
+              }
               value={reviewRemarks}
               onChange={(e) => setReviewRemarks(e.target.value)}
               rows={4}
-              className={approvalAction === 'reject' ? 'border-red-200 focus-visible:ring-red-500' : ''}
+              className={
+                approvalAction === "reject"
+                  ? "border-red-200 focus-visible:ring-red-500"
+                  : ""
+              }
             />
-            {approvalAction === 'reject' && (
+            {approvalAction === "reject" && (
               <p className="text-xs text-red-500 mt-1">
-                * Feedback is required when rejecting a blog to help the author understand what needs improvement.
+                * Feedback is required when rejecting a blog to help the author
+                understand what needs improvement.
               </p>
             )}
-            {(approvalAction === 'approve' || approvalAction === 'schedule') && (
+            {(approvalAction === "approve" ||
+              approvalAction === "schedule") && (
               <p className="text-xs text-muted-foreground mt-1">
-                Feedback is optional when approving a blog. You can provide constructive comments if desired.
+                Feedback is optional when approving a blog. You can provide
+                constructive comments if desired.
               </p>
             )}
           </div>
@@ -529,13 +655,15 @@ const BlogApprovals: React.FC = () => {
             <Button variant="outline" onClick={closeReviewDialog}>
               Cancel
             </Button>
-            <Button 
-              variant={approvalAction === 'reject' ? 'destructive' : 'default'}
+            <Button
+              variant={approvalAction === "reject" ? "destructive" : "default"}
               onClick={handleReviewSubmit}
             >
-              {approvalAction === 'approve' ? 'Approve & Publish' : 
-               approvalAction === 'schedule' ? 'Schedule Publication' : 
-               'Reject Blog'}
+              {approvalAction === "approve"
+                ? "Approve & Publish"
+                : approvalAction === "schedule"
+                  ? "Schedule Publication"
+                  : "Reject Blog"}
             </Button>
           </DialogFooter>
         </DialogContent>
