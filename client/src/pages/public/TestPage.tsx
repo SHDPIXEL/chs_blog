@@ -12,7 +12,7 @@ const TestPage = () => {
           <Button className="w-full" variant="default">Go to Blogs List</Button>
         </Link>
         
-        <Link href="/blogs/1">
+        <Link href="/blogs/1/getting-started">
           <Button className="w-full" variant="outline">View Blog Detail (ID: 1)</Button>
         </Link>
       </div>

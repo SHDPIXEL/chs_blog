@@ -326,9 +326,15 @@ const AdminMyBlogs: React.FC = () => {
                                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
-                                  onClick={() =>
-                                    window.open(`/blogs/${blog.id}`, "_blank")
-                                  }
+                                  onClick={() => {
+                                    const slug = blog.title
+                                      .toLowerCase()
+                                      .replace(/[^\w\s-]/g, "")
+                                      .replace(/\s+/g, "-")
+                                      .replace(/-+/g, "-")
+                                      .trim();
+                                    window.open(`/blogs/${blog.id}/${slug}`, "_blank");
+                                  }}
                                 >
                                   <Eye className="mr-2 h-4 w-4" /> Preview
                                 </DropdownMenuItem>

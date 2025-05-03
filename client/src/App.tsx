@@ -42,7 +42,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/auth/login" component={Login} />
       <Route path="/auth/register" component={Register} />
-      <Route path="/blog/:id" component={ViewBlog} />
+      <Route path="/blog/:id/:slug?" component={ViewBlog} />
 
       <Route path="/blogs" component={Blogs} />
       <Route path="/blogs/:id" component={BlogDetail} />
@@ -119,8 +119,6 @@ function Router() {
         component={EditBlog}
         role="author"
       />
-      <Route path="/blog/:id" component={ViewBlog} />
-
       {/* Fallback to 404 */}
       <Route component={NotFound} />
     </Switch>
