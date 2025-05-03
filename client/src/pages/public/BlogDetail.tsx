@@ -5,7 +5,6 @@ import { Helmet } from "react-helmet-async";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, MessageSquare, Share2, Eye } from "lucide-react";
 import PublicLayout from "@/components/layout/PublicLayout";
@@ -21,14 +20,24 @@ const demoImages = [
   "/uploads/e51dde8b-a72e-4c15-b668-d0e6d9aae7ec.png",
 ];
 
+// Helper function to generate slugs from text
+const generateSlug = (text: string): string => {
+  return text
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, "") // Remove special characters
+    .replace(/\s+/g, "-") // Replace spaces with hyphens
+    .replace(/-+/g, "-") // Remove consecutive hyphens
+    .trim();
+};
+
 const BlogDetail: React.FC = () => {
-  // Match the URL pattern
+  // Match the URL pattern for /blogs/:id/:slug
   const [match, params] = useRoute("/blogs/:id/:slug");
   const [location, setLocation] = useLocation();
   
   // Get the article ID from the URL
   const articleId = parseInt(params?.id || "0");
-      
+  
   // Get slug from URL
   const urlSlug = params?.slug || "";
   
@@ -67,7 +76,6 @@ const BlogDetail: React.FC = () => {
 
       // Calculate reading progress with improved accuracy
       // This handles cases where content is shorter than viewport
-      let readableContent = totalHeight;
       let progress = 0;
 
       if (totalHeight > 0) {
@@ -183,37 +191,32 @@ const BlogDetail: React.FC = () => {
     tags = [],
     coAuthors = [],
   } = article;
-  
-  // Generate the slug from article title if not available in the URL
-  const generateSlug = (text: string) => {
-    return text
-      .toLowerCase()
-      .replace(/[^\w\s-]/g, "") // Remove special characters
-      .replace(/\s+/g, "-") // Replace spaces with hyphens
-      .replace(/-+/g, "-") // Remove consecutive hyphens
-      .trim();
-  };
-  
+
   // Determine the proper article slug from the article title
   const articleSlug = generateSlug(articleData.title);
   
   // Create the canonical URL with the correct format (blog/id/slug)
   const canonicalUrl = `${window.location.origin}/blogs/${articleId}/${articleSlug}`;
   
-  // Check if the current slug matches the generated slug and redirect if different
+  // Redirect if the current slug doesn't match the correct slug
   useEffect(() => {
-    if (urlSlug !== articleSlug) {
+    // Only redirect if we have article data and the slugs don't match
+    if (articleData && urlSlug !== articleSlug) {
       setLocation(`/blogs/${articleId}/${articleSlug}`);
     }
-  }, [urlSlug, articleId, articleSlug, setLocation]);
+  }, [articleId, articleSlug, urlSlug, articleData, setLocation]);
 
   return (
     <PublicLayout>
       <Helmet>
-        <title>{articleData.title} | Centre for Human Sciences | Rishihood University</title>
+        <title>
+          {articleData.title} | Centre for Human Sciences | Rishihood University
+        </title>
         <meta name="description" content={articleData.excerpt} />
         <meta name="author" content={articleData.author?.name} />
         <link rel="canonical" href={canonicalUrl} />
+        <meta property="og:url" content={canonicalUrl} />
+        <meta name="robots" content="index, follow" />
         {articleData.keywords && (
           <meta name="keywords" content={articleData.keywords.join(", ")} />
         )}
@@ -259,14 +262,18 @@ const BlogDetail: React.FC = () => {
               },
             },
             keywords: tags.map((tag: { name: string }) => tag.name).join(", "),
-            articleSection: categories.map((cat: { name: string }) => cat.name).join(", "),
+            articleSection: categories
+              .map((cat: { name: string }) => cat.name)
+              .join(", "),
             ...(coAuthors.length > 0
               ? {
-                  coAuthors: coAuthors.map((coAuthor: { id: number; name: string }) => ({
-                    "@type": "Person",
-                    name: coAuthor.name,
-                    url: `${window.location.origin}/authors/${coAuthor.id}?name=${encodeURIComponent(coAuthor.name || "")}`,
-                  })),
+                  coAuthors: coAuthors.map(
+                    (coAuthor: { id: number; name: string }) => ({
+                      "@type": "Person",
+                      name: coAuthor.name,
+                      url: `${window.location.origin}/authors/${coAuthor.id}?name=${encodeURIComponent(coAuthor.name || "")}`,
+                    }),
+                  ),
                 }
               : {}),
           })}
@@ -342,20 +349,29 @@ const BlogDetail: React.FC = () => {
                   <div className="flex -space-x-2 ml-2">
                     {coAuthors
                       .slice(0, 3)
-                      .map((coAuthor: { id: number; name: string; avatarUrl?: string }, index: number) => (
-                        <Avatar
-                          key={index}
-                          className="h-6 w-6 border-2 border-white"
-                        >
-                          <AvatarImage
-                            src={coAuthor.avatarUrl}
-                            alt={coAuthor.name}
-                          />
-                          <AvatarFallback className="text-xs">
-                            {getInitials(coAuthor.name)}
-                          </AvatarFallback>
-                        </Avatar>
-                      ))}
+                      .map(
+                        (
+                          coAuthor: {
+                            id: number;
+                            name: string;
+                            avatarUrl?: string;
+                          },
+                          index: number,
+                        ) => (
+                          <Avatar
+                            key={index}
+                            className="h-6 w-6 border-2 border-white"
+                          >
+                            <AvatarImage
+                              src={coAuthor.avatarUrl}
+                              alt={coAuthor.name}
+                            />
+                            <AvatarFallback className="text-xs">
+                              {getInitials(coAuthor.name)}
+                            </AvatarFallback>
+                          </Avatar>
+                        ),
+                      )}
                     {coAuthors.length > 3 && (
                       <div className="h-6 w-6 rounded-full bg-gray-200 flex items-center justify-center text-xs border-2 border-white">
                         +{coAuthors.length - 3}
@@ -495,50 +511,55 @@ const BlogDetail: React.FC = () => {
               </CardContent>
             </Card>
 
-            {/* Co-authors Cards */}
+            {/* Co-Authors Cards */}
             {coAuthors.length > 0 && (
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold mb-2">Co-Authors</h3>
-                {coAuthors.map((coAuthor: { id: number; name: string; bio?: string; avatarUrl?: string }) => (
-                  <Card key={coAuthor.id} className="bg-gray-50">
-                    <CardContent className="p-6">
-                      <div className="flex flex-col sm:flex-row gap-6">
-                        <Avatar className="h-16 w-16">
-                          <AvatarImage
-                            src={coAuthor.avatarUrl}
-                            alt={coAuthor.name}
-                          />
-                          <AvatarFallback>
-                            {getInitials(coAuthor.name)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <h3 className="text-lg font-bold mb-2">
-                            {coAuthor.name}
-                          </h3>
-                          <p className="text-gray-700 text-sm mb-4">
-                            {coAuthor.bio || "Contributor to this article"}
-                          </p>
-                          <Link
-                            href={`/authors/${coAuthor.id}?name=${coAuthor.name}`}
-                          >
-                            <Button variant="outline" size="sm">
-                              View Profile
-                            </Button>
-                          </Link>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {coAuthors.map(
+                  (coAuthor: {
+                    id: number;
+                    name: string;
+                    bio?: string;
+                    avatarUrl?: string;
+                  }) => (
+                    <Card key={coAuthor.id}>
+                      <CardContent className="p-4">
+                        <div className="flex gap-4">
+                          <Avatar className="h-16 w-16">
+                            <AvatarImage
+                              src={coAuthor.avatarUrl}
+                              alt={coAuthor.name}
+                            />
+                            <AvatarFallback>
+                              {getInitials(coAuthor.name)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <h3 className="font-bold">{coAuthor.name}</h3>
+                            <p className="text-sm text-gray-600 mb-2">
+                              {coAuthor.bio ||
+                                "Contributing researcher and academic."}
+                            </p>
+                            <Link href={`/authors/${coAuthor.id}`}>
+                              <Button
+                                variant="ghost"
+                                className="text-xs px-2 py-1 h-auto"
+                              >
+                                View Profile
+                              </Button>
+                            </Link>
+                          </div>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardContent>
+                    </Card>
+                  ),
+                )}
               </div>
             )}
           </div>
 
-          {/* Related articles would go here */}
-
           {/* Comments section */}
           <div id="comments-section" className="mt-16">
+            <h2 className="text-2xl font-bold mb-8">Comments</h2>
             <CommentsList articleId={articleId} />
           </div>
         </div>
