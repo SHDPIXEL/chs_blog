@@ -193,6 +193,7 @@ const BlogManagement: React.FC = () => {
   // Bulk update status
   const bulkUpdateStatusMutation = useMutation({
     mutationFn: async ({ blogIds, status }: { blogIds: number[]; status: string }) => {
+      console.log('Sending bulk update with IDs:', blogIds, 'status:', status);
       const res = await apiRequest('PATCH', '/api/admin/articles/bulk/status', {
         ids: blogIds,
         status

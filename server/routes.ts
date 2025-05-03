@@ -1824,12 +1824,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
           status,
           scheduledPublishAt,
           articleCount: ids?.length,
+          ids: ids,
         });
 
+        // Ensure IDs is actually an array of numbers
         if (!Array.isArray(ids) || ids.length === 0) {
           return res
             .status(400)
             .json({ message: "Invalid or empty article IDs" });
+        }
+        
+        // Make sure all IDs are valid numbers
+        const numericIds = ids.map(id => {
+          const numId = typeof id === 'string' ? parseInt(id) : id;
+          return isNaN(numId) ? null : numId;
+        }).filter(id => id !== null) as number[];
+        
+        console.log("Processed IDs for update:", numericIds);
+        
+        if (numericIds.length === 0) {
+          return res
+            .status(400)
+            .json({ message: "Invalid article IDs" });
         }
 
         if (!Object.values(ArticleStatus).includes(status)) {
@@ -1838,7 +1854,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Update each article's status and send notifications
         const results = await Promise.all(
-          ids.map(async (id) => {
+          numericIds.map(async (id) => {
             try {
               // First get the article to know who the author is and current status
               const article = await storage.getArticle(id);
@@ -2020,6 +2036,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
             .status(400)
             .json({ message: "Invalid or empty article IDs" });
         }
+        
+        // Make sure all IDs are valid numbers
+        const numericIds = ids.map(id => {
+          const numId = typeof id === 'string' ? parseInt(id) : id;
+          return isNaN(numId) ? null : numId;
+        }).filter(id => id !== null) as number[];
+        
+        console.log("Processed IDs for featured update:", numericIds);
+        
+        if (numericIds.length === 0) {
+          return res
+            .status(400)
+            .json({ message: "Invalid article IDs" });
+        }
 
         if (typeof featured !== "boolean") {
           return res
@@ -2030,7 +2060,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // For now just return success - in a real app this would update each article
         return res.json({
           success: true,
-          results: ids.map((id) => ({ id, success: true })),
+          results: numericIds.map((id) => ({ id, success: true })),
         });
       } catch (error) {
         return res.status(500).json({ message: "Server error" });
