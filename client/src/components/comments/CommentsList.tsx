@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { Loader2 } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import { UserRole } from '@shared/schema';
 
 interface CommentsListProps {
   articleId: number;
@@ -19,11 +21,25 @@ export function CommentsList({ articleId }: CommentsListProps) {
   const [authorEmail, setAuthorEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const { user, isAuthenticated } = useAuth();
 
   // Load comments on mount
   useEffect(() => {
     fetchComments();
   }, [articleId]);
+  
+  // Auto-fill name and email fields if user is authenticated
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      // Add role label for admins and authors
+      const roleLabel = 
+        user.role === UserRole.ADMIN ? '[Admin] ' : 
+        user.role === UserRole.AUTHOR ? '[Author] ' : '';
+      
+      setAuthorName(`${roleLabel}${user.name}`);
+      setAuthorEmail(user.email);
+    }
+  }, [isAuthenticated, user]);
 
   const fetchComments = async () => {
     setIsLoading(true);
@@ -78,10 +94,14 @@ export function CommentsList({ articleId }: CommentsListProps) {
       // Add new comment to the list using our handler
       handleCommentAdded(comment);
       
-      // Reset form
+      // Reset comment text, but keep name and email if user is authenticated
       setNewComment('');
-      setAuthorName('');
-      setAuthorEmail('');
+      
+      if (!isAuthenticated) {
+        // Only clear name and email for non-authenticated users
+        setAuthorName('');
+        setAuthorEmail('');
+      }
       
       toast({
         title: 'Comment Posted',
@@ -124,6 +144,12 @@ export function CommentsList({ articleId }: CommentsListProps) {
           
           <div className="bg-gray-50 p-6 rounded-lg">
             <h4 className="text-xl font-semibold mb-4">Leave a Comment</h4>
+            
+            {isAuthenticated && user && (
+              <div className="mb-4 p-3 bg-blue-50 text-blue-700 rounded-md">
+                <p>Commenting as <strong>{user.name}</strong> ({user.role})</p>
+              </div>
+            )}
             
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>

@@ -7,6 +7,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { MessageSquare } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import { UserRole } from '@shared/schema';
 
 // Comment already has an optional replyCount property from schema.ts
 interface CommentProps {
