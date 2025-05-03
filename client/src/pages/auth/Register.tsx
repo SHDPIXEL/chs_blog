@@ -6,7 +6,7 @@ const Register: React.FC = () => {
   return (
     <>
       <Helmet>
-        <title>Register | BlogCMS</title>
+        <title>Register | CHC</title>
       </Helmet>
       <AuthForm />
     </>

@@ -6,7 +6,7 @@ const Login: React.FC = () => {
   return (
     <>
       <Helmet>
-        <title>Login | BlogCMS</title>
+        <title>Login | CHC</title>
       </Helmet>
       <AuthForm />
     </>

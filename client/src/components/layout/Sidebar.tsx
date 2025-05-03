@@ -63,7 +63,7 @@ const Sidebar: React.FC<SidebarProps> = ({ role }) => {
       <div className="flex items-center p-4 border-b border-[#ffedd2]">
         <SquarePen className="h-6 w-6 text-[#cc0033] mr-2" />
         <h1 className="text-xl font-bold text-[#333a3d]">
-          BlogCMS {role === 'admin' ? 'Admin' : 'Author'}
+          CHC {role === 'admin' ? 'Admin' : 'Author'}
         </h1>
       </div>
       

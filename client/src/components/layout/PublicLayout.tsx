@@ -122,9 +122,9 @@ const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
             <div>
               <div className="flex items-center">
                 <div className="h-8 w-8 rounded-md bg-rose-600 flex items-center justify-center">
-                  <span className="text-white font-bold">B</span>
+                  <span className="text-white font-bold">C</span>
                 </div>
-                <span className="ml-2 text-lg font-semibold">BlogCMS</span>
+                <span className="ml-2 text-lg font-semibold">CHC</span>
               </div>
               <p className="mt-2 text-sm text-gray-400 max-w-xs">
                 A professional blogging platform for sharing knowledge, insights, and ideas with the world.
@@ -188,7 +188,7 @@ const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
             </div>
           </div>
           <div className="mt-12 border-t border-gray-800 pt-8">
-            <p className="text-sm text-gray-400 text-center">© 2023 BlogCMS. All rights reserved.</p>
+            <p className="text-sm text-gray-400 text-center">© 2023 CHC, Rishihood University. All rights reserved.</p>
           </div>
         </div>
       </footer>
