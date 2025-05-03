@@ -1,75 +1,55 @@
 /**
  * Extracts initials from a name
- * Examples:
- * - "Sarah Johnson" → "SJ"
- * - "Priya Sharma" → "PS"
- * - "John" → "J"
+ * Example: "John Doe" -> "JD"
  */
 export function getInitials(name: string): string {
-  if (!name || typeof name !== 'string') return 'A';
+  if (!name) return '?';
   
   return name
     .split(' ')
     .map(part => part[0])
     .join('')
     .toUpperCase()
-    .substring(0, 2);  // Limit to 2 characters
+    .substring(0, 2);
 }
 
 /**
- * Generates a deterministic color based on the name
- */
-export function getAvatarColor(name: string): string {
-  // List of pleasant background colors for avatars
-  const colors = [
-    '#F87171', // red
-    '#FB923C', // orange
-    '#FBBF24', // amber
-    '#A3E635', // lime
-    '#34D399', // emerald
-    '#22D3EE', // cyan
-    '#60A5FA', // blue
-    '#A78BFA', // violet
-    '#F472B6', // pink
-  ];
-  
-  // Create a simple hash from the name for deterministic color selection
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  
-  // Use the hash to pick a color
-  const index = Math.abs(hash) % colors.length;
-  return colors[index];
-}
-
-/**
- * Generates an SVG data URL with initials for use as avatar background
+ * Creates a data URL for an avatar with initials
+ * @param name - The name to extract initials from
+ * @returns A data URL string for the avatar
  */
 export function createInitialsAvatar(name: string): string {
   const initials = getInitials(name);
-  const color = getAvatarColor(name);
+  const colors = [
+    '#F44336', '#E91E63', '#9C27B0', '#673AB7',
+    '#3F51B5', '#2196F3', '#03A9F4', '#00BCD4',
+    '#009688', '#4CAF50', '#8BC34A', '#CDDC39',
+    '#FFC107', '#FF9800', '#FF5722', '#795548'
+  ];
   
-  // Create an SVG with the initials and background color
-  const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-      <rect width="100" height="100" fill="${color}" />
-      <text 
-        x="50" 
-        y="50" 
-        font-family="Arial, sans-serif" 
-        font-size="40" 
-        font-weight="bold" 
-        fill="white" 
-        text-anchor="middle" 
-        dominant-baseline="central"
-      >
-        ${initials}
-      </text>
-    </svg>
-  `;
+  // Generate a consistent color based on the name
+  const colorIndex = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length;
+  const backgroundColor = colors[colorIndex];
   
-  // Convert the SVG to a data URL
-  return `data:image/svg+xml;base64,${btoa(svg)}`;
+  // Create a canvas element
+  const canvas = document.createElement('canvas');
+  canvas.width = 200;
+  canvas.height = 200;
+  
+  const context = canvas.getContext('2d');
+  if (!context) return '';
+  
+  // Fill background
+  context.fillStyle = backgroundColor;
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  
+  // Draw text
+  context.fillStyle = 'white';
+  context.font = 'bold 80px Arial';
+  context.textAlign = 'center';
+  context.textBaseline = 'middle';
+  context.fillText(initials, canvas.width / 2, canvas.height / 2);
+  
+  // Convert to data URL
+  return canvas.toDataURL('image/png');
 }

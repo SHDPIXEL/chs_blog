@@ -29,6 +29,7 @@ import EditBlog from "@/pages/author/EditBlog";
 import ViewBlog from "@/pages/ViewBlog";
 import NotFound from "@/pages/not-found";
 import BlogPreview from "@/pages/preview/BlogPreview";
+import GuestStyleBlogPreview from "@/pages/preview/GuestStyleBlogPreview";
 
 // Public blog pages
 import Blogs from "./pages/public/Blogs";
@@ -123,7 +124,7 @@ function Router() {
       {/* Blog Preview Route - accessible to both admin and author */}
       <ProtectedRoute
         path="/preview/blogs/:id"
-        component={BlogPreview}
+        component={GuestStyleBlogPreview}
         role="any"
       />
       
