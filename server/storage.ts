@@ -95,7 +95,7 @@ export interface IStorage {
   deleteAsset(id: number): Promise<boolean>;
   
   // Notification operations
-  createNotification(notification: InsertNotification): Promise<Notification>;
+  createNotification(notification: InsertNotification | ExtendedInsertNotification): Promise<Notification>;
   getUserNotifications(userId: number): Promise<Notification[]>;
   markNotificationAsRead(id: number): Promise<Notification | undefined>;
   markAllNotificationsAsRead(userId: number): Promise<boolean>;
@@ -854,7 +854,7 @@ export class DatabaseStorage implements IStorage {
   }
   
   // Notification methods
-  async createNotification(notificationData: InsertNotification): Promise<Notification> {
+  async createNotification(notificationData: InsertNotification | ExtendedInsertNotification): Promise<Notification> {
     const [notification] = await db.insert(notifications).values(notificationData).returning();
     return notification;
   }
@@ -942,7 +942,8 @@ export class DatabaseStorage implements IStorage {
             title: "New Reply to Comment",
             message: `${comment.authorName} replied to a comment on your article "${article.title}"`,
             articleId: article.id,
-            commentId: newComment.id
+            commentId: newComment.id,
+            articleSlug: article.slug // Add slug for better navigation
           });
         }
       }
@@ -958,7 +959,8 @@ export class DatabaseStorage implements IStorage {
           title: "New Comment on Article",
           message: `${comment.authorName} commented on your article "${article.title}"`,
           articleId: article.id,
-          commentId: newComment.id
+          commentId: newComment.id,
+          articleSlug: article.slug // Add slug for better navigation
         });
       }
     }
