@@ -19,6 +19,16 @@ import PublicLayout from "@/components/layout/PublicLayout";
 // Default placeholder image
 const placeholderImage = "/uploads/96af7ed8-cd23-4f38-b2ed-9e03a54bc72b.png";
 
+// Helper function to generate slugs from text
+const generateSlug = (text: string) => {
+  return text
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, "") // Remove special characters
+    .replace(/\s+/g, "-") // Replace spaces with hyphens
+    .replace(/-+/g, "-") // Remove consecutive hyphens
+    .trim();
+};
+
 const Blogs: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -157,7 +167,7 @@ const Blogs: React.FC = () => {
                 {filteredArticles.length > 0 && (
                   <div className="mb-10">
                     <Link
-                      href={`/blogs/${filteredArticles[0].id}?title=${filteredArticles[0].slug}`}
+                      href={`/blogs/${filteredArticles[0].id}/${filteredArticles[0].slug || generateSlug(filteredArticles[0].title)}`}
                     >
                       <Card className="overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-300 group">
                         <div className="md:flex">
@@ -241,7 +251,7 @@ const Blogs: React.FC = () => {
                     {filteredArticles.slice(1).map((article: any) => (
                       <Link
                         key={article.id}
-                        href={`/blogs/${article.id}?title=${article.slug}`}
+                        href={`/blogs/${article.id}/${article.slug || generateSlug(article.title)}`}
                       >
                         <Card className="overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-300 h-full group">
                           <div className="h-48 overflow-hidden">

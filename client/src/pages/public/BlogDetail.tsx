@@ -347,7 +347,7 @@ const BlogDetail: React.FC = () => {
                   <div className="flex -space-x-2 ml-2">
                     {coAuthors
                       .slice(0, 3)
-                      .map((coAuthor: any, index: number) => (
+                      .map((coAuthor: { id: number; name: string; avatarUrl?: string }, index: number) => (
                         <Avatar
                           key={index}
                           className="h-6 w-6 border-2 border-white"
@@ -422,7 +422,7 @@ const BlogDetail: React.FC = () => {
           {/* Tags */}
           {tags.length > 0 && (
             <div className="mt-12 flex flex-wrap gap-2">
-              {tags.map((tag: any) => (
+              {tags.map((tag: { id: number; name: string }) => (
                 <Badge key={tag.id} variant="secondary">
                   #{tag.name}
                 </Badge>
@@ -504,7 +504,7 @@ const BlogDetail: React.FC = () => {
             {coAuthors.length > 0 && (
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold mb-2">Co-Authors</h3>
-                {coAuthors.map((coAuthor: any) => (
+                {coAuthors.map((coAuthor: { id: number; name: string; bio?: string; avatarUrl?: string }) => (
                   <Card key={coAuthor.id} className="bg-gray-50">
                     <CardContent className="p-6">
                       <div className="flex flex-col sm:flex-row gap-6">
