@@ -28,6 +28,7 @@ import {
   notifications,
   type Notification,
   type InsertNotification,
+  type ExtendedInsertNotification,
   comments,
   type Comment,
   type InsertComment,

@@ -2498,6 +2498,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             ? `${validatedData.authorName} replied to a comment on your article "${article.title}"` 
             : `${validatedData.authorName} commented on your article "${article.title}"`;
           
+          // Use the extended notification schema to include the article slug
           await storage.createNotification({
             userId: article.authorId,
             type: "comment_received",

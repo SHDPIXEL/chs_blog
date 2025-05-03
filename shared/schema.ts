@@ -161,6 +161,7 @@ export const notifications = pgTable("notifications", {
   message: text("message").notNull(),
   articleId: integer("article_id").references(() => articles.id),
   commentId: integer("comment_id").references(() => comments.id), // Reference to the comment if notification is about a comment
+  articleSlug: text("article_slug"), // Store article slug for better navigation URLs
   read: boolean("read").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -389,6 +390,11 @@ export const insertNotificationSchema = createInsertSchema(notifications).omit({
   createdAt: true,
 });
 
+// Extend the insert notification schema to make articleSlug optional
+export const extendedInsertNotificationSchema = insertNotificationSchema.extend({
+  articleSlug: z.string().optional(),
+});
+
 export const updateNotificationSchema = z.object({
   read: z.boolean().optional(),
 });
@@ -426,6 +432,7 @@ export type UpdateAsset = z.infer<typeof updateAssetSchema>;
 export type SearchAssets = z.infer<typeof searchAssetsSchema>;
 export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+export type ExtendedInsertNotification = z.infer<typeof extendedInsertNotificationSchema>;
 export type UpdateNotification = z.infer<typeof updateNotificationSchema>;
 export type Comment = typeof comments.$inferSelect & { replyCount?: number };  // Add optional replyCount
 export type InsertComment = z.infer<typeof insertCommentSchema>;
