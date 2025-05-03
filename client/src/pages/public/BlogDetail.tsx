@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useRoute, Link } from "wouter";
+import { useRoute, Link, useLocation } from "wouter";
 import { Helmet } from "react-helmet-async";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -22,11 +22,21 @@ const demoImages = [
 ];
 
 const BlogDetail: React.FC = () => {
-  const [, params] = useRoute("/blogs/:identifier");
-  const articleId = !isNaN(Number(params?.identifier))
-    ? parseInt(params?.identifier)
-    : 0;
-  const articleSlug = isNaN(Number(params?.slug)) ? params?.identifier : "";
+  // Try to match different URL patterns
+  const [matchIdSlug, paramsIdSlug] = useRoute("/blogs/:id/:slug");
+  const [matchId, paramsId] = useRoute("/blogs/:id");
+  const [location, setLocation] = useLocation();
+  
+  // Determine article ID from either URL pattern
+  const articleId = matchIdSlug 
+    ? parseInt(paramsIdSlug?.id || "0") 
+    : matchId 
+      ? parseInt(paramsId?.id || "0") 
+      : 0;
+      
+  // Get slug if available from URL
+  const urlSlug = matchIdSlug ? paramsIdSlug?.slug : "";
+  
   const [readingProgress, setReadingProgress] = useState(0);
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -178,6 +188,29 @@ const BlogDetail: React.FC = () => {
     tags = [],
     coAuthors = [],
   } = article;
+  
+  // Generate the slug from article title if not available in the URL
+  const generateSlug = (text: string) => {
+    return text
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, "") // Remove special characters
+      .replace(/\s+/g, "-") // Replace spaces with hyphens
+      .replace(/-+/g, "-") // Remove consecutive hyphens
+      .trim();
+  };
+  
+  // Determine the proper article slug from the article title
+  const articleSlug = generateSlug(articleData.title);
+  
+  // Create the canonical URL with the correct format (blog/id/slug)
+  const canonicalUrl = `${window.location.origin}/blogs/${articleId}/${articleSlug}`;
+  
+  // If we're on the /blogs/:id route without slug, redirect to the canonical URL
+  useEffect(() => {
+    if (matchId && !matchIdSlug && articleSlug) {
+      setLocation(`/blogs/${articleId}/${articleSlug}`);
+    }
+  }, [matchId, matchIdSlug, articleId, articleSlug, setLocation]);
 
   return (
     <PublicLayout>
@@ -185,6 +218,7 @@ const BlogDetail: React.FC = () => {
         <title>{articleData.title} | Centre for Human Sciences | Rishihood University</title>
         <meta name="description" content={articleData.excerpt} />
         <meta name="author" content={articleData.author?.name} />
+        <link rel="canonical" href={canonicalUrl} />
         {articleData.keywords && (
           <meta name="keywords" content={articleData.keywords.join(", ")} />
         )}
@@ -229,11 +263,11 @@ const BlogDetail: React.FC = () => {
                 url: `${window.location.origin}/logo.png`,
               },
             },
-            keywords: tags.map((tag) => tag.name).join(", "),
-            articleSection: categories.map((cat) => cat.name).join(", "),
+            keywords: tags.map((tag: { name: string }) => tag.name).join(", "),
+            articleSection: categories.map((cat: { name: string }) => cat.name).join(", "),
             ...(coAuthors.length > 0
               ? {
-                  coAuthors: coAuthors.map((coAuthor) => ({
+                  coAuthors: coAuthors.map((coAuthor: { id: number; name: string }) => ({
                     "@type": "Person",
                     name: coAuthor.name,
                     url: `${window.location.origin}/authors/${coAuthor.id}?name=${encodeURIComponent(coAuthor.name || "")}`,
@@ -273,7 +307,7 @@ const BlogDetail: React.FC = () => {
         {/* Article header */}
         <div className="max-w-4xl mx-auto mb-10">
           <div className="flex items-center gap-3 mb-4">
-            {categories.map((category: any) => (
+            {categories.map((category: { id: number; name: string }) => (
               <Badge
                 key={category.id}
                 variant="outline"

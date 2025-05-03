@@ -46,6 +46,7 @@ function Router() {
 
       <Route path="/blogs" component={Blogs} />
       <Route path="/blogs/:id" component={BlogDetail} />
+      <Route path="/blogs/:id/:slug" component={BlogDetail} />
       <Route path="/authors/:id" component={PublicAuthorProfile} />
       <Route path="/test-blog" component={TestPage} />
 

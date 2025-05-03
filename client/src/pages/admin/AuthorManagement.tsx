@@ -221,6 +221,10 @@ const AuthorManagement: React.FC = () => {
   if (isLoading) {
     return (
       <AdminLayout>
+        <Helmet>
+          <title>Author Management | Centre for Human Sciences | Rishihood University</title>
+          <meta name="robots" content="noindex, nofollow" />
+        </Helmet>
         <div className="p-6">
           <div className="flex items-center justify-center h-[50vh]">
             <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
@@ -232,6 +236,10 @@ const AuthorManagement: React.FC = () => {
 
   return (
     <AdminLayout>
+      <Helmet>
+        <title>Author Management | Centre for Human Sciences | Rishihood University</title>
+        <meta name="robots" content="noindex, nofollow" />
+      </Helmet>
       <div className="p-6">
         <div className="flex flex-col">
           <div className="flex justify-between items-center mb-6">
