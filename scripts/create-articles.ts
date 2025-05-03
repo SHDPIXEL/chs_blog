@@ -2,8 +2,8 @@ import { db } from "../server/db";
 import { users, articles, ArticleStatus, categories, tags, articleCategories, articleTags } from "../shared/schema";
 import { eq } from "drizzle-orm";
 
-export async function seedContent() {
-  console.log("Starting to seed content (categories, tags, articles)...");
+async function createArticles() {
+  console.log("Starting to create articles...");
 
   // Get existing author
   const [author] = await db
@@ -12,59 +12,26 @@ export async function seedContent() {
     .where(eq(users.email, "author@example.com"));
 
   if (!author) {
-    console.error("No author found with email author@example.com. Aborting content seeding.");
+    console.error("No author found with email author@example.com. Aborting article creation.");
     return;
   }
 
   const authorId = author.id;
   console.log(`Found author with ID: ${authorId}`);
 
-  // Create categories
-  const categoryData = [
-    { name: 'JavaScript', slug: 'javascript', description: 'Articles about JavaScript programming language, frameworks, and tools.' },
-    { name: 'Web Development', slug: 'web-development', description: 'Resources for web developers including frontend and backend topics.' },
-    { name: 'Mobile Development', slug: 'mobile-development', description: 'Everything related to building mobile applications.' },
-    { name: 'DevOps', slug: 'devops', description: 'Continuous integration, deployment, and cloud infrastructure topics.' },
-    { name: 'UI/UX Design', slug: 'ui-ux-design', description: 'User interface and experience design principles and practices.' },
-    { name: 'Career Development', slug: 'career-development', description: 'Tips and advice for growing your tech career.' }
-  ];
-  
-  console.log("Creating categories...");
-  const categoryIds: number[] = [];
-  
-  for (const category of categoryData) {
-    const [newCategory] = await db.insert(categories).values(category).returning();
-    categoryIds.push(newCategory.id);
-    console.log(`Created category: ${category.name}`);
+  // Get existing categories and tags
+  const existingCategories = await db.select().from(categories);
+  const existingTags = await db.select().from(tags);
+
+  console.log(`Found ${existingCategories.length} categories and ${existingTags.length} tags`);
+
+  if (existingCategories.length === 0 || existingTags.length === 0) {
+    console.error("No categories or tags found. Please run the seed-content.ts script first.");
+    return;
   }
 
-  // Create tags
-  const tagData = [
-    { name: 'React', slug: 'react' },
-    { name: 'Node.js', slug: 'nodejs' },
-    { name: 'TypeScript', slug: 'typescript' },
-    { name: 'CSS', slug: 'css' },
-    { name: 'Performance', slug: 'performance' },
-    { name: 'Beginner', slug: 'beginner' },
-    { name: 'Advanced', slug: 'advanced' },
-    { name: 'Tutorial', slug: 'tutorial' },
-    { name: 'Career', slug: 'career' },
-    { name: 'Best Practices', slug: 'best-practices' }
-  ];
-  
-  console.log("Creating tags...");
-  const tagIds: number[] = [];
-  
-  for (const tag of tagData) {
-    const [newTag] = await db.insert(tags).values(tag).returning();
-    tagIds.push(newTag.id);
-    console.log(`Created tag: ${tag.name}`);
-  }
-
-  // Create sample articles
-  console.log("Creating sample blog posts...");
-  
   // Create published blog
+  console.log("Creating sample blog posts...");
   const [publishedArticle] = await db.insert(articles).values({
     title: "Getting Started with Modern JavaScript",
     slug: "getting-started-with-modern-javascript",
@@ -165,22 +132,22 @@ By mastering these modern JavaScript features, you'll write cleaner, more effici
   // Add categories and tags to the published article
   await db.insert(articleCategories).values({
     articleId: publishedArticle.id,
-    categoryId: categoryIds[0] // JavaScript category
+    categoryId: existingCategories[0].id // JavaScript category
   });
   
   await db.insert(articleCategories).values({
     articleId: publishedArticle.id,
-    categoryId: categoryIds[1] // Web Development category
+    categoryId: existingCategories[1].id // Web Development category
   });
   
   await db.insert(articleTags).values({
     articleId: publishedArticle.id,
-    tagId: tagIds[2] // TypeScript tag
+    tagId: existingTags[2].id // TypeScript tag
   });
   
   await db.insert(articleTags).values({
     articleId: publishedArticle.id,
-    tagId: tagIds[5] // Beginner tag
+    tagId: existingTags[5].id // Beginner tag
   });
   
   // Create draft blog
@@ -250,12 +217,12 @@ Stay tuned for the complete guide!
   // Add categories and tags to the draft article
   await db.insert(articleCategories).values({
     articleId: draftArticle.id,
-    categoryId: categoryIds[1] // Web Development category
+    categoryId: existingCategories[1].id // Web Development category
   });
   
   await db.insert(articleTags).values({
     articleId: draftArticle.id,
-    tagId: tagIds[0] // React tag
+    tagId: existingTags[0].id // React tag
   });
   
   // Create in-review article
@@ -348,34 +315,34 @@ I'll be expanding this article to include:
   // Add categories and tags to the review article
   await db.insert(articleCategories).values({
     articleId: reviewArticle.id,
-    categoryId: categoryIds[1] // Web Development category
+    categoryId: existingCategories[1].id // Web Development category
   });
   
   await db.insert(articleTags).values({
     articleId: reviewArticle.id,
-    tagId: tagIds[0] // React tag
+    tagId: existingTags[0].id // React tag
   });
   
   await db.insert(articleTags).values({
     articleId: reviewArticle.id,
-    tagId: tagIds[1] // Node.js tag
+    tagId: existingTags[1].id // Node.js tag
   });
   
   await db.insert(articleTags).values({
     articleId: reviewArticle.id,
-    tagId: tagIds[7] // Tutorial tag
+    tagId: existingTags[7].id // Tutorial tag
   });
   
-  console.log("Content seeding completed successfully!");
+  console.log("Articles created successfully!");
 }
 
-// Run the seed function
-seedContent()
+// Run the function
+createArticles()
   .then(() => {
-    console.log('Content seeded successfully');
+    console.log('Articles created successfully');
     process.exit(0);
   })
   .catch((error) => {
-    console.error('Error seeding content:', error);
+    console.error('Error creating articles:', error);
     process.exit(1);
   });
