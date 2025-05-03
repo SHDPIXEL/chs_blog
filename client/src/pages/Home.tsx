@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { SquarePen } from 'lucide-react';
+import { Helmet } from 'react-helmet-async';
 
 const Home: React.FC = () => {
   const [location, setLocation] = useLocation();
@@ -23,6 +24,11 @@ const Home: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
+      <Helmet>
+        <title>CHC - Centre for Human Sciences | Rishihood University</title>
+        <meta name="description" content="Professional blog platform for authors and administrators at Centre for Human Sciences, Rishihood University" />
+        <meta name="robots" content="index, follow" />
+      </Helmet>
       <div className="text-center mb-8">
         <div className="flex justify-center">
           <SquarePen className="h-16 w-16 text-primary" />

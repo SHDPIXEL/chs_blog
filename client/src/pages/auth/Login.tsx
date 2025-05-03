@@ -7,6 +7,7 @@ const Login: React.FC = () => {
     <>
       <Helmet>
         <title>Login | Centre for Human Sciences | Rishihood University</title>
+        <meta name="robots" content="noindex, nofollow" />
       </Helmet>
       <AuthForm />
     </>

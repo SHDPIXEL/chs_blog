@@ -88,7 +88,9 @@ const Blogs: React.FC = () => {
   return (
     <PublicLayout>
       <Helmet>
-        <title>Blog | Academic Research Center</title>
+        <title>Blog | Centre for Human Sciences | Rishihood University</title>
+        <meta name="description" content="Explore academic articles and research papers from the Centre for Human Sciences at Rishihood University." />
+        <meta name="robots" content="index, follow" />
       </Helmet>
 
       <div className="py-12">

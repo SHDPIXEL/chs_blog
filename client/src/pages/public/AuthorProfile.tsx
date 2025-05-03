@@ -128,8 +128,9 @@ const AuthorProfile: React.FC = () => {
         <title>{author.name} - Author Profile | Centre for Human Sciences | Rishihood University</title>
         <meta
           name="description"
-          content={`${author.name}'s profile and articles`}
+          content={`${author.name}'s profile and published articles at the Centre for Human Sciences, Rishihood University. View research papers and academic contributions.`}
         />
+        <meta name="robots" content="index, follow" />
       </Helmet>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">

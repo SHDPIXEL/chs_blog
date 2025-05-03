@@ -185,7 +185,6 @@ const BlogDetail: React.FC = () => {
         <title>{articleData.title} | Centre for Human Sciences | Rishihood University</title>
         <meta name="description" content={articleData.excerpt} />
         <meta name="author" content={articleData.author?.name} />
-        <meta name="robots" content="index, follow" />
         {articleData.keywords && (
           <meta name="keywords" content={articleData.keywords.join(", ")} />
         )}
