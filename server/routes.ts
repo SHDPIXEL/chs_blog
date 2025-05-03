@@ -1747,6 +1747,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
+  // Create a new author
+  app.post(
+    "/api/admin/authors",
+    authenticateToken,
+    requireAdmin,
+    async (req: AuthRequest, res) => {
+      try {
+        if (!req.user?.id) {
+          return res.status(401).json({ message: "Authentication required" });
+        }
+        
+        const { name, email, password, bio, canPublish } = req.body;
+        
+        // Basic validation
+        if (!name || !email || !password) {
+          return res.status(400).json({ message: "Name, email and password are required" });
+        }
+        
+        // Check if email already exists
+        const existingUser = await storage.getUserByEmail(email);
+        if (existingUser) {
+          return res.status(400).json({ message: "A user with this email already exists" });
+        }
+        
+        // Create the new author
+        const newAuthor = await storage.createUser({
+          name,
+          email,
+          password,
+          role: UserRole.AUTHOR,
+          bio: bio || null,
+          canPublish: canPublish || false
+        });
+        
+        // Remove password from response
+        const { password: _, ...authorWithoutPassword } = newAuthor;
+        
+        return res.status(201).json(authorWithoutPassword);
+      } catch (error) {
+        console.error("Error creating author:", error);
+        return res.status(500).json({ message: "Server error" });
+      }
+    }
+  );
+
   // Update author status (active/inactive)
   app.patch(
     "/api/admin/authors/:id/status",
