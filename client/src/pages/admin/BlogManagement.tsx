@@ -194,26 +194,59 @@ const BlogManagement: React.FC = () => {
   const bulkUpdateStatusMutation = useMutation({
     mutationFn: async ({ blogIds, status }: { blogIds: number[]; status: string }) => {
       console.log('Sending bulk update with IDs:', blogIds, 'status:', status);
-      const res = await apiRequest('PATCH', '/api/admin/articles/bulk/status', {
-        ids: blogIds.map(id => Number(id)), // Ensure all IDs are numbers
-        status
-      });
-      return res.json();
+      
+      try {
+        // First, ensure all IDs are valid numbers and log them
+        const numericIds = blogIds.map(id => {
+          const numId = Number(id);
+          console.log(`Converting ID ${id} (${typeof id}) to number: ${numId}`);
+          return numId;
+        });
+        
+        console.log('After conversion, sending IDs:', numericIds);
+        
+        const res = await apiRequest('PATCH', '/api/admin/articles/bulk/status', {
+          ids: numericIds,
+          status
+        });
+        
+        // Handle the response - clone it to prevent "body stream already read" errors
+        const clonedRes = res.clone();
+        let resultData;
+        
+        try {
+          resultData = await res.json();
+          console.log('Bulk update response:', resultData);
+        } catch (err) {
+          console.error('Error parsing JSON response:', err);
+          // If JSON parsing fails, try text
+          const textResponse = await clonedRes.text();
+          console.log('Response as text:', textResponse);
+          return { success: false, message: textResponse };
+        }
+        
+        return resultData;
+      } catch (error) {
+        console.error('Bulk update error caught in mutation:', error);
+        throw error;
+      }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('Bulk update succeeded with data:', data);
       queryClient.invalidateQueries({ queryKey: ['/api/admin/articles'] });
       setBulkActionDialogOpen(false);
       setBulkAction(null);
       setSelectedBlogs([]);
       toast({
         title: 'Bulk update successful',
-        description: 'Selected blog posts have been updated',
+        description: data.message || 'Selected blog posts have been updated',
       });
     },
     onError: (error: Error) => {
+      console.error('Bulk update error in onError handler:', error);
       toast({
         title: 'Bulk update failed',
-        description: error.message,
+        description: error.message || 'An error occurred during bulk update',
         variant: 'destructive',
       });
     }
@@ -246,26 +279,60 @@ const BlogManagement: React.FC = () => {
   // Bulk toggle featured status
   const bulkToggleFeaturedMutation = useMutation({
     mutationFn: async ({ blogIds, featured }: { blogIds: number[]; featured: boolean }) => {
-      const res = await apiRequest('PATCH', '/api/admin/articles/bulk/featured', {
-        ids: blogIds.map(id => Number(id)), // Ensure all IDs are numbers
-        featured
-      });
-      return res.json();
+      console.log('Sending bulk featured toggle with IDs:', blogIds, 'featured:', featured);
+      
+      try {
+        // First, ensure all IDs are valid numbers and log them
+        const numericIds = blogIds.map(id => {
+          const numId = Number(id);
+          console.log(`Converting ID ${id} (${typeof id}) to number: ${numId}`);
+          return numId;
+        });
+        
+        console.log('After conversion, sending IDs:', numericIds);
+        
+        const res = await apiRequest('PATCH', '/api/admin/articles/bulk/featured', {
+          ids: numericIds,
+          featured
+        });
+        
+        // Handle the response - clone it to prevent "body stream already read" errors
+        const clonedRes = res.clone();
+        let resultData;
+        
+        try {
+          resultData = await res.json();
+          console.log('Bulk featured toggle response:', resultData);
+        } catch (err) {
+          console.error('Error parsing JSON response:', err);
+          // If JSON parsing fails, try text
+          const textResponse = await clonedRes.text();
+          console.log('Response as text:', textResponse);
+          return { success: false, message: textResponse };
+        }
+        
+        return resultData;
+      } catch (error) {
+        console.error('Bulk featured toggle error caught in mutation:', error);
+        throw error;
+      }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('Bulk featured toggle succeeded with data:', data);
       queryClient.invalidateQueries({ queryKey: ['/api/admin/articles'] });
       setBulkActionDialogOpen(false);
       setBulkAction(null);
       setSelectedBlogs([]);
       toast({
         title: 'Bulk update successful',
-        description: 'Featured status of selected blog posts has been updated',
+        description: data.message || 'Featured status of selected blog posts has been updated',
       });
     },
     onError: (error: Error) => {
+      console.error('Bulk featured toggle error in onError handler:', error);
       toast({
         title: 'Bulk update failed',
-        description: error.message,
+        description: error.message || 'An error occurred during bulk update',
         variant: 'destructive',
       });
     }

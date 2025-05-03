@@ -25,15 +25,25 @@ async function throwIfResNotOk(res: Response) {
     
     // For other errors, try to get detailed error message
     try {
-      const errorData = await res.json();
-      const text = errorData.message || res.statusText;
-      console.error(`API error (${res.status}):`, text, errorData);
-      throw new Error(`${res.status}: ${text}`);
+      // Clone the response first to prevent "body stream already read" errors 
+      const resClone = res.clone();
+      let errorText;
+      
+      try {
+        const errorData = await resClone.json();
+        errorText = errorData.message || res.statusText;
+        console.error(`API error (${res.status}):`, errorText, errorData);
+      } catch (jsonError) {
+        // If can't parse as JSON, use text
+        errorText = await res.text() || res.statusText;
+        console.error(`API error (${res.status}) - Non-JSON:`, errorText);
+      }
+      
+      throw new Error(`${res.status}: ${errorText}`);
     } catch (e) {
-      // If can't parse as JSON, use text
-      const text = await res.text() || res.statusText;
-      console.error(`API error (${res.status}):`, text);
-      throw new Error(`${res.status}: ${text}`);
+      // Fallback error handling if all else fails
+      console.error(`API error (${res.status}) - Fallback:`, e);
+      throw new Error(`${res.status}: ${res.statusText || "Unknown error"}`);
     }
   }
 }
