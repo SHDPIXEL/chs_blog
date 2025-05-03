@@ -2,6 +2,7 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { Link } from 'wouter';
+import { Helmet } from 'react-helmet-async';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { AuthDebug } from '@/components/debug/AuthDebug';
@@ -132,6 +133,10 @@ const AdminDashboard: React.FC = () => {
   if (isLoading) {
     return (
       <AdminLayout>
+        <Helmet>
+          <title>Admin Dashboard | Centre for Human Sciences | Rishihood University</title>
+          <meta name="robots" content="noindex, nofollow" />
+        </Helmet>
         <div className="p-6">
           <div className="flex items-center justify-center h-[50vh]">
             <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
@@ -155,6 +160,10 @@ const AdminDashboard: React.FC = () => {
 
   return (
     <AdminLayout>
+      <Helmet>
+        <title>Admin Dashboard | Centre for Human Sciences | Rishihood University</title>
+        <meta name="robots" content="noindex, nofollow" />
+      </Helmet>
       <div className="p-6 space-y-6">
         <div>
           <h1 className="text-3xl font-bold">Admin Dashboard</h1>
