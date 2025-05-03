@@ -22,20 +22,15 @@ const demoImages = [
 ];
 
 const BlogDetail: React.FC = () => {
-  // Try to match different URL patterns
-  const [matchIdSlug, paramsIdSlug] = useRoute("/blogs/:id/:slug");
-  const [matchId, paramsId] = useRoute("/blogs/:id");
+  // Match the URL pattern
+  const [match, params] = useRoute("/blogs/:id/:slug");
   const [location, setLocation] = useLocation();
   
-  // Determine article ID from either URL pattern
-  const articleId = matchIdSlug 
-    ? parseInt(paramsIdSlug?.id || "0") 
-    : matchId 
-      ? parseInt(paramsId?.id || "0") 
-      : 0;
+  // Get the article ID from the URL
+  const articleId = parseInt(params?.id || "0");
       
-  // Get slug if available from URL
-  const urlSlug = matchIdSlug ? paramsIdSlug?.slug : "";
+  // Get slug from URL
+  const urlSlug = params?.slug || "";
   
   const [readingProgress, setReadingProgress] = useState(0);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -205,12 +200,12 @@ const BlogDetail: React.FC = () => {
   // Create the canonical URL with the correct format (blog/id/slug)
   const canonicalUrl = `${window.location.origin}/blogs/${articleId}/${articleSlug}`;
   
-  // If we're on the /blogs/:id route without slug, redirect to the canonical URL
+  // Check if the current slug matches the generated slug and redirect if different
   useEffect(() => {
-    if (matchId && !matchIdSlug && articleSlug) {
+    if (urlSlug !== articleSlug) {
       setLocation(`/blogs/${articleId}/${articleSlug}`);
     }
-  }, [matchId, matchIdSlug, articleId, articleSlug, setLocation]);
+  }, [urlSlug, articleId, articleSlug, setLocation]);
 
   return (
     <PublicLayout>

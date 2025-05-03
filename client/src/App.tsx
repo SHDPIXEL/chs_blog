@@ -45,7 +45,6 @@ function Router() {
       <Route path="/blog/:id/:slug?" component={ViewBlog} />
 
       <Route path="/blogs" component={Blogs} />
-      <Route path="/blogs/:id" component={BlogDetail} />
       <Route path="/blogs/:id/:slug" component={BlogDetail} />
       <Route path="/authors/:id" component={PublicAuthorProfile} />
       <Route path="/test-blog" component={TestPage} />
