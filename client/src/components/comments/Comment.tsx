@@ -27,6 +27,7 @@ export function CommentComponent({ comment, articleId, isReply = false }: Commen
   const [isLoadingReplies, setIsLoadingReplies] = useState(false);
   const [showReplies, setShowReplies] = useState(false);
   const { toast } = useToast();
+  const { user, isAuthenticated } = useAuth();
   
   // Format the date nicely
   const formattedDate = comment.createdAt 
@@ -56,6 +57,19 @@ export function CommentComponent({ comment, articleId, isReply = false }: Commen
       checkForReplies();
     }
   }, [comment.id, isReply, comment.replyCount]);
+  
+  // Auto-fill name and email fields if user is authenticated and reply form shown
+  useEffect(() => {
+    if (showReplyForm && isAuthenticated && user) {
+      // Add role label for admins and authors
+      const roleLabel = 
+        user.role === UserRole.ADMIN ? '[Admin] ' : 
+        user.role === UserRole.AUTHOR ? '[Author] ' : '';
+      
+      setReplyAuthorName(`${roleLabel}${user.name}`);
+      setReplyAuthorEmail(user.email);
+    }
+  }, [showReplyForm, isAuthenticated, user]);
 
   // Load replies when user clicks to show them
   const loadReplies = async () => {
@@ -114,10 +128,16 @@ export function CommentComponent({ comment, articleId, isReply = false }: Commen
       // Make sure replies are visible
       setShowReplies(true);
       
-      // Reset form
+      // Reset the reply content
       setReplyContent('');
-      setReplyAuthorName('');
-      setReplyAuthorEmail('');
+      
+      // Only clear author fields if not authenticated
+      if (!isAuthenticated) {
+        setReplyAuthorName('');
+        setReplyAuthorEmail('');
+      }
+      
+      // Close the reply form
       setShowReplyForm(false);
       
       toast({
@@ -183,6 +203,11 @@ export function CommentComponent({ comment, articleId, isReply = false }: Commen
           
           {showReplyForm && (
             <form onSubmit={submitReply} className="mt-4 space-y-4">
+              {isAuthenticated && user && (
+                <div className="mb-4 p-3 bg-blue-50 text-blue-700 rounded-md">
+                  <p>Replying as <strong>{user.name}</strong> ({user.role})</p>
+                </div>
+              )}
               <div>
                 <Textarea
                   placeholder="Write your reply..."
