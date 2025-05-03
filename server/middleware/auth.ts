@@ -31,7 +31,21 @@ export const authenticateToken = async (
 
     jwt.verify(token, JWT_SECRET, async (err, decoded: any) => {
       if (err) {
-        return res.status(403).json({ message: "Invalid or expired token" });
+        console.error("JWT verification error:", err.name, err.message);
+        return res.status(403).json({ 
+          message: "Invalid or expired token", 
+          error: err.message,
+          name: err.name
+        });
+      }
+
+      // Validate that decoded contains all required fields
+      if (!decoded || !decoded.id || !decoded.email || !decoded.role) {
+        console.error("Invalid token content:", decoded);
+        return res.status(403).json({ 
+          message: "Invalid token format",
+          content: decoded ? "Missing user properties" : "No decoded content"
+        });
       }
 
       // Add user info to request
@@ -41,6 +55,7 @@ export const authenticateToken = async (
         role: decoded.role
       };
       
+      console.log("Authenticated user:", req.user.email, "Role:", req.user.role);
       next();
     });
   } catch (error) {
@@ -55,11 +70,19 @@ export const requireAdmin = (
   next: NextFunction
 ) => {
   if (!req.user) {
+    console.error("Admin middleware: No user in request");
     return res.status(401).json({ message: "Authentication required" });
   }
 
+  console.log("Admin middleware: Checking role", req.user.role, "Expected:", UserRole.ADMIN);
+  
   if (req.user.role !== UserRole.ADMIN) {
-    return res.status(403).json({ message: "Admin access required" });
+    console.error("Admin access required but user role is:", req.user.role);
+    return res.status(403).json({ 
+      message: "Admin access required",
+      userRole: req.user.role,
+      requiredRole: UserRole.ADMIN
+    });
   }
 
   next();

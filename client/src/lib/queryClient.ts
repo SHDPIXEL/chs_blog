@@ -10,12 +10,31 @@ async function throwIfResNotOk(res: Response) {
         localStorage.removeItem("blogcms_token");
       }
       
-      const text = "Authentication required. Please log in again.";
-      throw new Error(`${res.status}: ${text}`);
+      // Get the actual error message if available
+      let errorText;
+      try {
+        const errorData = await res.json();
+        errorText = errorData.message || "Authentication required. Please log in again.";
+      } catch (e) {
+        errorText = "Authentication required. Please log in again.";
+      }
+      
+      console.error(`Authentication error (${res.status}):`, errorText);
+      throw new Error(`${res.status}: ${errorText}`);
     }
     
-    const text = (await res.text()) || res.statusText;
-    throw new Error(`${res.status}: ${text}`);
+    // For other errors, try to get detailed error message
+    try {
+      const errorData = await res.json();
+      const text = errorData.message || res.statusText;
+      console.error(`API error (${res.status}):`, text, errorData);
+      throw new Error(`${res.status}: ${text}`);
+    } catch (e) {
+      // If can't parse as JSON, use text
+      const text = await res.text() || res.statusText;
+      console.error(`API error (${res.status}):`, text);
+      throw new Error(`${res.status}: ${text}`);
+    }
   }
 }
 
