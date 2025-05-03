@@ -39,7 +39,7 @@ const BlogCard = ({ blog }: { blog: any }) => {
             ))}
           </div>
           <h3 className="font-semibold text-lg line-clamp-2">
-            <Link href={`/blogs/${blog.id}`}>
+            <Link href={`/blogs/${blog.id}/${blog.slug}`}>
               <a className="hover:text-blue-600 transition-colors">
                 {blog.title}
               </a>
@@ -125,7 +125,10 @@ const AuthorProfile: React.FC = () => {
   return (
     <PublicLayout>
       <Helmet>
-        <title>{author.name} - Author Profile | Centre for Human Sciences | Rishihood University</title>
+        <title>
+          {author.name} - Author Profile | Centre for Human Sciences | Rishihood
+          University
+        </title>
         <meta
           name="description"
           content={`${author.name}'s profile and published articles at the Centre for Human Sciences, Rishihood University. View research papers and academic contributions.`}
