@@ -341,25 +341,59 @@ const BlogManagement: React.FC = () => {
   // Bulk delete blogs
   const bulkDeleteMutation = useMutation({
     mutationFn: async (blogIds: number[]) => {
-      const res = await apiRequest('DELETE', '/api/admin/articles/bulk', {
-        ids: blogIds.map(id => Number(id)) // Ensure all IDs are numbers
-      });
-      return res.json();
+      console.log('Sending bulk delete with IDs:', blogIds);
+      
+      try {
+        // First, ensure all IDs are valid numbers and log them
+        const numericIds = blogIds.map(id => {
+          const numId = Number(id);
+          console.log(`Converting ID ${id} (${typeof id}) to number: ${numId}`);
+          return numId;
+        });
+        
+        console.log('After conversion, sending IDs:', numericIds);
+        
+        const res = await apiRequest('DELETE', '/api/admin/articles/bulk', {
+          ids: numericIds
+        });
+        
+        // Handle the response - clone it to prevent "body stream already read" errors
+        const clonedRes = res.clone();
+        let resultData;
+        
+        try {
+          resultData = await res.json();
+          console.log('Bulk delete response:', resultData);
+        } catch (err) {
+          console.error('Error parsing JSON response:', err);
+          // If JSON parsing fails, try text
+          const textResponse = await clonedRes.text();
+          console.log('Response as text:', textResponse);
+          return { success: false, message: textResponse };
+        }
+        
+        return resultData;
+      } catch (error) {
+        console.error('Bulk delete error caught in mutation:', error);
+        throw error;
+      }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('Bulk delete succeeded with data:', data);
       queryClient.invalidateQueries({ queryKey: ['/api/admin/articles'] });
       setBulkActionDialogOpen(false);
       setBulkAction(null);
       setSelectedBlogs([]);
       toast({
         title: 'Bulk delete successful',
-        description: `${selectedBlogs.length} blog posts have been deleted`,
+        description: data.message || `${selectedBlogs.length} blog posts have been deleted`,
       });
     },
     onError: (error: Error) => {
+      console.error('Bulk delete error in onError handler:', error);
       toast({
         title: 'Bulk delete failed',
-        description: error.message,
+        description: error.message || 'An error occurred during bulk deletion',
         variant: 'destructive',
       });
     }

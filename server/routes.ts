@@ -1820,47 +1820,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         const { ids, status, scheduledPublishAt } = req.body;
 
-        console.log("Bulk article status update request:", {
+        console.log("Bulk article status update request received from user:", req.user.email);
+        console.log("Request body:", JSON.stringify(req.body, null, 2));
+        
+        // Detailed inspection of the IDs array
+        if (ids === undefined) {
+          console.error("Missing 'ids' in request body");
+          return res.status(400).json({ 
+            message: "Article IDs are required",
+            received: req.body 
+          });
+        }
+        
+        if (!status) {
+          console.error("Missing 'status' in request body");
+          return res.status(400).json({ 
+            message: "Status is required",
+            received: req.body 
+          });
+        }
+
+        // Log complete details of what we received
+        console.log("Detailed IDs inspection:", {
           status,
           scheduledPublishAt,
-          articleCount: ids?.length,
-          ids: ids,
-          idsType: Array.isArray(ids) ? "array" : typeof ids,
+          idsValue: ids,
+          idsType: typeof ids,
+          isArray: Array.isArray(ids),
+          idsLength: Array.isArray(ids) ? ids.length : 'N/A',
           idsDetails: Array.isArray(ids) ? ids.map(id => ({ 
             value: id, 
             type: typeof id,
-            isNumber: !isNaN(Number(id))
-          })) : "not an array"
+            valueAsString: String(id),
+            isValid: !isNaN(Number(id)) 
+          })) : 'not an array'
         });
-
-        // Additional debug logging for the raw request body
-        console.log("Raw request body for bulk update:", req.body);
-        console.log("Type of ids:", typeof ids);
-        console.log("Is array?", Array.isArray(ids));
-        console.log("ids value:", ids);
-        console.log("Status value:", status);
         
-        // Ensure IDs is actually an array of numbers
-        if (!Array.isArray(ids) || ids.length === 0) {
-          return res
-            .status(400)
-            .json({ message: "Invalid or empty article IDs" });
+        // Ensure IDs is actually an array
+        if (!Array.isArray(ids)) {
+          console.error("IDs is not an array:", ids);
+          return res.status(400).json({ 
+            message: "Article IDs must be an array",
+            received: typeof ids
+          });
+        }
+        
+        if (ids.length === 0) {
+          console.error("Empty IDs array");
+          return res.status(400).json({ message: "Empty article IDs array" });
         }
         
         // Make sure all IDs are valid numbers
         const numericIds = ids.map(id => {
-          console.log("Processing ID:", id, "type:", typeof id);
-          const numId = typeof id === 'string' ? parseInt(id) : Number(id);
-          console.log("Converted to numeric:", numId, "isNaN?", isNaN(numId));
-          return isNaN(numId) ? null : numId;
+          console.log(`Processing ID '${id}' (type: ${typeof id})`);
+          // Handle different potential formats
+          let numId: number;
+          if (typeof id === 'string') {
+            numId = parseInt(id.trim());
+          } else if (typeof id === 'number') {
+            numId = id;
+          } else {
+            numId = Number(id);
+          }
+          
+          const isValid = !isNaN(numId) && numId > 0;
+          console.log(`Converted to numeric: ${numId}, valid: ${isValid}`);
+          return isValid ? numId : null;
         }).filter(id => id !== null) as number[];
         
-        console.log("Processed IDs for update:", numericIds);
+        console.log("Final processed IDs for update:", numericIds);
         
         if (numericIds.length === 0) {
-          return res
-            .status(400)
-            .json({ message: "Invalid article IDs" });
+          console.error("No valid IDs found after processing");
+          return res.status(400).json({ 
+            message: "No valid article IDs found", 
+            originalIds: ids,
+            validationDetails: Array.isArray(ids) ? ids.map(id => ({ 
+              original: id,
+              asNumber: Number(id), 
+              isValid: !isNaN(Number(id)) && Number(id) > 0
+            })) : 'not an array'
+          });
         }
 
         if (!Object.values(ArticleStatus).includes(status)) {
