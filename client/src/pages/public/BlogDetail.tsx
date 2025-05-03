@@ -5,6 +5,7 @@ import { Helmet } from "react-helmet-async";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, MessageSquare, Share2, Eye } from "lucide-react";
 import PublicLayout from "@/components/layout/PublicLayout";
@@ -12,114 +13,13 @@ import { CommentsList } from "@/components/comments/CommentsList";
 import { ContentRenderer } from "@/components/blog/ContentRenderer";
 import { getInitials } from "@/lib/avatarUtils";
 
-// Demo images for placeholder
-const demoImages = [
-  "/uploads/96af7ed8-cd23-4f38-b2ed-9e03a54bc72b.png",
-  "/uploads/08a69f11-51da-491a-a8d4-cedebb5f3d90.png",
-  "/uploads/d03cc5f2-2997-4bde-9ebe-80894b10adbd.png",
-  "/uploads/e51dde8b-a72e-4c15-b668-d0e6d9aae7ec.png",
-];
-
-// Helper function to generate slugs from text
-const generateSlug = (text: string): string => {
-  return text
-    .toLowerCase()
-    .replace(/[^\w\s-]/g, "") // Remove special characters
-    .replace(/\s+/g, "-") // Replace spaces with hyphens
-    .replace(/-+/g, "-") // Remove consecutive hyphens
-    .trim();
-};
-
 const BlogDetail: React.FC = () => {
-  // Match the URL pattern for /blogs/:id/:slug
   const [match, params] = useRoute("/blogs/:id/:slug");
   const [location, setLocation] = useLocation();
-  
-  // Get the article ID from the URL
   const articleId = parseInt(params?.id || "0");
-  
-  // Get slug from URL
   const urlSlug = params?.slug || "";
-  
   const [readingProgress, setReadingProgress] = useState(0);
   const contentRef = useRef<HTMLDivElement>(null);
-
-  // Throttle function to limit how often the scroll handler runs
-  const throttle = useCallback((func: Function, delay: number) => {
-    let lastCall = 0;
-    return (...args: any[]) => {
-      const now = Date.now();
-      if (now - lastCall < delay) return;
-      lastCall = now;
-      return func(...args);
-    };
-  }, []);
-
-  // Calculate reading progress with enhanced accuracy and smoothness
-  useEffect(() => {
-    // Main calculation logic in a separate function for clarity
-    const calculateReadingProgress = () => {
-      if (!contentRef.current) return;
-
-      const element = contentRef.current;
-      const totalHeight = element.scrollHeight; // Use scrollHeight for better accuracy
-      const windowHeight = window.innerHeight;
-      const scrollTop = window.scrollY || document.documentElement.scrollTop;
-      const contentBox = element.getBoundingClientRect();
-
-      // More accurate calculation of content start position
-      const contentStart = contentBox.top + scrollTop - 100; // Small offset for better UX
-
-      // Calculate visible content area
-      const contentBottom = contentStart + totalHeight;
-      const viewportBottom = scrollTop + windowHeight;
-
-      // Calculate reading progress with improved accuracy
-      // This handles cases where content is shorter than viewport
-      let progress = 0;
-
-      if (totalHeight > 0) {
-        // If we haven't scrolled to the content yet
-        if (scrollTop < contentStart) {
-          progress = 0;
-        }
-        // If we've scrolled past the content
-        else if (scrollTop >= contentBottom - windowHeight) {
-          progress = 100;
-        }
-        // If we're somewhere in the content
-        else {
-          progress =
-            ((scrollTop - contentStart) / (totalHeight - windowHeight + 200)) *
-            100;
-        }
-      }
-
-      // Ensure progress is always within valid range with smoother interpolation
-      const smoothedProgress = Math.min(Math.max(progress, 0), 100);
-
-      // Update state only if the change is significant (reduces unnecessary renders)
-      if (Math.abs(smoothedProgress - readingProgress) > 0.5) {
-        setReadingProgress(smoothedProgress);
-      }
-    };
-
-    // Throttled scroll handler to improve performance
-    const handleScroll = throttle(calculateReadingProgress, 16); // ~60fps for smooth animation
-
-    // Attach event listeners for different scenarios to make it more responsive
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    window.addEventListener("resize", handleScroll, { passive: true });
-
-    // Initial calculation
-    calculateReadingProgress();
-
-    // Remove event listeners on cleanup
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-      window.removeEventListener("resize", handleScroll);
-    };
-  }, [readingProgress, throttle]);
 
   // Fetch article details
   const {
@@ -140,14 +40,65 @@ const BlogDetail: React.FC = () => {
     },
   });
 
-  function formatDate(dateString: string) {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  }
+  const throttle = useCallback((func: Function, delay: number) => {
+    let lastCall = 0;
+    return (...args: any[]) => {
+      const now = Date.now();
+      if (now - lastCall < delay) return;
+      lastCall = now;
+      return func(...args);
+    };
+  }, []);
+
+  // Combined useEffect for reading progress and slug redirection
+  useEffect(() => {
+    // Reading progress calculation
+    const calculateReadingProgress = () => {
+      if (!contentRef.current) return;
+
+      const element = contentRef.current;
+      const totalHeight = element.scrollHeight;
+      const windowHeight = window.innerHeight;
+      const scrollTop = window.scrollY || document.documentElement.scrollTop;
+      const contentBox = element.getBoundingClientRect();
+      const contentStart = contentBox.top + scrollTop - 100;
+      const contentBottom = contentStart + totalHeight;
+      let progress = 0;
+
+      if (totalHeight > 0) {
+        if (scrollTop < contentStart) {
+          progress = 0;
+        } else if (scrollTop >= contentBottom - windowHeight) {
+          progress = 100;
+        } else {
+          progress = ((scrollTop - contentStart) / (totalHeight - windowHeight + 200)) * 100;
+        }
+      }
+
+      const smoothedProgress = Math.min(Math.max(progress, 0), 100);
+      if (Math.abs(smoothedProgress - readingProgress) > 0.5) {
+        setReadingProgress(smoothedProgress);
+      }
+    };
+
+    const handleScroll = throttle(calculateReadingProgress, 16);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("resize", handleScroll, { passive: true });
+    calculateReadingProgress();
+
+    // Slug redirection
+    if (article?.article) {
+      const articleSlug = generateSlug(article.article.title);
+      if (urlSlug !== articleSlug) {
+        setLocation(`/blogs/${articleId}/${articleSlug}`);
+      }
+    }
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", handleScroll);
+    };
+  }, [article, articleId, urlSlug, readingProgress, throttle, setLocation]);
 
   // If loading or error
   if (isLoading) {
@@ -194,17 +145,19 @@ const BlogDetail: React.FC = () => {
 
   // Determine the proper article slug from the article title
   const articleSlug = generateSlug(articleData.title);
-  
+
   // Create the canonical URL with the correct format (blog/id/slug)
   const canonicalUrl = `${window.location.origin}/blogs/${articleId}/${articleSlug}`;
-  
-  // Redirect if the current slug doesn't match the correct slug
-  useEffect(() => {
-    // Only redirect if we have article data and the slugs don't match
-    if (articleData && urlSlug !== articleSlug) {
-      setLocation(`/blogs/${articleId}/${articleSlug}`);
-    }
-  }, [articleId, articleSlug, urlSlug, articleData, setLocation]);
+
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
 
   return (
     <PublicLayout>
@@ -566,6 +519,16 @@ const BlogDetail: React.FC = () => {
       </div>
     </PublicLayout>
   );
+};
+
+// Helper function to generate slugs from text
+const generateSlug = (text: string): string => {
+  return text
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .trim();
 };
 
 export default BlogDetail;
