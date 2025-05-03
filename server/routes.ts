@@ -1,5 +1,7 @@
-import express, { type Express, Request, Response } from "express";
+import express, { type Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
+import cors from "cors";
+import { corsOptions } from "./cors-config";
 import { storage } from "./storage";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
@@ -40,6 +42,11 @@ import { istToUtc, utcToIst, formatIstDate } from "@shared/utils/dateTime";
 const JWT_SECRET = process.env.JWT_SECRET || "blog-platform-jwt-secret";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Enable CORS
+  app.use(cors(corsOptions));
+  
+  // Add CORS preflight
+  app.options('*', cors(corsOptions));
   // Auth routes
   app.post("/api/auth/register", async (req, res) => {
     try {
