@@ -28,7 +28,7 @@ const Home: React.FC = () => {
           <SquarePen className="h-16 w-16 text-primary" />
         </div>
         <h1 className="mt-4 text-4xl font-extrabold text-gray-900 sm:text-5xl sm:tracking-tight lg:text-6xl">
-          Welcome to BlogCMS
+          Welcome to CHC
         </h1>
         <p className="mt-3 max-w-md mx-auto text-base text-gray-500 sm:text-lg md:mt-5 md:text-xl md:max-w-3xl">
           Professional blog platform for authors and administrators

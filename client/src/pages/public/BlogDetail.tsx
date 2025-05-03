@@ -182,7 +182,7 @@ const BlogDetail: React.FC = () => {
   return (
     <PublicLayout>
       <Helmet>
-        <title>{articleData.title} | BlogCMS</title>
+        <title>{articleData.title} | CHC</title>
         <meta name="description" content={articleData.excerpt} />
         <meta name="author" content={articleData.author?.name} />
         {articleData.keywords && (
@@ -209,7 +209,7 @@ const BlogDetail: React.FC = () => {
             },
             "publisher": {
               "@type": "Organization",
-              "name": "BlogCMS",
+              "name": "CHC",
               "logo": {
                 "@type": "ImageObject",
                 "url": "/logo.png"
