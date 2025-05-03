@@ -192,7 +192,12 @@ const BlogDetail: React.FC = () => {
         <meta property="og:description" content={articleData.excerpt} />
         <meta property="og:type" content="article" />
         {articleData.featuredImage && (
-          <meta property="og:image" content={articleData.featuredImage} />
+          <meta 
+            property="og:image" 
+            content={articleData.featuredImage.startsWith('http') 
+              ? articleData.featuredImage 
+              : `${window.location.origin}${articleData.featuredImage}`} 
+          />
         )}
         <script type="application/ld+json">
           {JSON.stringify({
@@ -200,23 +205,36 @@ const BlogDetail: React.FC = () => {
             "@type": "BlogPosting",
             "headline": articleData.title,
             "description": articleData.excerpt,
-            "image": articleData.featuredImage,
+            "image": articleData.featuredImage ? 
+              (articleData.featuredImage.startsWith('http') ? 
+                articleData.featuredImage : 
+                `${window.location.origin}${articleData.featuredImage}`
+              ) : null,
             "datePublished": articleData.createdAt,
             "dateModified": articleData.updatedAt,
             "author": {
               "@type": "Person",
               "name": articleData.author?.name,
+              "url": articleData.author?.id ? 
+                `${window.location.origin}/authors/${articleData.author.id}?name=${encodeURIComponent(articleData.author.name || '')}` : null
             },
             "publisher": {
               "@type": "Organization",
               "name": "CHC",
               "logo": {
                 "@type": "ImageObject",
-                "url": "/logo.png"
+                "url": `${window.location.origin}/logo.png`
               }
             },
             "keywords": tags.map(tag => tag.name).join(", "),
-            "articleSection": categories.map(cat => cat.name).join(", ")
+            "articleSection": categories.map(cat => cat.name).join(", "),
+            ...(coAuthors.length > 0 ? {
+              "coAuthors": coAuthors.map(coAuthor => ({
+                "@type": "Person",
+                "name": coAuthor.name,
+                "url": `${window.location.origin}/authors/${coAuthor.id}?name=${encodeURIComponent(coAuthor.name || '')}`
+              }))
+            } : {})
           })}
         </script>
       </Helmet>
