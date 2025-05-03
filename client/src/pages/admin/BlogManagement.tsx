@@ -318,33 +318,57 @@ const BlogManagement: React.FC = () => {
   // Select/deselect all blogs
   const handleSelectAll = (checked: boolean) => {
     if (checked && filteredBlogs) {
-      setSelectedBlogs(filteredBlogs.map(blog => blog.id));
+      // Make sure all IDs are numbers
+      const numericIds = filteredBlogs.map(blog => Number(blog.id));
+      console.log('Selecting all blogs with IDs:', numericIds);
+      setSelectedBlogs(numericIds);
     } else {
+      console.log('Clearing all selected blogs');
       setSelectedBlogs([]);
     }
   };
 
   // Toggle selection of a single blog
   const handleToggleSelect = (blogId: number) => {
-    setSelectedBlogs(prev => 
-      prev.includes(blogId)
-        ? prev.filter(id => id !== blogId)
-        : [...prev, blogId]
-    );
+    // Ensure blogId is a number
+    const numericBlogId = Number(blogId);
+    console.log('Toggling selection for blog ID:', numericBlogId, 'type:', typeof numericBlogId);
+    
+    setSelectedBlogs(prev => {
+      // Check if it's already selected
+      const isSelected = prev.some(id => Number(id) === numericBlogId);
+      
+      if (isSelected) {
+        // Remove this ID
+        console.log('Removing blog ID from selection:', numericBlogId);
+        return prev.filter(id => Number(id) !== numericBlogId);
+      } else {
+        // Add this ID
+        console.log('Adding blog ID to selection:', numericBlogId);
+        return [...prev, numericBlogId];
+      }
+    });
   };
 
   // Handle bulk actions
   const executeBulkAction = () => {
     if (!bulkAction || selectedBlogs.length === 0) return;
+    
+    // Debug info about selected blogs
+    console.log('Selected blog IDs:', selectedBlogs);
+    console.log('Types of selected blogs:', selectedBlogs.map(id => typeof id));
+    console.log('Status information:', bulkAction);
 
     switch (bulkAction) {
       case 'publish':
+        console.log('Executing bulk publish with IDs:', selectedBlogs);
         bulkUpdateStatusMutation.mutate({ 
           blogIds: selectedBlogs, 
           status: ArticleStatus.PUBLISHED 
         });
         break;
       case 'draft':
+        console.log('Executing bulk draft with IDs:', selectedBlogs);
         bulkUpdateStatusMutation.mutate({ 
           blogIds: selectedBlogs, 
           status: ArticleStatus.DRAFT 
@@ -552,7 +576,7 @@ const BlogManagement: React.FC = () => {
                         <TableRow key={blog.id}>
                           <TableCell>
                             <Checkbox 
-                              checked={selectedBlogs.includes(blog.id)}
+                              checked={selectedBlogs.some(id => Number(id) === Number(blog.id))}
                               onCheckedChange={() => handleToggleSelect(blog.id)}
                               aria-label={`Select ${blog.title}`}
                             />

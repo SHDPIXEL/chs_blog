@@ -1833,6 +1833,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           })) : "not an array"
         });
 
+        // Additional debug logging for the raw request body
+        console.log("Raw request body for bulk update:", req.body);
+        console.log("Type of ids:", typeof ids);
+        console.log("Is array?", Array.isArray(ids));
+        console.log("ids value:", ids);
+        console.log("Status value:", status);
+        
         // Ensure IDs is actually an array of numbers
         if (!Array.isArray(ids) || ids.length === 0) {
           return res
@@ -1842,7 +1849,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Make sure all IDs are valid numbers
         const numericIds = ids.map(id => {
-          const numId = typeof id === 'string' ? parseInt(id) : id;
+          console.log("Processing ID:", id, "type:", typeof id);
+          const numId = typeof id === 'string' ? parseInt(id) : Number(id);
+          console.log("Converted to numeric:", numId, "isNaN?", isNaN(numId));
           return isNaN(numId) ? null : numId;
         }).filter(id => id !== null) as number[];
         
@@ -1990,17 +1999,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         const { ids } = req.body;
+        
+        console.log("Bulk delete request. Raw ids:", ids);
+        console.log("Type of ids:", typeof ids);
+        console.log("Is array?", Array.isArray(ids));
 
         if (!Array.isArray(ids) || ids.length === 0) {
           return res
             .status(400)
             .json({ message: "Invalid or empty article IDs" });
         }
+        
+        // Process IDs to ensure they're all numbers
+        const numericIds = ids.map(id => {
+          console.log("Processing ID:", id, "type:", typeof id);
+          return typeof id === 'string' ? parseInt(id) : Number(id);
+        }).filter(id => !isNaN(id));
+        
+        console.log("Processed numeric IDs:", numericIds);
+        
+        if (numericIds.length === 0) {
+          return res
+            .status(400)
+            .json({ message: "All provided article IDs were invalid" });
+        }
 
         const results = [];
 
         // Delete each article one by one
-        for (const id of ids) {
+        for (const id of numericIds) {
           console.log(`Starting transaction to delete article ${id}`);
           try {
             // Delete article and related records
@@ -2036,6 +2063,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         const { ids, featured } = req.body;
+        
+        console.log("Bulk feature request. Raw ids:", ids);
+        console.log("Type of ids:", typeof ids);
+        console.log("Is array?", Array.isArray(ids));
+        console.log("Featured value:", featured, "type:", typeof featured);
 
         if (!Array.isArray(ids) || ids.length === 0) {
           return res
@@ -2045,7 +2077,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Make sure all IDs are valid numbers
         const numericIds = ids.map(id => {
-          const numId = typeof id === 'string' ? parseInt(id) : id;
+          console.log("Processing ID:", id, "type:", typeof id);
+          const numId = typeof id === 'string' ? parseInt(id) : Number(id);
+          console.log("Converted to numeric:", numId, "isNaN?", isNaN(numId));
           return isNaN(numId) ? null : numId;
         }).filter(id => id !== null) as number[];
         

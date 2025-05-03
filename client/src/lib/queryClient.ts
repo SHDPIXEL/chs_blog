@@ -33,6 +33,13 @@ export async function apiRequest(
     ...(token ? { "Authorization": `Bearer ${token}` } : {}),
   };
 
+  // Debug log for bulk actions
+  if (url.includes('bulk')) {
+    console.log('Sending request to bulk endpoint:', url);
+    console.log('Request data:', data);
+    console.log('Request data JSON:', JSON.stringify(data));
+  }
+
   const res = await fetch(url, {
     method,
     headers,
