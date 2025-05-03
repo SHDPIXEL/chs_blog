@@ -1981,7 +1981,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               // First get the article to know who the author is and current status
               const article = await storage.getArticle(id);
               if (!article) {
-                return { id, success: false };
+                console.error(`Article with ID ${id} not found`);
+                return { id, success: false, error: "Article not found" };
               }
 
               // Prepare update data with status

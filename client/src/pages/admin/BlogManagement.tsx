@@ -212,14 +212,22 @@ const BlogManagement: React.FC = () => {
       console.log("Sending bulk update with IDs:", blogIds, "status:", status);
 
       try {
-        // First, ensure all IDs are valid numbers and log them
-        const numericIds = blogIds.map((id) => {
-          const numId = Number(id);
-          console.log(`Converting ID ${id} (${typeof id}) to number: ${numId}`);
-          return numId;
-        });
+        // Ensure all IDs are valid numbers
+        const numericIds = blogIds
+          .map((id) => {
+            if (typeof id === "string") {
+              return parseInt(id.trim());
+            }
+            return Number(id);
+          })
+          .filter((id) => !isNaN(id) && id > 0);
 
-        console.log("After conversion, sending IDs:", numericIds);
+        console.log("Filtered numeric IDs for update:", numericIds);
+        
+        // Make sure we have valid IDs to update
+        if (numericIds.length === 0) {
+          throw new Error("No valid article IDs to update");
+        }
 
         const res = await apiRequest(
           "PATCH",
