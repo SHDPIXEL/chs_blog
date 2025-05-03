@@ -937,11 +937,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Article not found" });
       }
 
-      // Increment view count asynchronously - no need to await
-      const viewCount = (article.viewCount || 0) + 1;
-      storage.updateArticle(article.id, { viewCount }).catch((err) => {
-        console.error("Failed to update view count:", err);
-      });
+      // Increment view count asynchronously with proper logging
+      let currentViewCount = article.viewCount || 0;
+      let newViewCount = currentViewCount + 1;
+      
+      try {
+        // Record the view in logs with timestamp and article info
+        console.log(`Updating article ${article.id} with data:`, { viewCount: newViewCount });
+        
+        // Update the article view count in the database
+        storage.updateArticle(article.id, { viewCount: newViewCount }).catch((err) => {
+          console.error(`Failed to update view count for article ${article.id}:`, err);
+        });
+      } catch (viewCountError) {
+        console.error(`Error processing view count for article ${article.id}:`, viewCountError);
+        // Don't fail the request if view counting fails
+      }
 
       // Get full article with relations
       const fullArticle = await storage.getArticleWithRelations(article.id);
@@ -950,7 +961,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Update the view count in the response
-      fullArticle.article.viewCount = viewCount;
+      fullArticle.article.viewCount = newViewCount;
 
       // Get author info with limited fields
       const author = fullArticle.article.authorId
@@ -2455,6 +2466,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Create the comment
       const comment = await storage.createComment(validatedData);
+      
+      // Create a notification for the article author
+      if (article.authorId) {
+        try {
+          const notificationType = NotificationType.COMMENT_RECEIVED;
+          const notificationTitle = validatedData.parentId 
+            ? "New Reply to Comment" 
+            : "New Comment on Article";
+          const notificationMessage = validatedData.parentId 
+            ? `${validatedData.authorName} replied to a comment on your article "${article.title}"` 
+            : `${validatedData.authorName} commented on your article "${article.title}"`;
+          
+          await storage.createNotification({
+            userId: article.authorId,
+            type: notificationType,
+            title: notificationTitle,
+            message: notificationMessage,
+            articleId: article.id,
+            commentId: comment.id
+          });
+          console.log(`Created notification for author ID ${article.authorId} for new comment`);
+        } catch (notificationError) {
+          console.error("Error creating comment notification:", notificationError);
+          // Don't fail the whole request if notification creation fails
+        }
+      }
+      
       return res.status(201).json(comment);
     } catch (error) {
       console.error("Error creating comment:", error);
