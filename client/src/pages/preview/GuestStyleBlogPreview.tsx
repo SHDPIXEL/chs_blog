@@ -1,19 +1,26 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useLocation, Link } from 'wouter';
-import { Helmet } from 'react-helmet-async';
-import { useQuery } from '@tanstack/react-query';
-import { Loader2, AlertTriangle, ArrowLeft, MessageSquare, Share2, Eye } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useAuth } from '@/context/AuthContext';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Separator } from '@/components/ui/separator';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import AdminLayout from '@/components/layout/AdminLayout';
-import AuthorLayout from '@/components/layout/AuthorLayout';
-import { ContentRenderer } from '@/components/blog/ContentRenderer';
-import { getInitials } from '@/lib/avatarUtils';
+import React, { useState, useEffect, useRef } from "react";
+import { useParams, useLocation, Link } from "wouter";
+import { Helmet } from "react-helmet-async";
+import { useQuery } from "@tanstack/react-query";
+import {
+  Loader2,
+  AlertTriangle,
+  ArrowLeft,
+  MessageSquare,
+  Share2,
+  Eye,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/context/AuthContext";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Separator } from "@/components/ui/separator";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import AdminLayout from "@/components/layout/AdminLayout";
+import AuthorLayout from "@/components/layout/AuthorLayout";
+import { ContentRenderer } from "@/components/blog/ContentRenderer";
+import { getInitials } from "@/lib/avatarUtils";
 
 // Define types for better type safety
 interface Category {
@@ -74,9 +81,9 @@ export default function GuestStyleBlogPreview() {
   const [, navigate] = useLocation();
   const { user } = useAuth();
   const numericId = id ? parseInt(id) : 0;
-  const isAdmin = user?.role === 'admin';
+  const isAdmin = user?.role === "admin";
   const [readingProgress, setReadingProgress] = useState(0);
-  
+
   const {
     data: blogData,
     isLoading,
@@ -86,31 +93,31 @@ export default function GuestStyleBlogPreview() {
     enabled: !!id && !isNaN(numericId),
   });
 
-  // Reference to the content container
-  const contentRef = useRef<HTMLDivElement>(null);
-
-  // Calculate reading progress as user scrolls within the content div
+  // Calculate reading progress as user scrolls the page
   useEffect(() => {
-    const contentElement = contentRef.current;
-    if (!contentElement) return;
-    
     const calculateReadingProgress = () => {
-      const totalHeight = contentElement.scrollHeight - contentElement.clientHeight;
+      // Get the total height of the page
+      const totalHeight = document.documentElement.scrollHeight - window.innerHeight;
       if (totalHeight <= 0) return;
-      const progress = (contentElement.scrollTop / totalHeight) * 100;
+      
+      // Calculate how far the user has scrolled
+      const scrollPosition = window.scrollY;
+      
+      // Calculate progress percentage
+      const progress = (scrollPosition / totalHeight) * 100;
       setReadingProgress(Math.min(100, Math.max(0, progress)));
     };
 
-    contentElement.addEventListener('scroll', calculateReadingProgress);
+    window.addEventListener("scroll", calculateReadingProgress);
     calculateReadingProgress();
 
-    return () => contentElement.removeEventListener('scroll', calculateReadingProgress);
+    return () => window.removeEventListener("scroll", calculateReadingProgress);
   }, [blogData]);
 
   // If there's no valid ID or user isn't authenticated, redirect
   useEffect(() => {
     if ((!id || isNaN(numericId)) && !isLoading) {
-      navigate('/admin/blogs');
+      navigate("/admin/blogs");
     }
   }, [id, numericId, isLoading, navigate]);
 
@@ -121,7 +128,9 @@ export default function GuestStyleBlogPreview() {
     return (
       <Layout>
         <Helmet>
-          <title>Blog Preview | Centre for Human Sciences | Rishihood University</title>
+          <title>
+            Blog Preview | Centre for Human Sciences | Rishihood University
+          </title>
           <meta name="robots" content="noindex, nofollow" />
         </Helmet>
         <div className="flex flex-col items-center justify-center p-8 min-h-[60vh]">
@@ -136,7 +145,9 @@ export default function GuestStyleBlogPreview() {
     return (
       <Layout>
         <Helmet>
-          <title>Preview Error | Centre for Human Sciences | Rishihood University</title>
+          <title>
+            Preview Error | Centre for Human Sciences | Rishihood University
+          </title>
           <meta name="robots" content="noindex, nofollow" />
         </Helmet>
         <div className="p-8">
@@ -144,12 +155,14 @@ export default function GuestStyleBlogPreview() {
             <AlertTriangle className="h-4 w-4 mr-2" />
             <AlertTitle>Error</AlertTitle>
             <AlertDescription>
-              {error instanceof Error 
-                ? error.message 
+              {error instanceof Error
+                ? error.message
                 : "You don't have permission to preview this article or it doesn't exist."}
             </AlertDescription>
           </Alert>
-          <Button onClick={() => navigate(isAdmin ? '/admin/blogs' : '/author/blogs')}>
+          <Button
+            onClick={() => navigate(isAdmin ? "/admin/blogs" : "/author/blogs")}
+          >
             Return to Blog List
           </Button>
         </div>
@@ -161,7 +174,9 @@ export default function GuestStyleBlogPreview() {
     return (
       <Layout>
         <Helmet>
-          <title>Preview Not Found | Centre for Human Sciences | Rishihood University</title>
+          <title>
+            Preview Not Found | Centre for Human Sciences | Rishihood University
+          </title>
           <meta name="robots" content="noindex, nofollow" />
         </Helmet>
         <div className="p-8">
@@ -169,10 +184,13 @@ export default function GuestStyleBlogPreview() {
             <AlertTriangle className="h-4 w-4 mr-2" />
             <AlertTitle>Not Found</AlertTitle>
             <AlertDescription>
-              The article you're trying to preview couldn't be found or you don't have permission to view it.
+              The article you're trying to preview couldn't be found or you
+              don't have permission to view it.
             </AlertDescription>
           </Alert>
-          <Button onClick={() => navigate(isAdmin ? '/admin/blogs' : '/author/blogs')}>
+          <Button
+            onClick={() => navigate(isAdmin ? "/admin/blogs" : "/author/blogs")}
+          >
             Return to Blog List
           </Button>
         </div>
@@ -200,22 +218,32 @@ export default function GuestStyleBlogPreview() {
           </div>
           <div>
             <p className="text-yellow-600 text-sm">
-              Status: <span className="font-medium">{article.status}</span> | 
-              {article.published ? ' Published' : ' Not Published'}
+              Status: <span className="font-medium">{article.status}</span> |
+              {article.published ? " Published" : " Not Published"}
             </p>
           </div>
         </div>
       </div>
 
-      {/* Reading progress bar removed from here */}
+      {/* Reading Progress Bar - directly below the preview mode banner */}
+      <div className="h-1.5 bg-gray-200 w-full shadow-sm relative">
+        <div
+          className="h-full bg-gradient-to-r from-rose-600 to-rose-500 transition-all duration-200 ease-in-out absolute top-0 left-0"
+          style={{
+            width: `${readingProgress}%`,
+            boxShadow: readingProgress > 0 ? "0 0 10px rgba(204, 0, 51, 0.5)" : "none",
+          }}
+          aria-hidden="true"
+        />
+      </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Back button */}
         <div className="mb-8">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             className="flex items-center gap-1"
-            onClick={() => navigate(isAdmin ? '/admin/blogs' : '/author/blogs')}
+            onClick={() => navigate(isAdmin ? "/admin/blogs" : "/author/blogs")}
           >
             <ArrowLeft className="h-4 w-4" />
             <span>Back to Blogs</span>
@@ -223,7 +251,7 @@ export default function GuestStyleBlogPreview() {
         </div>
 
         {/* Article header */}
-        <div className="max-w-4xl mx-auto mb-10">
+        <div className="max-w-4xl mx-auto mb-10 relative">
           <div className="flex items-center gap-3 mb-4">
             {categories?.map((category: Category) => (
               <Badge
@@ -247,9 +275,7 @@ export default function GuestStyleBlogPreview() {
                 alt={article.author?.name}
               />
               <AvatarFallback>
-                {article.author?.name
-                  ? getInitials(article.author.name)
-                  : "A"}
+                {article.author?.name ? getInitials(article.author.name) : "A"}
               </AvatarFallback>
             </Avatar>
             <div>
@@ -261,22 +287,20 @@ export default function GuestStyleBlogPreview() {
                   <div className="flex -space-x-2 ml-2">
                     {coAuthors
                       .slice(0, 3)
-                      .map(
-                        (coAuthor: User, index: number) => (
-                          <Avatar
-                            key={index}
-                            className="h-6 w-6 border-2 border-white"
-                          >
-                            <AvatarImage
-                              src={coAuthor.avatarUrl}
-                              alt={coAuthor.name}
-                            />
-                            <AvatarFallback className="text-xs">
-                              {getInitials(coAuthor.name)}
-                            </AvatarFallback>
-                          </Avatar>
-                        ),
-                      )}
+                      .map((coAuthor: User, index: number) => (
+                        <Avatar
+                          key={index}
+                          className="h-6 w-6 border-2 border-white"
+                        >
+                          <AvatarImage
+                            src={coAuthor.avatarUrl}
+                            alt={coAuthor.name}
+                          />
+                          <AvatarFallback className="text-xs">
+                            {getInitials(coAuthor.name)}
+                          </AvatarFallback>
+                        </Avatar>
+                      ))}
                     {coAuthors.length > 3 && (
                       <div className="h-6 w-6 rounded-full bg-gray-200 flex items-center justify-center text-xs border-2 border-white">
                         +{coAuthors.length - 3}
@@ -286,11 +310,13 @@ export default function GuestStyleBlogPreview() {
                 )}
               </div>
               <div className="flex items-center text-sm text-gray-500">
-                <span>{article.createdAt ? formatDate(article.createdAt.toString()) : 'Draft'}</span>
-                <span className="mx-2">•</span>
                 <span>
-                  {Math.ceil(article.content.length / 1000)} min read
+                  {article.createdAt
+                    ? formatDate(article.createdAt.toString())
+                    : "Draft"}
                 </span>
+                <span className="mx-2">•</span>
+                <span>{Math.ceil(article.content.length / 1000)} min read</span>
                 {coAuthors.length > 0 && (
                   <>
                     <span className="mx-2">•</span>
@@ -329,24 +355,27 @@ export default function GuestStyleBlogPreview() {
         )}
 
         {/* Article content with scrollable area and progress bar */}
-        <div className="max-w-4xl mx-auto relative">
+        <div className="max-w-4xl mx-auto">
           {/* Reading Progress Bar at top of content */}
           <div className="sticky top-16 left-0 right-0 h-1.5 bg-gray-200 z-40 shadow-sm">
             <div
               className="h-full bg-gradient-to-r from-rose-600 to-rose-500 transition-all duration-200 ease-in-out"
               style={{
                 width: `${readingProgress}%`,
-                boxShadow: readingProgress > 0 ? "0 0 10px rgba(204, 0, 51, 0.5)" : "none",
+                boxShadow:
+                  readingProgress > 0
+                    ? "0 0 10px rgba(204, 0, 51, 0.5)"
+                    : "none",
               }}
               aria-hidden="true"
             />
           </div>
-          
+
           {/* Scrollable content container */}
-          <div 
+          <div
             ref={contentRef}
             className="max-h-[calc(100vh-200px)] overflow-y-auto pr-4 custom-scrollbar"
-            style={{ scrollBehavior: 'smooth' }}
+            style={{ scrollBehavior: "smooth" }}
           >
             <ContentRenderer
               content={article.content}
@@ -367,10 +396,7 @@ export default function GuestStyleBlogPreview() {
             {/* Article actions */}
             <div className="mt-12 flex justify-between items-center py-4 border-t border-b">
               <div className="flex gap-6">
-                <Button
-                  variant="ghost"
-                  className="flex items-center gap-1"
-                >
+                <Button variant="ghost" className="flex items-center gap-1">
                   <MessageSquare className="h-5 w-5" />
                   <span>Comment</span>
                 </Button>
@@ -404,8 +430,12 @@ export default function GuestStyleBlogPreview() {
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
-                      <h3 className="text-xl font-semibold mb-2">{article.author?.name}</h3>
-                      <p className="text-gray-600 mb-4">{article.author?.bio || "No author bio available."}</p>
+                      <h3 className="text-xl font-semibold mb-2">
+                        {article.author?.name}
+                      </h3>
+                      <p className="text-gray-600 mb-4">
+                        {article.author?.bio || "No author bio available."}
+                      </p>
                     </div>
                   </div>
                 </CardContent>
@@ -419,14 +449,19 @@ export default function GuestStyleBlogPreview() {
                       <CardContent className="p-4">
                         <div className="flex items-center">
                           <Avatar className="h-12 w-12 mr-4">
-                            <AvatarImage src={coAuthor.avatarUrl} alt={coAuthor.name} />
+                            <AvatarImage
+                              src={coAuthor.avatarUrl}
+                              alt={coAuthor.name}
+                            />
                             <AvatarFallback>
                               {getInitials(coAuthor.name)}
                             </AvatarFallback>
                           </Avatar>
                           <div>
                             <h4 className="font-medium">{coAuthor.name}</h4>
-                            <p className="text-sm text-gray-500 mt-1">Co-Author</p>
+                            <p className="text-sm text-gray-500 mt-1">
+                              Co-Author
+                            </p>
                           </div>
                         </div>
                       </CardContent>
@@ -438,25 +473,27 @@ export default function GuestStyleBlogPreview() {
 
             {/* Edit buttons section */}
             <div className="mt-16 pt-6 border-t flex justify-between">
-              <Button 
+              <Button
                 variant="outline"
-                onClick={() => navigate(isAdmin ? '/admin/blogs' : '/author/blogs')}
+                onClick={() =>
+                  navigate(isAdmin ? "/admin/blogs" : "/author/blogs")
+                }
               >
                 Back to Blogs
               </Button>
-              
+
               <div className="space-x-2">
                 {isAdmin && (
-                  <Button 
+                  <Button
                     onClick={() => navigate(`/admin/blogs/${article.id}`)}
                     variant="secondary"
                   >
                     Edit Article
                   </Button>
                 )}
-                
+
                 {!isAdmin && article.authorId === user?.id && (
-                  <Button 
+                  <Button
                     onClick={() => navigate(`/author/blogs/${article.id}`)}
                     variant="secondary"
                   >
