@@ -1,6 +1,7 @@
 import express, { type Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { db } from "./db";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import multer from "multer";
@@ -25,8 +26,12 @@ import {
   updateAssetSchema,
   insertCommentSchema,
   updateCommentSchema,
+  articles,
+  users,
+  comments,
 } from "@shared/schema";
 import { z } from "zod";
+import { sql, eq, and, desc } from "drizzle-orm";
 import {
   authenticateToken,
   requireAdmin,
@@ -170,31 +175,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
     "/api/admin/dashboard",
     authenticateToken,
     requireAdmin,
-    (req, res) => {
-      // Mock dashboard data - in a real app, this would fetch from a database
-      return res.json({
-        stats: {
-          totalUsers: 12,
-          totalPosts: 45,
-          pageViews: 2340,
-          comments: 98,
-        },
-        recentActivity: [
-          {
-            id: 1,
-            type: "userRegistered",
-            user: "John Smith",
-            role: "author",
-            timestamp: new Date().toISOString(),
-          },
-          {
-            id: 2,
+    async (req, res) => {
+      try {
+        // Get real stats from database
+        const [usersCount, articlesCount, commentsCount] = await Promise.all([
+          db.select({ count: sql`count(*)` }).from(users),
+          db.select({ count: sql`count(*)` }).from(articles),
+          db.select({ count: sql`count(*)` }).from(comments)
+        ]);
+        
+        // Calculate total page views by summing all article view counts
+        const viewsResult = await db
+          .select({ totalViews: sql`COALESCE(SUM(view_count), 0)` })
+          .from(articles)
+          .where(eq(articles.published, true));
+        
+        // Get recent activities (latest articles and user registrations)
+        const recentArticles = await db
+          .select({
+            id: articles.id,
+            title: articles.title,
+            createdAt: articles.createdAt
+          })
+          .from(articles)
+          .orderBy(desc(articles.createdAt))
+          .limit(3);
+          
+        const recentUsers = await db
+          .select({
+            id: users.id,
+            name: users.name,
+            role: users.role,
+            createdAt: users.createdAt
+          })
+          .from(users)
+          .orderBy(desc(users.createdAt))
+          .limit(3);
+        
+        // Format activities
+        const recentActivity = [
+          ...recentArticles.map(article => ({
+            id: `article-${article.id}`,
             type: "postPublished",
-            title: "The Future of Web Development",
-            timestamp: new Date(Date.now() - 3600000).toISOString(),
+            title: article.title,
+            timestamp: article.createdAt.toISOString()
+          })),
+          ...recentUsers.map(user => ({
+            id: `user-${user.id}`,
+            type: "userRegistered",
+            user: user.name,
+            role: user.role,
+            timestamp: user.createdAt.toISOString()
+          }))
+        ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+         .slice(0, 5); // Get the 5 most recent activities
+
+        return res.json({
+          stats: {
+            totalUsers: Number(usersCount[0].count),
+            totalPosts: Number(articlesCount[0].count),
+            pageViews: Number(viewsResult[0].totalViews) || 0,
+            comments: Number(commentsCount[0].count),
           },
-        ],
-      });
+          recentActivity
+        });
+      } catch (error) {
+        console.error("Error fetching admin dashboard data:", error);
+        return res.status(500).json({ message: "Error fetching dashboard data" });
+      }
     },
   );
 
@@ -215,7 +263,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Calculate stats
         const published = articles.filter((a) => a.published).length;
         const drafts = articles.filter((a) => !a.published).length;
-        const totalViews = 1234; // In a real app this would be calculated from a view counter
+        
+        // Calculate actual total views from author's published articles
+        const viewsResult = await db
+          .select({ totalViews: sql`COALESCE(SUM(view_count), 0)` })
+          .from(articles)
+          .where(
+            and(
+              eq(articles.authorId, req.user.id),
+              eq(articles.published, true)
+            )
+          );
+        const totalViews = Number(viewsResult[0].totalViews) || 0;
 
         return res.json({
           stats: {

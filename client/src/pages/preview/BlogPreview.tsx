@@ -1,16 +1,16 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, useLocation } from 'wouter';
-import { Helmet } from 'react-helmet-async';
-import { useQuery } from '@tanstack/react-query';
-import { Loader2, AlertTriangle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useAuth } from '@/context/AuthContext';
-import { format } from 'date-fns';
-import AdminLayout from '@/components/layout/AdminLayout';
-import AuthorLayout from '@/components/layout/AuthorLayout';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
+import React, { useEffect, useState } from "react";
+import { useParams, useLocation } from "wouter";
+import { Helmet } from "react-helmet-async";
+import { useQuery } from "@tanstack/react-query";
+import { Loader2, AlertTriangle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/context/AuthContext";
+import { format } from "date-fns";
+import AdminLayout from "@/components/layouts/AdminLayout";
+import AuthorLayout from "@/components/layout/AuthorLayout";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 
 // Define types for better type safety
 interface Category {
@@ -62,8 +62,8 @@ export default function BlogPreview() {
   const [, navigate] = useLocation();
   const { user } = useAuth();
   const numericId = id ? parseInt(id) : 0;
-  const isAdmin = user?.role === 'admin';
-  
+  const isAdmin = user?.role === "admin";
+
   const {
     data: blogData,
     isLoading,
@@ -76,7 +76,7 @@ export default function BlogPreview() {
   // If there's no valid ID or user isn't authenticated, redirect
   useEffect(() => {
     if ((!id || isNaN(numericId)) && !isLoading) {
-      navigate('/admin/blogs');
+      navigate("/admin/blogs");
     }
   }, [id, numericId, isLoading, navigate]);
 
@@ -87,7 +87,9 @@ export default function BlogPreview() {
     return (
       <Layout>
         <Helmet>
-          <title>Blog Preview | Centre for Human Sciences | Rishihood University</title>
+          <title>
+            Blog Preview | Centre for Human Sciences | Rishihood University
+          </title>
           <meta name="robots" content="noindex, nofollow" />
         </Helmet>
         <div className="flex flex-col items-center justify-center p-8 min-h-[60vh]">
@@ -102,7 +104,9 @@ export default function BlogPreview() {
     return (
       <Layout>
         <Helmet>
-          <title>Preview Error | Centre for Human Sciences | Rishihood University</title>
+          <title>
+            Preview Error | Centre for Human Sciences | Rishihood University
+          </title>
           <meta name="robots" content="noindex, nofollow" />
         </Helmet>
         <div className="p-8">
@@ -110,12 +114,14 @@ export default function BlogPreview() {
             <AlertTriangle className="h-4 w-4 mr-2" />
             <AlertTitle>Error</AlertTitle>
             <AlertDescription>
-              {error instanceof Error 
-                ? error.message 
+              {error instanceof Error
+                ? error.message
                 : "You don't have permission to preview this article or it doesn't exist."}
             </AlertDescription>
           </Alert>
-          <Button onClick={() => navigate(isAdmin ? '/admin/blogs' : '/author/blogs')}>
+          <Button
+            onClick={() => navigate(isAdmin ? "/admin/blogs" : "/author/blogs")}
+          >
             Return to Blog List
           </Button>
         </div>
@@ -127,7 +133,9 @@ export default function BlogPreview() {
     return (
       <Layout>
         <Helmet>
-          <title>Preview Not Found | Centre for Human Sciences | Rishihood University</title>
+          <title>
+            Preview Not Found | Centre for Human Sciences | Rishihood University
+          </title>
           <meta name="robots" content="noindex, nofollow" />
         </Helmet>
         <div className="p-8">
@@ -135,10 +143,13 @@ export default function BlogPreview() {
             <AlertTriangle className="h-4 w-4 mr-2" />
             <AlertTitle>Not Found</AlertTitle>
             <AlertDescription>
-              The article you're trying to preview couldn't be found or you don't have permission to view it.
+              The article you're trying to preview couldn't be found or you
+              don't have permission to view it.
             </AlertDescription>
           </Alert>
-          <Button onClick={() => navigate(isAdmin ? '/admin/blogs' : '/author/blogs')}>
+          <Button
+            onClick={() => navigate(isAdmin ? "/admin/blogs" : "/author/blogs")}
+          >
             Return to Blog List
           </Button>
         </div>
@@ -147,14 +158,14 @@ export default function BlogPreview() {
   }
 
   const { article, categories, tags, coAuthors } = blogData;
-  
+
   return (
     <Layout>
       <Helmet>
         <title>{`Preview: ${article.title} | Centre for Human Sciences | Rishihood University`}</title>
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
-      
+
       <div className="container max-w-5xl py-8">
         {/* Preview Banner */}
         <div className="bg-yellow-100 border-l-4 border-yellow-500 p-4 mb-6 rounded-sm">
@@ -165,37 +176,41 @@ export default function BlogPreview() {
             </p>
           </div>
           <p className="text-yellow-600 text-sm mt-1">
-            Status: <span className="font-medium">{article.status}</span> | 
-            {article.published ? ' Published' : ' Not Published'}
+            Status: <span className="font-medium">{article.status}</span> |
+            {article.published ? " Published" : " Not Published"}
           </p>
         </div>
-        
+
         {/* Article Header */}
         <div className="mb-10">
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6">{article.title}</h1>
-          
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6">
+            {article.title}
+          </h1>
+
           {/* Author and Date Information */}
           <div className="flex flex-wrap items-center gap-4 mb-4 text-muted-foreground">
             <div className="flex items-center">
               {article.author?.avatarUrl && (
                 <div className="w-10 h-10 rounded-full overflow-hidden mr-3">
-                  <img 
-                    src={article.author.avatarUrl} 
-                    alt={article.author.name} 
+                  <img
+                    src={article.author.avatarUrl}
+                    alt={article.author.name}
                     className="w-full h-full object-cover"
                   />
                 </div>
               )}
               <div>
-                <p className="font-medium text-foreground">{article.author?.name || 'Unknown Author'}</p>
+                <p className="font-medium text-foreground">
+                  {article.author?.name || "Unknown Author"}
+                </p>
                 {article.createdAt && (
                   <p className="text-sm">
-                    {format(new Date(article.createdAt), 'MMMM d, yyyy')}
+                    {format(new Date(article.createdAt), "MMMM d, yyyy")}
                   </p>
                 )}
               </div>
             </div>
-            
+
             {/* Reading Time */}
             {article.readingTime && (
               <div className="text-sm">
@@ -203,11 +218,15 @@ export default function BlogPreview() {
               </div>
             )}
           </div>
-          
+
           {/* Categories and Tags */}
           <div className="flex flex-wrap gap-2 mb-6">
             {categories?.map((category: Category) => (
-              <Badge key={category.id} variant="secondary" className="bg-primary/10 hover:bg-primary/20">
+              <Badge
+                key={category.id}
+                variant="secondary"
+                className="bg-primary/10 hover:bg-primary/20"
+              >
                 {category.name}
               </Badge>
             ))}
@@ -217,25 +236,25 @@ export default function BlogPreview() {
               </Badge>
             ))}
           </div>
-          
+
           {/* Featured Image */}
           {article.featuredImage && (
             <div className="mb-8 rounded-lg overflow-hidden">
-              <img 
-                src={article.featuredImage} 
-                alt={article.title} 
+              <img
+                src={article.featuredImage}
+                alt={article.title}
                 className="w-full h-auto"
               />
             </div>
           )}
         </div>
-        
+
         {/* Article Content */}
-        <div 
+        <div
           className="prose max-w-none lg:prose-lg prose-headings:text-foreground prose-p:text-foreground/90"
-          dangerouslySetInnerHTML={{ __html: article.content || '' }}
+          dangerouslySetInnerHTML={{ __html: article.content || "" }}
         />
-        
+
         {/* Co-Authors Section */}
         {coAuthors && coAuthors.length > 0 && (
           <div className="mt-16 pt-8 border-t">
@@ -246,9 +265,9 @@ export default function BlogPreview() {
                   <CardContent className="flex items-center p-4">
                     {coAuthor.avatarUrl && (
                       <div className="w-12 h-12 rounded-full overflow-hidden mr-4">
-                        <img 
-                          src={coAuthor.avatarUrl} 
-                          alt={coAuthor.name} 
+                        <img
+                          src={coAuthor.avatarUrl}
+                          alt={coAuthor.name}
                           className="w-full h-full object-cover"
                         />
                       </div>
@@ -262,28 +281,28 @@ export default function BlogPreview() {
             </div>
           </div>
         )}
-        
+
         {/* Action Buttons */}
         <div className="mt-10 pt-6 border-t flex justify-between">
-          <Button 
+          <Button
             variant="outline"
-            onClick={() => navigate(isAdmin ? '/admin/blogs' : '/author/blogs')}
+            onClick={() => navigate(isAdmin ? "/admin/blogs" : "/author/blogs")}
           >
             Back to Blogs
           </Button>
-          
+
           <div className="space-x-2">
             {isAdmin && (
-              <Button 
+              <Button
                 onClick={() => navigate(`/admin/blogs/${article.id}`)}
                 variant="secondary"
               >
                 Edit Article
               </Button>
             )}
-            
+
             {!isAdmin && article.authorId === user?.id && (
-              <Button 
+              <Button
                 onClick={() => navigate(`/author/blogs/${article.id}`)}
                 variant="secondary"
               >

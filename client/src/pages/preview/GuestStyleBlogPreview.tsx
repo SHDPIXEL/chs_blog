@@ -17,7 +17,7 @@ import { Separator } from "@/components/ui/separator";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import AdminLayout from "@/components/layout/AdminLayout";
+import AdminLayout from "@/components/layouts/AdminLayout";
 import AuthorLayout from "@/components/layout/AuthorLayout";
 import { ContentRenderer } from "@/components/blog/ContentRenderer";
 import { getInitials } from "@/lib/avatarUtils";
@@ -97,12 +97,13 @@ export default function GuestStyleBlogPreview() {
   useEffect(() => {
     const calculateReadingProgress = () => {
       // Get the total height of the page
-      const totalHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const totalHeight =
+        document.documentElement.scrollHeight - window.innerHeight;
       if (totalHeight <= 0) return;
-      
+
       // Calculate how far the user has scrolled
       const scrollPosition = window.scrollY;
-      
+
       // Calculate progress percentage
       const progress = (scrollPosition / totalHeight) * 100;
       setReadingProgress(Math.min(100, Math.max(0, progress)));
@@ -231,7 +232,8 @@ export default function GuestStyleBlogPreview() {
           className="h-full bg-gradient-to-r from-rose-600 to-rose-500 transition-all duration-200 ease-in-out absolute top-0 left-0"
           style={{
             width: `${readingProgress}%`,
-            boxShadow: readingProgress > 0 ? "0 0 10px rgba(204, 0, 51, 0.5)" : "none",
+            boxShadow:
+              readingProgress > 0 ? "0 0 10px rgba(204, 0, 51, 0.5)" : "none",
           }}
           aria-hidden="true"
         />

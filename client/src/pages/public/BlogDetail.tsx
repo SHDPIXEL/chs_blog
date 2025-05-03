@@ -71,7 +71,9 @@ const BlogDetail: React.FC = () => {
         } else if (scrollTop >= contentBottom - windowHeight) {
           progress = 100;
         } else {
-          progress = ((scrollTop - contentStart) / (totalHeight - windowHeight + 200)) * 100;
+          progress =
+            ((scrollTop - contentStart) / (totalHeight - windowHeight + 200)) *
+            100;
         }
       }
 
@@ -148,7 +150,6 @@ const BlogDetail: React.FC = () => {
 
   // Create the canonical URL with the correct format (blog/id/slug)
   const canonicalUrl = `${window.location.origin}/blogs/${articleId}/${articleSlug}`;
-
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -248,7 +249,10 @@ const BlogDetail: React.FC = () => {
         />
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div
+        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12"
+        ref={contentRef}
+      >
         {/* Back button */}
         <div className="mb-8">
           <Link href="/blogs">
@@ -300,31 +304,29 @@ const BlogDetail: React.FC = () => {
                 </Link>
                 {coAuthors.length > 0 && (
                   <div className="flex -space-x-2 ml-2">
-                    {coAuthors
-                      .slice(0, 3)
-                      .map(
-                        (
-                          coAuthor: {
-                            id: number;
-                            name: string;
-                            avatarUrl?: string;
-                          },
-                          index: number,
-                        ) => (
-                          <Avatar
-                            key={index}
-                            className="h-6 w-6 border-2 border-white"
-                          >
-                            <AvatarImage
-                              src={coAuthor.avatarUrl}
-                              alt={coAuthor.name}
-                            />
-                            <AvatarFallback className="text-xs">
-                              {getInitials(coAuthor.name)}
-                            </AvatarFallback>
-                          </Avatar>
-                        ),
-                      )}
+                    {coAuthors.slice(0, 3).map(
+                      (
+                        coAuthor: {
+                          id: number;
+                          name: string;
+                          avatarUrl?: string;
+                        },
+                        index: number,
+                      ) => (
+                        <Avatar
+                          key={index}
+                          className="h-6 w-6 border-2 border-white"
+                        >
+                          <AvatarImage
+                            src={coAuthor.avatarUrl}
+                            alt={coAuthor.name}
+                          />
+                          <AvatarFallback className="text-xs">
+                            {getInitials(coAuthor.name)}
+                          </AvatarFallback>
+                        </Avatar>
+                      ),
+                    )}
                     {coAuthors.length > 3 && (
                       <div className="h-6 w-6 rounded-full bg-gray-200 flex items-center justify-center text-xs border-2 border-white">
                         +{coAuthors.length - 3}
@@ -377,7 +379,7 @@ const BlogDetail: React.FC = () => {
         )}
 
         {/* Article content */}
-        <div className="max-w-4xl mx-auto" ref={contentRef}>
+        <div className="max-w-4xl mx-auto">
           <ContentRenderer
             content={articleData.content}
             className="prose prose-lg max-w-none prose-headings:text-gray-900 prose-p:text-gray-700"
