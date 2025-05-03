@@ -1,18 +1,17 @@
-import React from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
-import { Link } from 'wouter';
-import { Helmet } from 'react-helmet-async';
-import AdminLayout from '@/components/layouts/AdminLayout';
-import { Button } from '@/components/ui/button';
-import { AuthDebug } from '@/components/debug/AuthDebug';
+import React from "react";
+import { useQuery } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { Link } from "wouter";
+import { Helmet } from "react-helmet-async";
+import AdminLayout from "@/components/layouts/AdminLayout";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
+} from "@/components/ui/card";
 import {
   LineChart,
   Line,
@@ -26,7 +25,7 @@ import {
   PieChart,
   Pie,
   Cell,
-} from 'recharts';
+} from "recharts";
 import {
   Table,
   TableBody,
@@ -35,10 +34,10 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Users,
   BookOpen,
@@ -50,7 +49,7 @@ import {
   Clock,
   AlertCircle,
   CheckSquare,
-} from 'lucide-react';
+} from "lucide-react";
 
 interface DashboardStats {
   totalUsers: number;
@@ -109,32 +108,36 @@ interface DashboardData {
   viewsOverTime: ViewData[];
 }
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
 
 const AdminDashboard: React.FC = () => {
   const { data: dashboardData, isLoading } = useQuery<DashboardData>({
-    queryKey: ['/api/admin/dashboard'],
+    queryKey: ["/api/admin/dashboard"],
     queryFn: async () => {
-      const res = await apiRequest('GET', '/api/admin/dashboard');
+      const res = await apiRequest("GET", "/api/admin/dashboard");
       return res.json();
-    }
+    },
   });
-  
+
   // Get articles awaiting approval
-  const { data: pendingApprovals, isLoading: isLoadingApprovals } = useQuery<any[]>({
-    queryKey: ['/api/admin/articles', 'review'],
+  const { data: pendingApprovals, isLoading: isLoadingApprovals } = useQuery<
+    any[]
+  >({
+    queryKey: ["/api/admin/articles", "review"],
     queryFn: async () => {
-      const res = await apiRequest('GET', '/api/admin/articles?status=review');
+      const res = await apiRequest("GET", "/api/admin/articles?status=review");
       const data = await res.json();
       return data;
-    }
+    },
   });
 
   if (isLoading) {
     return (
       <AdminLayout>
         <Helmet>
-          <title>Admin Dashboard | Centre for Human Sciences | Rishihood University</title>
+          <title>
+            Admin Dashboard | Centre for Human Sciences | Rishihood University
+          </title>
           <meta name="robots" content="noindex, nofollow" />
         </Helmet>
         <div className="p-6">
@@ -150,12 +153,16 @@ const AdminDashboard: React.FC = () => {
     return (
       <AdminLayout>
         <Helmet>
-          <title>Admin Dashboard | Centre for Human Sciences | Rishihood University</title>
+          <title>
+            Admin Dashboard | Centre for Human Sciences | Rishihood University
+          </title>
           <meta name="robots" content="noindex, nofollow" />
         </Helmet>
         <div className="p-6">
           <div className="flex items-center justify-center h-[50vh]">
-            <p className="text-muted-foreground">Failed to load dashboard data.</p>
+            <p className="text-muted-foreground">
+              Failed to load dashboard data.
+            </p>
           </div>
         </div>
       </AdminLayout>
@@ -165,7 +172,9 @@ const AdminDashboard: React.FC = () => {
   return (
     <AdminLayout>
       <Helmet>
-        <title>Admin Dashboard | Centre for Human Sciences | Rishihood University</title>
+        <title>
+          Admin Dashboard | Centre for Human Sciences | Rishihood University
+        </title>
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
       <div className="p-6 space-y-6">
@@ -175,25 +184,34 @@ const AdminDashboard: React.FC = () => {
             Welcome to your dashboard. Here's an overview of your blog platform.
           </p>
         </div>
-        
+
         {/* Pending approvals notification */}
-        {!isLoadingApprovals && pendingApprovals && pendingApprovals.length > 0 && (
-          <Alert variant="default" className="bg-amber-50 border-amber-200">
-            <AlertCircle className="h-4 w-4 text-amber-600" />
-            <AlertTitle className="text-amber-800">Pending Blog Approvals</AlertTitle>
-            <AlertDescription className="flex flex-row items-center justify-between">
-              <span className="text-amber-700">
-                You have {pendingApprovals.length} blog post{pendingApprovals.length > 1 ? 's' : ''} waiting for approval
-              </span>
-              <Button asChild variant="outline" className="border-amber-500 hover:bg-amber-100 text-amber-800">
-                <Link to="/admin/blog-approvals">
-                  <CheckSquare className="mr-2 h-4 w-4" />
-                  Review Blogs
-                </Link>
-              </Button>
-            </AlertDescription>
-          </Alert>
-        )}
+        {!isLoadingApprovals &&
+          pendingApprovals &&
+          pendingApprovals.length > 0 && (
+            <Alert variant="default" className="bg-amber-50 border-amber-200">
+              <AlertCircle className="h-4 w-4 text-amber-600" />
+              <AlertTitle className="text-amber-800">
+                Pending Blog Approvals
+              </AlertTitle>
+              <AlertDescription className="flex flex-row items-center justify-between">
+                <span className="text-amber-700">
+                  You have {pendingApprovals.length} blog post
+                  {pendingApprovals.length > 1 ? "s" : ""} waiting for approval
+                </span>
+                <Button
+                  asChild
+                  variant="outline"
+                  className="border-amber-500 hover:bg-amber-100 text-amber-800"
+                >
+                  <Link to="/admin/blog-approvals">
+                    <CheckSquare className="mr-2 h-4 w-4" />
+                    Review Blogs
+                  </Link>
+                </Button>
+              </AlertDescription>
+            </Alert>
+          )}
 
         {/* Stats cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -202,8 +220,10 @@ const AdminDashboard: React.FC = () => {
               <div className="bg-primary/10 p-3 rounded-full mb-4">
                 <Users className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="font-bold text-3xl">{dashboardData.totalUsers || 0}</h3>
-              <p className="text-muted-foreground">Total Users</p>
+              <h3 className="font-bold text-3xl">
+                {dashboardData.totalUsers || 0}
+              </h3>
+              <p className="text-muted-foreground">Total Authors</p>
             </CardContent>
           </Card>
           <Card>
@@ -211,7 +231,9 @@ const AdminDashboard: React.FC = () => {
               <div className="bg-primary/10 p-3 rounded-full mb-4">
                 <BookOpen className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="font-bold text-3xl">{dashboardData.totalPosts || 0}</h3>
+              <h3 className="font-bold text-3xl">
+                {dashboardData.totalPosts || 0}
+              </h3>
               <p className="text-muted-foreground">Total Blog Posts</p>
             </CardContent>
           </Card>
@@ -220,7 +242,9 @@ const AdminDashboard: React.FC = () => {
               <div className="bg-primary/10 p-3 rounded-full mb-4">
                 <Eye className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="font-bold text-3xl">{dashboardData.totalViews || 0}</h3>
+              <h3 className="font-bold text-3xl">
+                {dashboardData.totalViews || 0}
+              </h3>
               <p className="text-muted-foreground">Total Page Views</p>
             </CardContent>
           </Card>
@@ -229,7 +253,9 @@ const AdminDashboard: React.FC = () => {
               <div className="bg-primary/10 p-3 rounded-full mb-4">
                 <FileText className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="font-bold text-3xl">{dashboardData.postsThisMonth || 0}</h3>
+              <h3 className="font-bold text-3xl">
+                {dashboardData.postsThisMonth || 0}
+              </h3>
               <p className="text-muted-foreground">Posts This Month</p>
             </CardContent>
           </Card>
@@ -273,7 +299,9 @@ const AdminDashboard: React.FC = () => {
           <Card>
             <CardHeader>
               <CardTitle>Posts by Status</CardTitle>
-              <CardDescription>Distribution of posts by their current status</CardDescription>
+              <CardDescription>
+                Distribution of posts by their current status
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="h-[300px]">
@@ -284,15 +312,22 @@ const AdminDashboard: React.FC = () => {
                       cx="50%"
                       cy="50%"
                       labelLine={false}
-                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                      label={({ name, percent }) =>
+                        `${name}: ${(percent * 100).toFixed(0)}%`
+                      }
                       outerRadius={80}
                       fill="#8884d8"
                       dataKey="count"
                       nameKey="status"
                     >
-                      {(dashboardData.postsByStatus || []).map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
+                      {(dashboardData.postsByStatus || []).map(
+                        (entry, index) => (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={COLORS[index % COLORS.length]}
+                          />
+                        ),
+                      )}
                     </Pie>
                     <Tooltip />
                   </PieChart>
@@ -305,7 +340,9 @@ const AdminDashboard: React.FC = () => {
           <Card>
             <CardHeader>
               <CardTitle>Popular Categories</CardTitle>
-              <CardDescription>Most used categories in blog posts</CardDescription>
+              <CardDescription>
+                Most used categories in blog posts
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="h-[300px]">
@@ -332,7 +369,9 @@ const AdminDashboard: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle>Recent Activity</CardTitle>
-                <CardDescription>Latest actions on the platform</CardDescription>
+                <CardDescription>
+                  Latest actions on the platform
+                </CardDescription>
               </div>
               <Clock className="h-4 w-4 text-muted-foreground" />
             </div>
@@ -360,9 +399,6 @@ const AdminDashboard: React.FC = () => {
             </Table>
           </CardContent>
         </Card>
-        
-        {/* Auth Debug Component (for debugging authentication issues) */}
-        <AuthDebug />
       </div>
     </AdminLayout>
   );
