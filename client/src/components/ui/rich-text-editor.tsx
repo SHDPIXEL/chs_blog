@@ -853,7 +853,7 @@ export const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>
       <EditorContent 
         editor={editor} 
         className={cn(
-          "prose max-w-none p-4 focus:outline-none min-h-[300px]",
+          "prose max-w-none p-4 focus:outline-none min-h-[300px] max-h-[600px] overflow-y-auto",
           "prose-headings:font-bold prose-h1:text-3xl prose-h2:text-2xl prose-h3:text-xl",
           "prose-p:my-2 prose-a:text-primary prose-blockquote:border-l-4 prose-blockquote:border-primary/30 prose-blockquote:pl-4 prose-blockquote:py-0.5 prose-blockquote:italic",
           "prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:rounded-md prose-code:before:content-none prose-code:after:content-none",

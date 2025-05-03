@@ -540,7 +540,7 @@ const AdminEditBlogPage: React.FC = () => {
                               value={field.value} 
                               onChange={field.onChange}
                               placeholder="Write your blog content here..." 
-                              className="min-h-[300px]"
+                              className="min-h-[400px] max-h-[600px]"
                             />
                           </FormControl>
                           <FormMessage />
