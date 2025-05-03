@@ -275,7 +275,7 @@ export default function BlogPreview() {
           <div className="space-x-2">
             {isAdmin && (
               <Button 
-                onClick={() => navigate(`/admin/blogs/edit/${article.id}`)}
+                onClick={() => navigate(`/admin/blogs/${article.id}`)}
                 variant="secondary"
               >
                 Edit Article
@@ -284,7 +284,7 @@ export default function BlogPreview() {
             
             {!isAdmin && article.authorId === user?.id && (
               <Button 
-                onClick={() => navigate(`/author/blogs/edit/${article.id}`)}
+                onClick={() => navigate(`/author/blogs/${article.id}`)}
                 variant="secondary"
               >
                 Edit Article

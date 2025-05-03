@@ -326,18 +326,25 @@ const AdminMyBlogs: React.FC = () => {
                                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
-                                  onClick={() => {
-                                    const slug = blog.title
-                                      .toLowerCase()
-                                      .replace(/[^\w\s-]/g, "")
-                                      .replace(/\s+/g, "-")
-                                      .replace(/-+/g, "-")
-                                      .trim();
-                                    window.open(`/blogs/${blog.id}/${slug}`, "_blank");
-                                  }}
+                                  onClick={() => navigate(`/preview/blogs/${blog.id}`)}
                                 >
                                   <Eye className="mr-2 h-4 w-4" /> Preview
                                 </DropdownMenuItem>
+                                {blog.published && (
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      const slug = blog.title
+                                        .toLowerCase()
+                                        .replace(/[^\w\s-]/g, "")
+                                        .replace(/\s+/g, "-")
+                                        .replace(/-+/g, "-")
+                                        .trim();
+                                      window.open(`/blogs/${blog.id}/${slug}`, "_blank");
+                                    }}
+                                  >
+                                    <Eye className="mr-2 h-4 w-4" /> View Published
+                                  </DropdownMenuItem>
+                                )}
                                 <DropdownMenuItem
                                   onClick={() =>
                                     navigate(`/admin/blogs/${blog.id}`)
