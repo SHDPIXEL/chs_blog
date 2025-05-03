@@ -1731,14 +1731,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Get all authors
         const users = await storage.getUsers(UserRole.AUTHOR);
 
-        // Add extended info (sample data)
-        const authorsWithExtendedInfo = users.map((user) => {
+        // Add extended info with actual data
+        const authorsWithExtendedInfo = await Promise.all(users.map(async (user) => {
+          // Get actual article count for this author
+          const authorArticles = await storage.getArticlesByAuthor(user.id);
+          
           return {
             ...user,
-            postCount: Math.floor(Math.random() * 10) + 1, // Sample data
-            activeStatus: true, // Sample data
+            postCount: authorArticles.length, // Actual article count from database
+            activeStatus: true, // We'll keep this as true for now, could be replaced with a real status field later
           };
-        });
+        }));
 
         return res.json(authorsWithExtendedInfo);
       } catch (error) {
