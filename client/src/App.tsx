@@ -15,6 +15,7 @@ import Login from "@/pages/auth/Login";
 import Register from "@/pages/auth/Register";
 import AdminDashboard from "@/pages/admin/Dashboard";
 import AuthorManagement from "@/pages/admin/AuthorManagement";
+import AddAuthor from "@/pages/admin/AddAuthor";
 import BlogManagement from "@/pages/admin/BlogManagement";
 import BlogApprovals from "@/pages/admin/BlogApprovals";
 import AdminNewBlog from "@/pages/admin/NewBlog";
@@ -61,6 +62,11 @@ function Router() {
       <ProtectedRoute
         path="/admin/authors"
         component={AuthorManagement}
+        role="admin"
+      />
+      <ProtectedRoute
+        path="/admin/authors/add"
+        component={AddAuthor}
         role="admin"
       />
       <ProtectedRoute

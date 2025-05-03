@@ -6,8 +6,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
-import AdminLayout from '@/components/layout/AdminLayout';
-import { Helmet } from 'react-helmet';
+import AdminLayout from '@/components/layouts/AdminLayout';
+import { Helmet } from 'react-helmet-async';
 import { ArrowLeft, UserPlus } from 'lucide-react';
 import {
   Card,

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useLocation } from 'wouter';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import AdminLayout from '@/components/layouts/AdminLayout';
@@ -83,6 +84,7 @@ interface ExtendedUser extends User {
 const AuthorManagement: React.FC = () => {
   const { toast } = useToast();
   const { user, refreshUserData } = useAuth();
+  const [, navigate] = useLocation();
   const [searchQuery, setSearchQuery] = useState('');
   const [permissionDialogOpen, setPermissionDialogOpen] = useState(false);
   const [selectedAuthor, setSelectedAuthor] = useState<ExtendedUser | null>(null);
@@ -244,7 +246,7 @@ const AuthorManagement: React.FC = () => {
         <div className="flex flex-col">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-3xl font-bold">Author Management</h1>
-            <Button>
+            <Button onClick={() => navigate('/admin/authors/add')}>
               <UserPlus className="mr-2 h-4 w-4" />
               Add New Author
             </Button>
