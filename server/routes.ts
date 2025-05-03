@@ -2432,8 +2432,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Create a new comment or reply
-  app.post("/api/articles/:id/comments", async (req, res) => {
+  // Create a new comment or reply with optional authentication
+  app.post("/api/articles/:id/comments", async (req: Request & Partial<AuthRequest>, res) => {
     try {
       const articleId = parseInt(req.params.id);
       if (isNaN(articleId)) {
@@ -2452,18 +2452,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .json({ message: "Cannot comment on unpublished articles" });
       }
 
+      // Check for authenticated user
+      const authHeader = req.headers.authorization;
+      let authenticatedUser = null;
+      
+      if (authHeader) {
+        const token = authHeader.split(' ')[1];
+        try {
+          const decoded = jwt.verify(token, JWT_SECRET) as { id: number };
+          authenticatedUser = await storage.getUser(decoded.id);
+        } catch (e) {
+          // Invalid token, continue as anonymous user
+          console.log("Invalid auth token for comment, continuing as anonymous");
+        }
+      }
+      
+      // Auto-fill author name and email for authenticated users
+      let commentData = { ...req.body, articleId };
+      
+      if (authenticatedUser) {
+        // If authenticated user, use their info and add role label
+        const roleLabel = authenticatedUser.role === UserRole.ADMIN ? "[Admin]" : 
+                          authenticatedUser.role === UserRole.AUTHOR ? "[Author]" : "";
+        
+        commentData.authorName = `${roleLabel} ${authenticatedUser.name}`.trim();
+        commentData.authorEmail = authenticatedUser.email;
+      }
+
       // Validate the comment data
-      const validatedData = insertCommentSchema.parse({
-        ...req.body,
-        articleId,
-      });
+      const validatedData = insertCommentSchema.parse(commentData);
 
       // Create the comment
       const comment = await storage.createComment(validatedData);
       
-      // Create a notification for the article author
-      if (article.authorId) {
+      // Create a notification for the article author only if commenter is not the author
+      const isCommentByAuthor = authenticatedUser && authenticatedUser.id === article.authorId;
+      
+      if (article.authorId && !isCommentByAuthor) {
         try {
+          // Get article slug for the notification URL
           const notificationTitle = validatedData.parentId 
             ? "New Reply to Comment" 
             : "New Comment on Article";
@@ -2473,17 +2500,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           await storage.createNotification({
             userId: article.authorId,
-            type: "comment_received", // Using the string value directly
+            type: "comment_received",
             title: notificationTitle,
             message: notificationMessage,
             articleId: article.id,
-            commentId: comment.id
+            commentId: comment.id,
+            articleSlug: article.slug // Add slug for better navigation
           });
           console.log(`Created notification for author ID ${article.authorId} for new comment`);
         } catch (notificationError) {
           console.error("Error creating comment notification:", notificationError);
           // Don't fail the whole request if notification creation fails
         }
+      } else if (isCommentByAuthor) {
+        console.log(`Skipping notification since comment is by the article author (${authenticatedUser?.id})`);
       }
       
       return res.status(201).json(comment);
