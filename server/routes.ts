@@ -265,16 +265,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const drafts = articles.filter((a) => !a.published).length;
         
         // Calculate actual total views from author's published articles
-        const viewsResult = await db
-          .select({ totalViews: sql`COALESCE(SUM(view_count), 0)` })
-          .from(articles)
-          .where(
-            and(
-              eq(articles.authorId, req.user.id),
-              eq(articles.published, true)
-            )
-          );
-        const totalViews = Number(viewsResult[0].totalViews) || 0;
+        // Instead of direct DB query, use filtered articles and sum their view counts
+        const publishedArticles = articles.filter(a => a.published && a.status === ArticleStatus.PUBLISHED);
+        const totalViews = publishedArticles.reduce((sum, article) => sum + (article.viewCount || 0), 0);
 
         return res.json({
           stats: {
@@ -285,6 +278,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           articles,
         });
       } catch (error) {
+        console.error("Error in author dashboard:", error);
         return res.status(500).json({ message: "Server error" });
       }
     },
@@ -2470,7 +2464,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create a notification for the article author
       if (article.authorId) {
         try {
-          const notificationType = NotificationType.COMMENT_RECEIVED;
           const notificationTitle = validatedData.parentId 
             ? "New Reply to Comment" 
             : "New Comment on Article";
@@ -2480,7 +2473,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           await storage.createNotification({
             userId: article.authorId,
-            type: notificationType,
+            type: "comment_received", // Using the string value directly
             title: notificationTitle,
             message: notificationMessage,
             articleId: article.id,
