@@ -9,9 +9,10 @@
  * Usage: node scripts/create-jwt-key.js
  */
 
-const crypto = require('crypto');
-const fs = require('fs');
-const path = require('path');
+import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 async function generateJwtSecret() {
   try {
@@ -55,12 +56,15 @@ async function generateJwtSecret() {
   }
 }
 
+// Get current file URL
+const __filename = fileURLToPath(import.meta.url);
+
 // Run the function if this script is called directly
-if (require.main === module) {
+if (process.argv[1] === __filename) {
   generateJwtSecret().catch(error => {
     console.error('Failed to generate JWT secret:', error);
     process.exit(1);
   });
 }
 
-module.exports = { generateJwtSecret };
+export { generateJwtSecret };
