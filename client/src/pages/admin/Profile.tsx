@@ -157,6 +157,7 @@ const AdminProfilePage = () => {
     <AdminLayout>
       <Helmet>
         <title>Admin Profile | Centre for Human Sciences | Rishihood University</title>
+        <meta name="robots" content="noindex, nofollow" />
       </Helmet>
       <div className="py-6 px-4 sm:px-6 lg:px-8">
         <PageHeader

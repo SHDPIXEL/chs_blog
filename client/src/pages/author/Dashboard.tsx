@@ -35,6 +35,7 @@ const AuthorDashboard: React.FC = () => {
     <AuthorLayout>
       <Helmet>
         <title>Author Dashboard | Centre for Human Sciences | Rishihood University</title>
+        <meta name="robots" content="noindex, nofollow" />
       </Helmet>
       <div className="py-6">
         <PageHeader 

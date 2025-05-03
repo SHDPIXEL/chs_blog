@@ -7,6 +7,7 @@ const Register: React.FC = () => {
     <>
       <Helmet>
         <title>Register | Centre for Human Sciences | Rishihood University</title>
+        <meta name="robots" content="noindex, nofollow" />
       </Helmet>
       <AuthForm />
     </>
