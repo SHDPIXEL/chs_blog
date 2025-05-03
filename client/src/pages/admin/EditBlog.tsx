@@ -1,48 +1,97 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useLocation, useParams } from 'wouter';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { apiRequest, queryClient } from '@/lib/queryClient';
-import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/use-auth';
-import { 
-  ArticleStatus, 
-  Category, 
-  Tag, 
-  User, 
-  extendedArticleSchema, 
-  Asset 
-} from '@shared/schema';
+import React, { useState, useEffect, useRef } from "react";
+import { useLocation, useParams } from "wouter";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
+import {
+  ArticleStatus,
+  Category,
+  Tag,
+  User,
+  extendedArticleSchema,
+  Asset,
+} from "@shared/schema";
 
 // Icons
-import { 
-  Loader2, ArrowLeft, Save, Trash2, Eye, Search,
-  Layout, Tags, Users, Image, Calendar, Clock,
-  CheckCircle, ImagePlus
-} from 'lucide-react';
+import {
+  Loader2,
+  ArrowLeft,
+  Save,
+  Trash2,
+  Eye,
+  Search,
+  Layout,
+  Tags,
+  Users,
+  Image,
+  Calendar,
+  Clock,
+  CheckCircle,
+  ImagePlus,
+} from "lucide-react";
 
 // UI Components
-import AdminLayout from '@/components/layout/AdminLayout';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { MultiSelect } from '@/components/ui/multi-select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-import { format } from 'date-fns';
-import PageHeader from '@/components/ui/PageHeader';
-import { RichTextEditor, RichTextEditorRef } from '@/components/ui/rich-text-editor';
-import BlogPreviewDialog from '@/components/blog/BlogPreviewDialog';
-import { AssetPickerButton } from '@/components/assets';
+import AdminLayout from "@/components/layouts/AdminLayout";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { MultiSelect } from "@/components/ui/multi-select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import PageHeader from "@/components/ui/PageHeader";
+import {
+  RichTextEditor,
+  RichTextEditorRef,
+} from "@/components/ui/rich-text-editor";
+import BlogPreviewDialog from "@/components/blog/BlogPreviewDialog";
+import { AssetPickerButton } from "@/components/assets";
 
 // Custom article schema for admin with strict validation
 const adminArticleSchema = extendedArticleSchema.extend({
@@ -59,9 +108,7 @@ const adminArticleSchema = extendedArticleSchema.extend({
     .string()
     .min(5, "Title must be at least 5 characters")
     .max(100, "Title cannot exceed 100 characters"),
-  content: z
-    .string()
-    .min(50, "Content must be at least 50 characters"),
+  content: z.string().min(50, "Content must be at least 50 characters"),
   excerpt: z
     .string()
     .max(200, "Excerpt cannot exceed 200 characters")
@@ -86,56 +133,62 @@ const AdminEditBlogPage: React.FC = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   const [featuredImage, setFeaturedImage] = useState<string | null>(null);
-  const [keywordInput, setKeywordInput] = useState<string>('');
-  const [tagInput, setTagInput] = useState<string>('');
+  const [keywordInput, setKeywordInput] = useState<string>("");
+  const [tagInput, setTagInput] = useState<string>("");
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [useScheduling, setUseScheduling] = useState(false);
-  const [scheduledPublishAt, setScheduledPublishAt] = useState<string | undefined>(undefined);
+  const [scheduledPublishAt, setScheduledPublishAt] = useState<
+    string | undefined
+  >(undefined);
   const editorRef = useRef<RichTextEditorRef>(null);
-  
+
   // Fetch the article data
-  const { data: article, isLoading: isArticleLoading, error: articleError } = useQuery<any>({
+  const {
+    data: article,
+    isLoading: isArticleLoading,
+    error: articleError,
+  } = useQuery<any>({
     queryKey: [`/api/articles/${articleId}/full`],
     queryFn: async () => {
-      const res = await apiRequest('GET', `/api/articles/${articleId}/full`);
+      const res = await apiRequest("GET", `/api/articles/${articleId}/full`);
       return res.json();
-    }
+    },
   });
-  
+
   // Fetch categories
   const { data: categories = [] } = useQuery<Category[]>({
-    queryKey: ['/api/categories'],
+    queryKey: ["/api/categories"],
     queryFn: async () => {
-      const res = await apiRequest('GET', '/api/categories');
+      const res = await apiRequest("GET", "/api/categories");
       return res.json();
-    }
+    },
   });
-  
+
   // Fetch tags
   const { data: tags = [] } = useQuery<Tag[]>({
-    queryKey: ['/api/tags'],
+    queryKey: ["/api/tags"],
     queryFn: async () => {
-      const res = await apiRequest('GET', '/api/tags');
+      const res = await apiRequest("GET", "/api/tags");
       return res.json();
-    }
+    },
   });
-  
+
   // Fetch other authors (for co-author selection)
   const { data: authors = [] } = useQuery<User[]>({
-    queryKey: ['/api/users/authors'],
+    queryKey: ["/api/users/authors"],
     queryFn: async () => {
-      const res = await apiRequest('GET', '/api/users/authors');
+      const res = await apiRequest("GET", "/api/users/authors");
       return res.json();
-    }
+    },
   });
-  
+
   // Setup form
   const form = useForm<AdminArticleFormValues>({
     resolver: zodResolver(adminArticleSchema),
     defaultValues: {
-      title: '',
-      content: '',
-      excerpt: '',
+      title: "",
+      content: "",
+      excerpt: "",
       status: ArticleStatus.DRAFT,
       featured: false,
       categoryIds: [],
@@ -144,19 +197,19 @@ const AdminEditBlogPage: React.FC = () => {
       customTags: [],
       authorId: user?.id ? Number(user.id) : undefined,
       keywords: [],
-      slug: '',
-      metaTitle: '',
-      metaDescription: '',
+      slug: "",
+      metaTitle: "",
+      metaDescription: "",
     },
   });
-  
+
   // Update form values when article data is loaded
   useEffect(() => {
     if (article && article.article) {
       const formValues = {
         title: article.article.title,
         content: article.article.content,
-        excerpt: article.article.excerpt || '',
+        excerpt: article.article.excerpt || "",
         status: article.article.status,
         featured: article.article.featured || false,
         categoryIds: article.categories?.map((c: Category) => c.id) || [],
@@ -164,19 +217,19 @@ const AdminEditBlogPage: React.FC = () => {
         coAuthorIds: article.coAuthors?.map((a: User) => a.id) || [],
         authorId: user?.id ? Number(user.id) : undefined,
         keywords: article.article.keywords || [],
-        slug: article.article.slug || '',
-        metaTitle: article.article.metaTitle || '',
-        metaDescription: article.article.metaDescription || '',
-        reviewRemarks: article.article.reviewRemarks || '',
+        slug: article.article.slug || "",
+        metaTitle: article.article.metaTitle || "",
+        metaDescription: article.article.metaDescription || "",
+        reviewRemarks: article.article.reviewRemarks || "",
         customTags: article.tags?.map((t: Tag) => t.name) || [],
       };
-      
+
       form.reset(formValues);
-      
+
       if (article.article.featuredImage) {
         setFeaturedImage(article.article.featuredImage);
       }
-      
+
       // Check for scheduled publish date
       if (article.article.scheduledPublishAt) {
         setUseScheduling(true);
@@ -184,7 +237,7 @@ const AdminEditBlogPage: React.FC = () => {
       }
     }
   }, [article, form, user]);
-  
+
   // Update blog mutation
   const updateBlogMutation = useMutation({
     mutationFn: async (data: AdminArticleFormValues) => {
@@ -197,10 +250,10 @@ const AdminEditBlogPage: React.FC = () => {
       if (!data.slug && data.title) {
         data.slug = data.title
           .toLowerCase()
-          .replace(/[^\w\s]/gi, '')
-          .replace(/\s+/g, '-');
+          .replace(/[^\w\s]/gi, "")
+          .replace(/\s+/g, "-");
       }
-      
+
       // Add scheduling data if needed
       const articleData = {
         ...data,
@@ -224,49 +277,55 @@ const AdminEditBlogPage: React.FC = () => {
       // Remove customTags as it's not in the API schema
       delete (articleData as any).customTags;
 
-      const res = await apiRequest('PATCH', `/api/articles/${articleId}`, articleData);
+      const res = await apiRequest(
+        "PATCH",
+        `/api/articles/${articleId}`,
+        articleData,
+      );
       return await res.json();
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/articles'] });
-      queryClient.invalidateQueries({ queryKey: [`/api/articles/${articleId}/full`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/articles"] });
+      queryClient.invalidateQueries({
+        queryKey: [`/api/articles/${articleId}/full`],
+      });
       toast({
-        title: 'Success',
+        title: "Success",
         description: `The blog "${data.title}" has been updated successfully`,
       });
     },
     onError: (error: Error) => {
       toast({
-        title: 'Error',
+        title: "Error",
         description: `Failed to update blog: ${error.message}`,
-        variant: 'destructive',
+        variant: "destructive",
       });
     },
   });
-  
+
   // Delete blog mutation
   const deleteBlogMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest('DELETE', `/api/articles/${articleId}`);
+      const res = await apiRequest("DELETE", `/api/articles/${articleId}`);
       return await res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/articles'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/articles"] });
       toast({
-        title: 'Success',
-        description: 'The blog has been deleted successfully',
+        title: "Success",
+        description: "The blog has been deleted successfully",
       });
-      navigate('/admin/blogs');
+      navigate("/admin/blogs");
     },
     onError: (error: Error) => {
       toast({
-        title: 'Error',
+        title: "Error",
         description: `Failed to delete blog: ${error.message}`,
-        variant: 'destructive',
+        variant: "destructive",
       });
     },
   });
-  
+
   // Form submission handler
   const onSubmit = (values: AdminArticleFormValues) => {
     console.log("Form submitted with values:", values);
@@ -280,13 +339,13 @@ const AdminEditBlogPage: React.FC = () => {
       });
       return;
     }
-    
+
     // Always set the authorId value before validation - ensure it's a number
     form.setValue("authorId", Number(user.id));
-    
+
     updateBlogMutation.mutate(values);
   };
-  
+
   // Handle opening the preview dialog
   const handlePreview = () => {
     const formValues = form.getValues();
@@ -296,7 +355,7 @@ const AdminEditBlogPage: React.FC = () => {
     }
     setIsPreviewOpen(true);
   };
-  
+
   // Handle adding a keyword
   const addKeyword = () => {
     if (keywordInput.trim()) {
@@ -336,16 +395,16 @@ const AdminEditBlogPage: React.FC = () => {
       currentTags.filter((t) => t !== tag),
     );
   };
-  
+
   const handleViewArticle = () => {
-    window.open(`/blogs/${articleId}`, '_blank');
+    window.open(`/blogs/${articleId}`, "_blank");
   };
-  
+
   // Debug form errors
   console.log("Form errors:", form.formState.errors);
   console.log("Form is valid:", form.formState.isValid);
   console.log("Form is submitting:", form.formState.isSubmitting);
-  
+
   // If still loading, show loading state
   if (isArticleLoading) {
     return (
@@ -356,7 +415,7 @@ const AdminEditBlogPage: React.FC = () => {
       </AdminLayout>
     );
   }
-  
+
   // If error loading article, show error state
   if (articleError || !article) {
     return (
@@ -369,10 +428,14 @@ const AdminEditBlogPage: React.FC = () => {
                   Error Loading Blog
                 </h3>
                 <div className="mt-2 max-w-xl text-sm text-gray-500">
-                  <p>{articleError instanceof Error ? articleError.message : 'Failed to load blog data'}</p>
+                  <p>
+                    {articleError instanceof Error
+                      ? articleError.message
+                      : "Failed to load blog data"}
+                  </p>
                 </div>
                 <div className="mt-4">
-                  <Button size="sm" onClick={() => navigate('/admin/blogs')}>
+                  <Button size="sm" onClick={() => navigate("/admin/blogs")}>
                     <ArrowLeft className="h-4 w-4 mr-2" />
                     Back to Blogs
                   </Button>
@@ -384,17 +447,17 @@ const AdminEditBlogPage: React.FC = () => {
       </AdminLayout>
     );
   }
-  
+
   return (
     <AdminLayout>
       <div className="py-6 px-4 sm:px-6 lg:px-8">
-        <PageHeader 
-          title="Edit Blog" 
+        <PageHeader
+          title="Edit Blog"
           buttonText="Back to Blogs"
           buttonIcon={ArrowLeft}
-          onButtonClick={() => navigate('/admin/blogs')}
+          onButtonClick={() => navigate("/admin/blogs")}
         />
-        
+
         <div className="mt-6">
           <Card>
             <CardHeader>
@@ -403,7 +466,7 @@ const AdminEditBlogPage: React.FC = () => {
                 Update the blog post and save changes
               </CardDescription>
             </CardHeader>
-            
+
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)}>
                 <Tabs defaultValue="content" className="space-y-4">
@@ -425,7 +488,7 @@ const AdminEditBlogPage: React.FC = () => {
                       Co-Authors
                     </TabsTrigger>
                   </TabsList>
-                  
+
                   {/* Content Tab */}
                   <TabsContent value="content" className="space-y-6 px-4">
                     {/* Hidden authorId field - will be set by the admin's user ID */}
@@ -433,15 +496,17 @@ const AdminEditBlogPage: React.FC = () => {
                       control={form.control}
                       name="authorId"
                       render={({ field }) => (
-                        <input 
-                          type="hidden" 
-                          {...field} 
-                          value={user?.id ? Number(user.id) : 0} 
-                          onChange={(e) => field.onChange(Number(e.target.value))}
+                        <input
+                          type="hidden"
+                          {...field}
+                          value={user?.id ? Number(user.id) : 0}
+                          onChange={(e) =>
+                            field.onChange(Number(e.target.value))
+                          }
                         />
                       )}
                     />
-                    
+
                     {/* Title field */}
                     <FormField
                       control={form.control}
@@ -505,7 +570,9 @@ const AdminEditBlogPage: React.FC = () => {
                               <AssetPickerButton
                                 onSelect={(asset) => {
                                   // Handle both single asset and array of assets
-                                  const selectedAsset = Array.isArray(asset) ? asset[0] : asset;
+                                  const selectedAsset = Array.isArray(asset)
+                                    ? asset[0]
+                                    : asset;
                                   if (selectedAsset?.url) {
                                     setFeaturedImage(selectedAsset.url);
                                   }
@@ -526,7 +593,7 @@ const AdminEditBlogPage: React.FC = () => {
                         </FormItem>
                       )}
                     />
-                    
+
                     {/* Content field with Rich Text Editor */}
                     <FormField
                       control={form.control}
@@ -535,11 +602,11 @@ const AdminEditBlogPage: React.FC = () => {
                         <FormItem>
                           <FormLabel>Content</FormLabel>
                           <FormControl>
-                            <RichTextEditor 
+                            <RichTextEditor
                               ref={editorRef}
-                              value={field.value} 
+                              value={field.value}
                               onChange={field.onChange}
-                              placeholder="Write your blog content here..." 
+                              placeholder="Write your blog content here..."
                               className="min-h-[400px] max-h-[600px]"
                             />
                           </FormControl>
@@ -547,7 +614,7 @@ const AdminEditBlogPage: React.FC = () => {
                         </FormItem>
                       )}
                     />
-                    
+
                     {/* Excerpt field */}
                     <FormField
                       control={form.control}
@@ -556,20 +623,21 @@ const AdminEditBlogPage: React.FC = () => {
                         <FormItem>
                           <FormLabel>Excerpt</FormLabel>
                           <FormControl>
-                            <Textarea 
-                              placeholder="A brief summary of your blog post..." 
+                            <Textarea
+                              placeholder="A brief summary of your blog post..."
                               className="resize-none h-24"
                               {...field}
                             />
                           </FormControl>
                           <FormDescription>
-                            A short excerpt for display in blog listings (max 200 characters)
+                            A short excerpt for display in blog listings (max
+                            200 characters)
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                    
+
                     {/* Slug field */}
                     <FormField
                       control={form.control}
@@ -584,13 +652,14 @@ const AdminEditBlogPage: React.FC = () => {
                             />
                           </FormControl>
                           <FormDescription>
-                            The URL-friendly version of the title that will be used in the blog post URL
+                            The URL-friendly version of the title that will be
+                            used in the blog post URL
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                    
+
                     {/* Publishing status field */}
                     <FormField
                       control={form.control}
@@ -598,8 +667,8 @@ const AdminEditBlogPage: React.FC = () => {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Publishing Status</FormLabel>
-                          <Select 
-                            onValueChange={field.onChange} 
+                          <Select
+                            onValueChange={field.onChange}
                             defaultValue={field.value}
                             value={field.value}
                           >
@@ -610,17 +679,20 @@ const AdminEditBlogPage: React.FC = () => {
                             </FormControl>
                             <SelectContent>
                               <SelectItem value="draft">Draft</SelectItem>
-                              <SelectItem value="published">Published</SelectItem>
+                              <SelectItem value="published">
+                                Published
+                              </SelectItem>
                             </SelectContent>
                           </Select>
                           <FormDescription>
-                            Select whether to save as draft or publish immediately
+                            Select whether to save as draft or publish
+                            immediately
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                    
+
                     {/* Schedule publishing */}
                     {form.watch("status") === "published" && (
                       <div className="border rounded-md p-4 space-y-4">
@@ -830,14 +902,15 @@ const AdminEditBlogPage: React.FC = () => {
                           <div className="space-y-1 leading-none">
                             <FormLabel>Feature this blog post?</FormLabel>
                             <FormDescription>
-                              Featured blog posts will be displayed prominently on the homepage
+                              Featured blog posts will be displayed prominently
+                              on the homepage
                             </FormDescription>
                           </div>
                         </FormItem>
                       )}
                     />
                   </TabsContent>
-                  
+
                   {/* SEO Tab */}
                   <TabsContent value="seo" className="space-y-6 px-4">
                     <FormField
@@ -853,7 +926,8 @@ const AdminEditBlogPage: React.FC = () => {
                             />
                           </FormControl>
                           <FormDescription>
-                            The title that appears in search engine results (max 60 characters for best results)
+                            The title that appears in search engine results (max
+                            60 characters for best results)
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
@@ -874,7 +948,8 @@ const AdminEditBlogPage: React.FC = () => {
                             />
                           </FormControl>
                           <FormDescription>
-                            The description that appears in search engine results (max 160 characters for best results)
+                            The description that appears in search engine
+                            results (max 160 characters for best results)
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
@@ -893,23 +968,22 @@ const AdminEditBlogPage: React.FC = () => {
                                 <Input
                                   placeholder="Enter keyword and press Enter or Add"
                                   value={keywordInput}
-                                  onChange={(e) => setKeywordInput(e.target.value)}
+                                  onChange={(e) =>
+                                    setKeywordInput(e.target.value)
+                                  }
                                   onKeyDown={(e) => {
-                                    if (e.key === 'Enter') {
+                                    if (e.key === "Enter") {
                                       e.preventDefault();
                                       addKeyword();
                                     }
                                   }}
                                 />
                               </FormControl>
-                              <Button 
-                                type="button" 
-                                onClick={addKeyword}
-                              >
+                              <Button type="button" onClick={addKeyword}>
                                 Add
                               </Button>
                             </div>
-                            
+
                             <div className="flex flex-wrap gap-2 mt-2">
                               {field.value.map((keyword, index) => (
                                 <div
@@ -937,7 +1011,7 @@ const AdminEditBlogPage: React.FC = () => {
                         </FormItem>
                       )}
                     />
-                    
+
                     <FormField
                       control={form.control}
                       name="customTags"
@@ -952,21 +1026,18 @@ const AdminEditBlogPage: React.FC = () => {
                                   value={tagInput}
                                   onChange={(e) => setTagInput(e.target.value)}
                                   onKeyDown={(e) => {
-                                    if (e.key === 'Enter') {
+                                    if (e.key === "Enter") {
                                       e.preventDefault();
                                       addCustomTag();
                                     }
                                   }}
                                 />
                               </FormControl>
-                              <Button 
-                                type="button" 
-                                onClick={addCustomTag}
-                              >
+                              <Button type="button" onClick={addCustomTag}>
                                 Add
                               </Button>
                             </div>
-                            
+
                             <div className="flex flex-wrap gap-2 mt-2">
                               {field.value.map((tag, index) => (
                                 <div
@@ -988,14 +1059,15 @@ const AdminEditBlogPage: React.FC = () => {
                             </div>
                           </div>
                           <FormDescription>
-                            Custom tags are displayed on the blog post and can be created on the fly
+                            Custom tags are displayed on the blog post and can
+                            be created on the fly
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
                   </TabsContent>
-                  
+
                   {/* Categories Tab */}
                   <TabsContent value="categories" className="space-y-6 px-4">
                     <FormField
@@ -1006,9 +1078,11 @@ const AdminEditBlogPage: React.FC = () => {
                           <FormLabel>Categories</FormLabel>
                           <FormControl>
                             <MultiSelect
-                              value={field.value.map(id => id.toString())}
+                              value={field.value.map((id) => id.toString())}
                               onChange={(values) => {
-                                field.onChange(values.map(val => parseInt(val)));
+                                field.onChange(
+                                  values.map((val) => parseInt(val)),
+                                );
                               }}
                               options={categories.map((category) => ({
                                 label: category.name,
@@ -1024,7 +1098,7 @@ const AdminEditBlogPage: React.FC = () => {
                         </FormItem>
                       )}
                     />
-                    
+
                     <FormField
                       control={form.control}
                       name="tagIds"
@@ -1033,9 +1107,11 @@ const AdminEditBlogPage: React.FC = () => {
                           <FormLabel>Existing Tags</FormLabel>
                           <FormControl>
                             <MultiSelect
-                              value={field.value.map(id => id.toString())}
+                              value={field.value.map((id) => id.toString())}
                               onChange={(values) => {
-                                field.onChange(values.map(val => parseInt(val)));
+                                field.onChange(
+                                  values.map((val) => parseInt(val)),
+                                );
                               }}
                               options={tags.map((tag) => ({
                                 label: tag.name,
@@ -1045,14 +1121,15 @@ const AdminEditBlogPage: React.FC = () => {
                             />
                           </FormControl>
                           <FormDescription>
-                            Select from existing tags to categorize your post (or create custom tags in the SEO tab)
+                            Select from existing tags to categorize your post
+                            (or create custom tags in the SEO tab)
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
                   </TabsContent>
-                  
+
                   {/* Co-Authors Tab */}
                   <TabsContent value="coauthors" className="space-y-6 px-4">
                     <FormField
@@ -1063,12 +1140,17 @@ const AdminEditBlogPage: React.FC = () => {
                           <FormLabel>Co-Authors</FormLabel>
                           <FormControl>
                             <MultiSelect
-                              value={field.value.map(id => id.toString())}
+                              value={field.value.map((id) => id.toString())}
                               onChange={(values) => {
-                                field.onChange(values.map(val => parseInt(val)));
+                                field.onChange(
+                                  values.map((val) => parseInt(val)),
+                                );
                               }}
                               options={authors
-                                .filter((author) => author.id !== article?.article?.authorId)
+                                .filter(
+                                  (author) =>
+                                    author.id !== article?.article?.authorId,
+                                )
                                 .map((author) => ({
                                   label: author.name,
                                   value: author.id.toString(),
@@ -1083,9 +1165,11 @@ const AdminEditBlogPage: React.FC = () => {
                         </FormItem>
                       )}
                     />
-                    
+
                     <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                      <h3 className="text-sm font-medium text-blue-800 mb-2">Main Author</h3>
+                      <h3 className="text-sm font-medium text-blue-800 mb-2">
+                        Main Author
+                      </h3>
                       <p className="text-sm text-blue-600 mb-1">
                         You are set as the main author of this blog post.
                       </p>
@@ -1095,10 +1179,14 @@ const AdminEditBlogPage: React.FC = () => {
                     </div>
                   </TabsContent>
                 </Tabs>
-                
+
                 <CardFooter className="flex justify-between border-t px-6 py-4 mt-4">
                   <div className="flex gap-2">
-                    <Button variant="outline" type="button" onClick={() => navigate('/admin/blogs')}>
+                    <Button
+                      variant="outline"
+                      type="button"
+                      onClick={() => navigate("/admin/blogs")}
+                    >
                       Cancel
                     </Button>
                     <AlertDialog>
@@ -1112,13 +1200,13 @@ const AdminEditBlogPage: React.FC = () => {
                         <AlertDialogHeader>
                           <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                           <AlertDialogDescription>
-                            This action cannot be undone. This will permanently delete your
-                            blog post from the server.
+                            This action cannot be undone. This will permanently
+                            delete your blog post from the server.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                           <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction 
+                          <AlertDialogAction
                             onClick={() => deleteBlogMutation.mutate()}
                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                           >
@@ -1129,25 +1217,28 @@ const AdminEditBlogPage: React.FC = () => {
                     </AlertDialog>
                   </div>
                   <div className="flex gap-2">
-                    {article.article.status === 'published' && (
-                      <Button 
-                        type="button" 
-                        variant="outline" 
+                    {article.article.status === "published" && (
+                      <Button
+                        type="button"
+                        variant="outline"
                         onClick={handleViewArticle}
                       >
                         <Eye className="h-4 w-4 mr-2" />
                         View Article
                       </Button>
                     )}
-                    <Button 
-                      type="button" 
+                    <Button
+                      type="button"
                       variant="outline"
                       onClick={handlePreview}
                     >
                       <Eye className="h-4 w-4 mr-2" />
                       Preview
                     </Button>
-                    <Button type="submit" disabled={updateBlogMutation.isPending}>
+                    <Button
+                      type="submit"
+                      disabled={updateBlogMutation.isPending}
+                    >
                       {updateBlogMutation.isPending ? (
                         <>
                           <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -1167,19 +1258,27 @@ const AdminEditBlogPage: React.FC = () => {
           </Card>
         </div>
       </div>
-      
+
       {/* Preview Dialog */}
-      <BlogPreviewDialog 
-        open={isPreviewOpen} 
+      <BlogPreviewDialog
+        open={isPreviewOpen}
         onOpenChange={setIsPreviewOpen}
-        title={form.getValues('title')}
-        content={editorRef.current ? editorRef.current.getHTML() : form.getValues('content')}
-        excerpt={form.getValues('excerpt')}
-        author={article?.article?.author || user?.name || 'Anonymous'}
+        title={form.getValues("title")}
+        content={
+          editorRef.current
+            ? editorRef.current.getHTML()
+            : form.getValues("content")
+        }
+        excerpt={form.getValues("excerpt")}
+        author={article?.article?.author || user?.name || "Anonymous"}
         createdAt={article?.article?.createdAt || new Date().toISOString()}
         image={featuredImage}
-        categories={categories?.filter(c => form.getValues('categoryIds').includes(c.id)).map(c => c.name) || []}
-        tags={form.getValues('customTags') || []}
+        categories={
+          categories
+            ?.filter((c) => form.getValues("categoryIds").includes(c.id))
+            .map((c) => c.name) || []
+        }
+        tags={form.getValues("customTags") || []}
       />
     </AdminLayout>
   );

@@ -239,7 +239,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       </Sheet>
 
       {/* Content area */}
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex flex-1 flex-col w-0 overflow-hidden">
         <div className="relative z-10 flex h-16 flex-shrink-0 border-b bg-background">
           <div className="flex items-center justify-between flex-1 px-4">
             {/* Mobile menu button */}
@@ -305,7 +305,9 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         </div>
 
         {/* Main content */}
-        <main className="flex-1 overflow-y-auto bg-muted/30">{children}</main>
+        <main className="flex-1 relative overflow-y-auto bg-muted/30 focus:outline-none ">
+          {children}
+        </main>
       </div>
     </div>
   );
