@@ -149,6 +149,10 @@ const AdminDashboard: React.FC = () => {
   if (!dashboardData) {
     return (
       <AdminLayout>
+        <Helmet>
+          <title>Admin Dashboard | Centre for Human Sciences | Rishihood University</title>
+          <meta name="robots" content="noindex, nofollow" />
+        </Helmet>
         <div className="p-6">
           <div className="flex items-center justify-center h-[50vh]">
             <p className="text-muted-foreground">Failed to load dashboard data.</p>
