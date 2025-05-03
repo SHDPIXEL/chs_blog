@@ -28,6 +28,7 @@ import NewBlog from "@/pages/author/NewBlog";
 import EditBlog from "@/pages/author/EditBlog";
 import ViewBlog from "@/pages/ViewBlog";
 import NotFound from "@/pages/not-found";
+import BlogPreview from "@/pages/preview/BlogPreview";
 
 // Public blog pages
 import Blogs from "./pages/public/Blogs";
@@ -118,6 +119,14 @@ function Router() {
         component={EditBlog}
         role="author"
       />
+      
+      {/* Blog Preview Route - accessible to both admin and author */}
+      <ProtectedRoute
+        path="/preview/blogs/:id"
+        component={BlogPreview}
+        role="any"
+      />
+      
       {/* Fallback to 404 */}
       <Route component={NotFound} />
     </Switch>

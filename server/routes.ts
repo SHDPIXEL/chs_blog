@@ -134,30 +134,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // User permissions API - dedicated endpoint for checking user permissions
-  app.get("/api/auth/permissions", authenticateToken, async (req: AuthRequest, res) => {
-    try {
-      if (!req.user?.id) {
-        return res.status(401).json({ message: "Authentication required" });
+  app.get(
+    "/api/auth/permissions",
+    authenticateToken,
+    async (req: AuthRequest, res) => {
+      try {
+        if (!req.user?.id) {
+          return res.status(401).json({ message: "Authentication required" });
+        }
+
+        const user = await storage.getUser(req.user.id);
+        if (!user) {
+          return res.status(404).json({ message: "User not found" });
+        }
+
+        // Return only the permissions data, not the full user object
+        const permissions = {
+          canPublish: user.canPublish || user.role === "admin",
+          isAdmin: user.role === "admin",
+          role: user.role,
+        };
+
+        return res.status(200).json(permissions);
+      } catch (error) {
+        console.error("Error fetching user permissions:", error);
+        return res
+          .status(500)
+          .json({ message: "Server error while retrieving permissions" });
       }
-
-      const user = await storage.getUser(req.user.id);
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
-      }
-
-      // Return only the permissions data, not the full user object
-      const permissions = {
-        canPublish: user.canPublish || user.role === 'admin',
-        isAdmin: user.role === 'admin',
-        role: user.role
-      };
-
-      return res.status(200).json(permissions);
-    } catch (error) {
-      console.error('Error fetching user permissions:', error);
-      return res.status(500).json({ message: "Server error while retrieving permissions" });
-    }
-  });
+    },
+  );
 
   // Admin routes
   app.get(
@@ -531,11 +537,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           article.authorId !== req.user.id &&
           req.user.role !== UserRole.ADMIN
         ) {
-          return res
-            .status(403)
-            .json({
-              message: "You don't have permission to update this article",
-            });
+          return res.status(403).json({
+            message: "You don't have permission to update this article",
+          });
         }
 
         // Check if extended data is present (categories, tags, etc.)
@@ -602,12 +606,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error(`Error updating article ${articleId}:`, error);
         console.log("erooor here");
         console.error("Error updating article:", error);
-        return res
-          .status(500)
-          .json({
-            message: "Server error",
-            details: error instanceof Error ? error.message : String(error),
-          });
+        return res.status(500).json({
+          message: "Server error",
+          details: error instanceof Error ? error.message : String(error),
+        });
       }
     },
   );
@@ -646,11 +648,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           article.authorId !== req.user.id &&
           req.user.role !== UserRole.ADMIN
         ) {
-          return res
-            .status(403)
-            .json({
-              message: "You don't have permission to update this article",
-            });
+          return res.status(403).json({
+            message: "You don't have permission to update this article",
+          });
         }
 
         const updatedArticle = await storage.updateArticleStatus(
@@ -919,6 +919,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Preview endpoint for articles - requires authentication and permission check
+  app.get("/api/articles/:id/preview", authenticateToken, async (req: AuthRequest, res) => {
+    try {
+      const articleId = parseInt(req.params.id);
+      if (isNaN(articleId)) {
+        return res.status(400).json({ message: "Invalid article ID" });
+      }
+      
+      if (!req.user) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      
+      // Get article and relations
+      const fullArticle = await storage.getArticleWithRelations(articleId);
+      if (!fullArticle) {
+        return res.status(404).json({ message: "Article not found" });
+      }
+      
+      const article = fullArticle.article;
+      const userId = req.user.id;
+      const userRole = req.user.role;
+      
+      // Permission check:
+      // 1. User is an admin, or
+      // 2. User is the author, or
+      // 3. User is a co-author
+      const isAdmin = userRole === UserRole.ADMIN;
+      const isAuthor = article.authorId === userId;
+      const isCoAuthor = fullArticle.coAuthors.some(coAuthor => coAuthor.id === userId);
+      
+      console.log(`Preview access check for article ${articleId}:`, { 
+        userId, 
+        userRole, 
+        isAdmin, 
+        isAuthor, 
+        isCoAuthor 
+      });
+      
+      if (!isAdmin && !isAuthor && !isCoAuthor) {
+        return res.status(403).json({ 
+          message: "You don't have permission to preview this article"
+        });
+      }
+      
+      // Get full author info
+      const author = await storage.getUser(article.authorId);
+      
+      // Return article with full details for preview
+      return res.json({
+        ...fullArticle,
+        article: {
+          ...article,
+          author: author
+            ? {
+                id: author.id,
+                name: author.name,
+                avatarUrl: author.avatarUrl,
+                bio: author.bio,
+              }
+            : null,
+        },
+      });
+    } catch (error) {
+      console.error("Error fetching article preview:", error);
+      res.status(500).json({ message: "Failed to fetch article preview" });
+    }
+  });
+
   // Public endpoint for author profile and published articles
   app.get("/api/authors/:id/public", async (req, res) => {
     try {
@@ -1002,11 +1070,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             (author) => author.id === req.user.id,
           )
         ) {
-          return res
-            .status(403)
-            .json({
-              message: "You don't have permission to access this article",
-            });
+          return res.status(403).json({
+            message: "You don't have permission to access this article",
+          });
         }
 
         return res.json(articleWithRelations);
@@ -1043,11 +1109,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           article.authorId !== req.user.id &&
           req.user.role !== UserRole.ADMIN
         ) {
-          return res
-            .status(403)
-            .json({
-              message: "You don't have permission to delete this article",
-            });
+          return res.status(403).json({
+            message: "You don't have permission to delete this article",
+          });
         }
 
         const success = await storage.deleteArticle(articleId);
@@ -1203,11 +1267,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Check if user owns the asset or is admin
         if (asset.userId !== req.user.id && req.user.role !== UserRole.ADMIN) {
-          return res
-            .status(403)
-            .json({
-              message: "You don't have permission to access this asset",
-            });
+          return res.status(403).json({
+            message: "You don't have permission to access this asset",
+          });
         }
 
         return res.json(asset);
@@ -1279,11 +1341,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         if (asset.userId !== req.user.id && req.user.role !== UserRole.ADMIN) {
-          return res
-            .status(403)
-            .json({
-              message: "You don't have permission to update this asset",
-            });
+          return res.status(403).json({
+            message: "You don't have permission to update this asset",
+          });
         }
 
         const validatedData = updateAssetSchema.parse(req.body);
@@ -1504,11 +1564,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         if (asset.userId !== req.user.id && req.user.role !== UserRole.ADMIN) {
-          return res
-            .status(403)
-            .json({
-              message: "You don't have permission to delete this asset",
-            });
+          return res.status(403).json({
+            message: "You don't have permission to delete this asset",
+          });
         }
 
         // Delete file from disk
@@ -1820,23 +1878,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         const { ids, status, scheduledPublishAt } = req.body;
 
-        console.log("Bulk article status update request received from user:", req.user.email);
+        console.log(
+          "Bulk article status update request received from user:",
+          req.user.email,
+        );
         console.log("Request body:", JSON.stringify(req.body, null, 2));
-        
+
         // Detailed inspection of the IDs array
         if (ids === undefined) {
           console.error("Missing 'ids' in request body");
-          return res.status(400).json({ 
+          return res.status(400).json({
             message: "Article IDs are required",
-            received: req.body 
+            received: req.body,
           });
         }
-        
+
         if (!status) {
           console.error("Missing 'status' in request body");
-          return res.status(400).json({ 
+          return res.status(400).json({
             message: "Status is required",
-            received: req.body 
+            received: req.body,
           });
         }
 
@@ -1847,59 +1908,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
           idsValue: ids,
           idsType: typeof ids,
           isArray: Array.isArray(ids),
-          idsLength: Array.isArray(ids) ? ids.length : 'N/A',
-          idsDetails: Array.isArray(ids) ? ids.map(id => ({ 
-            value: id, 
-            type: typeof id,
-            valueAsString: String(id),
-            isValid: !isNaN(Number(id)) 
-          })) : 'not an array'
+          idsLength: Array.isArray(ids) ? ids.length : "N/A",
+          idsDetails: Array.isArray(ids)
+            ? ids.map((id) => ({
+                value: id,
+                type: typeof id,
+                valueAsString: String(id),
+                isValid: !isNaN(Number(id)),
+              }))
+            : "not an array",
         });
-        
+
         // Ensure IDs is actually an array
         if (!Array.isArray(ids)) {
           console.error("IDs is not an array:", ids);
-          return res.status(400).json({ 
+          return res.status(400).json({
             message: "Article IDs must be an array",
-            received: typeof ids
+            received: typeof ids,
           });
         }
-        
+
         if (ids.length === 0) {
           console.error("Empty IDs array");
           return res.status(400).json({ message: "Empty article IDs array" });
         }
-        
+
         // Make sure all IDs are valid numbers
-        const numericIds = ids.map(id => {
-          console.log(`Processing ID '${id}' (type: ${typeof id})`);
-          // Handle different potential formats
-          let numId: number;
-          if (typeof id === 'string') {
-            numId = parseInt(id.trim());
-          } else if (typeof id === 'number') {
-            numId = id;
-          } else {
-            numId = Number(id);
-          }
-          
-          const isValid = !isNaN(numId) && numId > 0;
-          console.log(`Converted to numeric: ${numId}, valid: ${isValid}`);
-          return isValid ? numId : null;
-        }).filter(id => id !== null) as number[];
-        
+        const numericIds = ids
+          .map((id) => {
+            console.log(`Processing ID '${id}' (type: ${typeof id})`);
+            // Handle different potential formats
+            let numId: number;
+            if (typeof id === "string") {
+              numId = parseInt(id.trim());
+            } else if (typeof id === "number") {
+              numId = id;
+            } else {
+              numId = Number(id);
+            }
+
+            const isValid = !isNaN(numId) && numId > 0;
+            console.log(`Converted to numeric: ${numId}, valid: ${isValid}`);
+            return isValid ? numId : null;
+          })
+          .filter((id) => id !== null) as number[];
+
         console.log("Final processed IDs for update:", numericIds);
-        
+
         if (numericIds.length === 0) {
           console.error("No valid IDs found after processing");
-          return res.status(400).json({ 
-            message: "No valid article IDs found", 
+          return res.status(400).json({
+            message: "No valid article IDs found",
             originalIds: ids,
-            validationDetails: Array.isArray(ids) ? ids.map(id => ({ 
-              original: id,
-              asNumber: Number(id), 
-              isValid: !isNaN(Number(id)) && Number(id) > 0
-            })) : 'not an array'
+            validationDetails: Array.isArray(ids)
+              ? ids.map((id) => ({
+                  original: id,
+                  asNumber: Number(id),
+                  isValid: !isNaN(Number(id)) && Number(id) > 0,
+                }))
+              : "not an array",
           });
         }
 
@@ -2039,7 +2106,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         const { ids } = req.body;
-        
+
         console.log("Bulk delete request. Raw ids:", ids);
         console.log("Type of ids:", typeof ids);
         console.log("Is array?", Array.isArray(ids));
@@ -2049,15 +2116,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
             .status(400)
             .json({ message: "Invalid or empty article IDs" });
         }
-        
+
         // Process IDs to ensure they're all numbers
-        const numericIds = ids.map(id => {
-          console.log("Processing ID:", id, "type:", typeof id);
-          return typeof id === 'string' ? parseInt(id) : Number(id);
-        }).filter(id => !isNaN(id));
-        
+        const numericIds = ids
+          .map((id) => {
+            console.log("Processing ID:", id, "type:", typeof id);
+            return typeof id === "string" ? parseInt(id) : Number(id);
+          })
+          .filter((id) => !isNaN(id));
+
         console.log("Processed numeric IDs:", numericIds);
-        
+
         if (numericIds.length === 0) {
           return res
             .status(400)
@@ -2082,13 +2151,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         return res.json({
           success: true,
-          results
+          results,
         });
       } catch (error) {
         console.error("Bulk delete error:", error);
         return res.status(500).json({ message: (error as Error).message });
       }
-    }
+    },
   );
 
   // Bulk update article featured status
@@ -2103,7 +2172,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         const { ids, featured } = req.body;
-        
+
         console.log("Bulk feature request. Raw ids:", ids);
         console.log("Type of ids:", typeof ids);
         console.log("Is array?", Array.isArray(ids));
@@ -2114,21 +2183,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
             .status(400)
             .json({ message: "Invalid or empty article IDs" });
         }
-        
+
         // Make sure all IDs are valid numbers
-        const numericIds = ids.map(id => {
-          console.log("Processing ID:", id, "type:", typeof id);
-          const numId = typeof id === 'string' ? parseInt(id) : Number(id);
-          console.log("Converted to numeric:", numId, "isNaN?", isNaN(numId));
-          return isNaN(numId) ? null : numId;
-        }).filter(id => id !== null) as number[];
-        
+        const numericIds = ids
+          .map((id) => {
+            console.log("Processing ID:", id, "type:", typeof id);
+            const numId = typeof id === "string" ? parseInt(id) : Number(id);
+            console.log("Converted to numeric:", numId, "isNaN?", isNaN(numId));
+            return isNaN(numId) ? null : numId;
+          })
+          .filter((id) => id !== null) as number[];
+
         console.log("Processed IDs for featured update:", numericIds);
-        
+
         if (numericIds.length === 0) {
           return res
             .status(400)
-            .json({ message: "Invalid article IDs" });
+            .json({ message: "Invalid 0 article IDs", data: numericIds });
         }
 
         if (typeof featured !== "boolean") {
@@ -2174,7 +2245,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     async (req: AuthRequest, res) => {
       try {
         if (!req.user?.id) {
-          return res.status(401).json({ message:"Authentication required" });
+          return res.status(401).json({ message: "Authentication required" });
         }
 
         const id = parseInt(req.params.id);

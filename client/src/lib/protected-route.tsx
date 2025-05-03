@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/use-auth";
 interface ProtectedRouteProps {
   path: string;
   component: React.ComponentType;
-  role?: "admin" | "author" | undefined;
+  role?: "admin" | "author" | "any" | undefined;
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
@@ -31,7 +31,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       {user ? (
         // If role is specified, check if user has that role
         role ? (
-          user?.role === role ? (
+          role === "any" || user?.role === role ? (
             <Component />
           ) : (
             // If user doesn't have the required role, redirect to appropriate dashboard
