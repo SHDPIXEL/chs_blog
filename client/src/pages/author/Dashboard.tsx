@@ -34,7 +34,7 @@ const AuthorDashboard: React.FC = () => {
   return (
     <AuthorLayout>
       <Helmet>
-        <title>Author Dashboard | BlogCMS</title>
+        <title>Author Dashboard | CHC</title>
       </Helmet>
       <div className="py-6">
         <PageHeader 

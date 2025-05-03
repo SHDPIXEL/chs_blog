@@ -156,7 +156,7 @@ const AdminProfilePage = () => {
   return (
     <AdminLayout>
       <Helmet>
-        <title>Admin Profile | BlogCMS</title>
+        <title>Admin Profile | CHC</title>
       </Helmet>
       <div className="py-6 px-4 sm:px-6 lg:px-8">
         <PageHeader
