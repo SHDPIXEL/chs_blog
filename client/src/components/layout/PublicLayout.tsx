@@ -22,9 +22,9 @@ const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
               <Link href="/">
                 <div className="flex items-center">
                   <div className="h-8 w-8 rounded-md bg-rose-600 flex items-center justify-center">
-                    <span className="text-white font-bold">B</span>
+                    <span className="text-white font-bold">C</span>
                   </div>
-                  <span className="ml-2 text-lg font-semibold text-gray-900">BlogCMS</span>
+                  <span className="ml-2 text-lg font-semibold text-gray-900">CHC</span>
                 </div>
               </Link>
             </div>
@@ -59,9 +59,9 @@ const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
                       <Link href="/">
                         <div className="flex items-center">
                           <div className="h-8 w-8 rounded-md bg-rose-600 flex items-center justify-center">
-                            <span className="text-white font-bold">B</span>
+                            <span className="text-white font-bold">C</span>
                           </div>
-                          <span className="ml-2 text-lg font-semibold text-gray-900">BlogCMS</span>
+                          <span className="ml-2 text-lg font-semibold text-gray-900">CHC</span>
                         </div>
                       </Link>
                       <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(false)}>

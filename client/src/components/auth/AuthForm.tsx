@@ -18,7 +18,7 @@ const AuthForm: React.FC = () => {
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <h1 className="text-center text-3xl font-extrabold text-gray-900 flex items-center justify-center">
           <SquarePen className="h-8 w-8 text-primary mr-2" />
-          BlogCMS
+          CHC
         </h1>
         <h2 className="mt-2 text-center text-sm text-gray-600">
           Professional blog platform for authors and administrators
