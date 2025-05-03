@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useLocation, Link } from 'wouter';
 import { Helmet } from 'react-helmet-async';
 import { useQuery } from '@tanstack/react-query';
@@ -86,20 +86,26 @@ export default function GuestStyleBlogPreview() {
     enabled: !!id && !isNaN(numericId),
   });
 
-  // Calculate reading progress as user scrolls
+  // Reference to the content container
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  // Calculate reading progress as user scrolls within the content div
   useEffect(() => {
+    const contentElement = contentRef.current;
+    if (!contentElement) return;
+    
     const calculateReadingProgress = () => {
-      const totalHeight = document.body.scrollHeight - window.innerHeight;
+      const totalHeight = contentElement.scrollHeight - contentElement.clientHeight;
       if (totalHeight <= 0) return;
-      const progress = (window.scrollY / totalHeight) * 100;
+      const progress = (contentElement.scrollTop / totalHeight) * 100;
       setReadingProgress(Math.min(100, Math.max(0, progress)));
     };
 
-    window.addEventListener('scroll', calculateReadingProgress);
+    contentElement.addEventListener('scroll', calculateReadingProgress);
     calculateReadingProgress();
 
-    return () => window.removeEventListener('scroll', calculateReadingProgress);
-  }, []);
+    return () => contentElement.removeEventListener('scroll', calculateReadingProgress);
+  }, [blogData]);
 
   // If there's no valid ID or user isn't authenticated, redirect
   useEffect(() => {
@@ -201,17 +207,7 @@ export default function GuestStyleBlogPreview() {
         </div>
       </div>
 
-      {/* Enhanced Reading Progress Bar */}
-      <div className="fixed top-16 left-0 right-0 h-1.5 bg-gray-200 z-40 shadow-sm">
-        <div
-          className="h-full bg-gradient-to-r from-rose-600 to-rose-500 transition-all duration-200 ease-in-out"
-          style={{
-            width: `${readingProgress}%`,
-            boxShadow: readingProgress > 0 ? "0 0 10px rgba(204, 0, 51, 0.5)" : "none",
-          }}
-          aria-hidden="true"
-        />
-      </div>
+      {/* Reading progress bar removed from here */}
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Back button */}
@@ -332,123 +328,142 @@ export default function GuestStyleBlogPreview() {
           </div>
         )}
 
-        {/* Article content */}
-        <div className="max-w-4xl mx-auto">
-          <ContentRenderer
-            content={article.content}
-            className="prose prose-lg max-w-none prose-headings:text-gray-900 prose-p:text-gray-700"
-          />
-
-          {/* Tags */}
-          {tags && tags.length > 0 && (
-            <div className="mt-12 flex flex-wrap gap-2">
-              {tags.map((tag: Tag) => (
-                <Badge key={tag.id} variant="secondary">
-                  #{tag.name}
-                </Badge>
-              ))}
-            </div>
-          )}
-
-          {/* Article actions */}
-          <div className="mt-12 flex justify-between items-center py-4 border-t border-b">
-            <div className="flex gap-6">
-              <Button
-                variant="ghost"
-                className="flex items-center gap-1"
-              >
-                <MessageSquare className="h-5 w-5" />
-                <span>Comment</span>
-              </Button>
-            </div>
-            <div className="flex gap-3">
-              <Button variant="ghost" size="icon">
-                <Share2 className="h-5 w-5" />
-              </Button>
-            </div>
+        {/* Article content with scrollable area and progress bar */}
+        <div className="max-w-4xl mx-auto relative">
+          {/* Reading Progress Bar at top of content */}
+          <div className="sticky top-16 left-0 right-0 h-1.5 bg-gray-200 z-40 shadow-sm">
+            <div
+              className="h-full bg-gradient-to-r from-rose-600 to-rose-500 transition-all duration-200 ease-in-out"
+              style={{
+                width: `${readingProgress}%`,
+                boxShadow: readingProgress > 0 ? "0 0 10px rgba(204, 0, 51, 0.5)" : "none",
+              }}
+              aria-hidden="true"
+            />
           </div>
+          
+          {/* Scrollable content container */}
+          <div 
+            ref={contentRef}
+            className="max-h-[calc(100vh-200px)] overflow-y-auto pr-4 custom-scrollbar"
+            style={{ scrollBehavior: 'smooth' }}
+          >
+            <ContentRenderer
+              content={article.content}
+              className="prose prose-lg max-w-none prose-headings:text-gray-900 prose-p:text-gray-700"
+            />
 
-          {/* Author info */}
-          <div className="mt-12">
-            <h2 className="text-2xl font-bold mb-6">
-              About the {coAuthors.length > 0 ? "Authors" : "Author"}
-            </h2>
-
-            {/* Main Author Card */}
-            <Card className="mb-6">
-              <CardContent className="p-6">
-                <div className="flex flex-col sm:flex-row gap-6">
-                  <Avatar className="h-20 w-20">
-                    <AvatarImage
-                      src={article.author?.avatarUrl}
-                      alt={article.author?.name}
-                    />
-                    <AvatarFallback className="text-lg">
-                      {article.author?.name
-                        ? getInitials(article.author.name)
-                        : "A"}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <h3 className="text-xl font-semibold mb-2">{article.author?.name}</h3>
-                    <p className="text-gray-600 mb-4">{article.author?.bio || "No author bio available."}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Co-authors */}
-            {coAuthors && coAuthors.length > 0 && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {coAuthors.map((coAuthor: User) => (
-                  <Card key={coAuthor.id}>
-                    <CardContent className="p-4">
-                      <div className="flex items-center">
-                        <Avatar className="h-12 w-12 mr-4">
-                          <AvatarImage src={coAuthor.avatarUrl} alt={coAuthor.name} />
-                          <AvatarFallback>
-                            {getInitials(coAuthor.name)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <h4 className="font-medium">{coAuthor.name}</h4>
-                          <p className="text-sm text-gray-500 mt-1">Co-Author</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+            {/* Tags */}
+            {tags && tags.length > 0 && (
+              <div className="mt-12 flex flex-wrap gap-2">
+                {tags.map((tag: Tag) => (
+                  <Badge key={tag.id} variant="secondary">
+                    #{tag.name}
+                  </Badge>
                 ))}
               </div>
             )}
-          </div>
 
-          {/* Edit buttons section */}
-          <div className="mt-16 pt-6 border-t flex justify-between">
-            <Button 
-              variant="outline"
-              onClick={() => navigate(isAdmin ? '/admin/blogs' : '/author/blogs')}
-            >
-              Back to Blogs
-            </Button>
-            
-            <div className="space-x-2">
-              {isAdmin && (
-                <Button 
-                  onClick={() => navigate(`/admin/blogs/${article.id}`)}
-                  variant="secondary"
+            {/* Article actions */}
+            <div className="mt-12 flex justify-between items-center py-4 border-t border-b">
+              <div className="flex gap-6">
+                <Button
+                  variant="ghost"
+                  className="flex items-center gap-1"
                 >
-                  Edit Article
+                  <MessageSquare className="h-5 w-5" />
+                  <span>Comment</span>
                 </Button>
+              </div>
+              <div className="flex gap-3">
+                <Button variant="ghost" size="icon">
+                  <Share2 className="h-5 w-5" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Author info */}
+            <div className="mt-12">
+              <h2 className="text-2xl font-bold mb-6">
+                About the {coAuthors.length > 0 ? "Authors" : "Author"}
+              </h2>
+
+              {/* Main Author Card */}
+              <Card className="mb-6">
+                <CardContent className="p-6">
+                  <div className="flex flex-col sm:flex-row gap-6">
+                    <Avatar className="h-20 w-20">
+                      <AvatarImage
+                        src={article.author?.avatarUrl}
+                        alt={article.author?.name}
+                      />
+                      <AvatarFallback className="text-lg">
+                        {article.author?.name
+                          ? getInitials(article.author.name)
+                          : "A"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <h3 className="text-xl font-semibold mb-2">{article.author?.name}</h3>
+                      <p className="text-gray-600 mb-4">{article.author?.bio || "No author bio available."}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Co-authors */}
+              {coAuthors && coAuthors.length > 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {coAuthors.map((coAuthor: User) => (
+                    <Card key={coAuthor.id}>
+                      <CardContent className="p-4">
+                        <div className="flex items-center">
+                          <Avatar className="h-12 w-12 mr-4">
+                            <AvatarImage src={coAuthor.avatarUrl} alt={coAuthor.name} />
+                            <AvatarFallback>
+                              {getInitials(coAuthor.name)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <h4 className="font-medium">{coAuthor.name}</h4>
+                            <p className="text-sm text-gray-500 mt-1">Co-Author</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               )}
+            </div>
+
+            {/* Edit buttons section */}
+            <div className="mt-16 pt-6 border-t flex justify-between">
+              <Button 
+                variant="outline"
+                onClick={() => navigate(isAdmin ? '/admin/blogs' : '/author/blogs')}
+              >
+                Back to Blogs
+              </Button>
               
-              {!isAdmin && article.authorId === user?.id && (
-                <Button 
-                  onClick={() => navigate(`/author/blogs/${article.id}`)}
-                  variant="secondary"
-                >
-                  Edit Article
-                </Button>
-              )}
+              <div className="space-x-2">
+                {isAdmin && (
+                  <Button 
+                    onClick={() => navigate(`/admin/blogs/${article.id}`)}
+                    variant="secondary"
+                  >
+                    Edit Article
+                  </Button>
+                )}
+                
+                {!isAdmin && article.authorId === user?.id && (
+                  <Button 
+                    onClick={() => navigate(`/author/blogs/${article.id}`)}
+                    variant="secondary"
+                  >
+                    Edit Article
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         </div>
