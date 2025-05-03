@@ -1825,6 +1825,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           scheduledPublishAt,
           articleCount: ids?.length,
           ids: ids,
+          idsType: Array.isArray(ids) ? "array" : typeof ids,
+          idsDetails: Array.isArray(ids) ? ids.map(id => ({ 
+            value: id, 
+            type: typeof id,
+            isNumber: !isNaN(Number(id))
+          })) : "not an array"
         });
 
         // Ensure IDs is actually an array of numbers

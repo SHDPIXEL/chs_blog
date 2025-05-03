@@ -195,7 +195,7 @@ const BlogManagement: React.FC = () => {
     mutationFn: async ({ blogIds, status }: { blogIds: number[]; status: string }) => {
       console.log('Sending bulk update with IDs:', blogIds, 'status:', status);
       const res = await apiRequest('PATCH', '/api/admin/articles/bulk/status', {
-        ids: blogIds,
+        ids: blogIds.map(id => Number(id)), // Ensure all IDs are numbers
         status
       });
       return res.json();
@@ -247,7 +247,7 @@ const BlogManagement: React.FC = () => {
   const bulkToggleFeaturedMutation = useMutation({
     mutationFn: async ({ blogIds, featured }: { blogIds: number[]; featured: boolean }) => {
       const res = await apiRequest('PATCH', '/api/admin/articles/bulk/featured', {
-        ids: blogIds,
+        ids: blogIds.map(id => Number(id)), // Ensure all IDs are numbers
         featured
       });
       return res.json();
@@ -275,7 +275,7 @@ const BlogManagement: React.FC = () => {
   const bulkDeleteMutation = useMutation({
     mutationFn: async (blogIds: number[]) => {
       const res = await apiRequest('DELETE', '/api/admin/articles/bulk', {
-        ids: blogIds
+        ids: blogIds.map(id => Number(id)) // Ensure all IDs are numbers
       });
       return res.json();
     },
