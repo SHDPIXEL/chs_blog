@@ -156,7 +156,7 @@ const AdminProfilePage = () => {
   return (
     <AdminLayout>
       <Helmet>
-        <title>Admin Profile | CHC</title>
+        <title>Admin Profile | Centre for Human Sciences | Rishihood University</title>
       </Helmet>
       <div className="py-6 px-4 sm:px-6 lg:px-8">
         <PageHeader

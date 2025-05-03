@@ -182,9 +182,10 @@ const BlogDetail: React.FC = () => {
   return (
     <PublicLayout>
       <Helmet>
-        <title>{articleData.title} | CHC</title>
+        <title>{articleData.title} | Centre for Human Sciences | Rishihood University</title>
         <meta name="description" content={articleData.excerpt} />
         <meta name="author" content={articleData.author?.name} />
+        <meta name="robots" content="index, follow" />
         {articleData.keywords && (
           <meta name="keywords" content={articleData.keywords.join(", ")} />
         )}
@@ -192,49 +193,54 @@ const BlogDetail: React.FC = () => {
         <meta property="og:description" content={articleData.excerpt} />
         <meta property="og:type" content="article" />
         {articleData.featuredImage && (
-          <meta 
-            property="og:image" 
-            content={articleData.featuredImage.startsWith('http') 
-              ? articleData.featuredImage 
-              : `${window.location.origin}${articleData.featuredImage}`} 
+          <meta
+            property="og:image"
+            content={
+              articleData.featuredImage.startsWith("http")
+                ? articleData.featuredImage
+                : `${window.location.origin}${articleData.featuredImage}`
+            }
           />
         )}
         <script type="application/ld+json">
           {JSON.stringify({
             "@context": "https://schema.org",
             "@type": "BlogPosting",
-            "headline": articleData.title,
-            "description": articleData.excerpt,
-            "image": articleData.featuredImage ? 
-              (articleData.featuredImage.startsWith('http') ? 
-                articleData.featuredImage : 
-                `${window.location.origin}${articleData.featuredImage}`
-              ) : null,
-            "datePublished": articleData.createdAt,
-            "dateModified": articleData.updatedAt,
-            "author": {
+            headline: articleData.title,
+            description: articleData.excerpt,
+            image: articleData.featuredImage
+              ? articleData.featuredImage.startsWith("http")
+                ? articleData.featuredImage
+                : `${window.location.origin}${articleData.featuredImage}`
+              : null,
+            datePublished: articleData.createdAt,
+            dateModified: articleData.updatedAt,
+            author: {
               "@type": "Person",
-              "name": articleData.author?.name,
-              "url": articleData.author?.id ? 
-                `${window.location.origin}/authors/${articleData.author.id}?name=${encodeURIComponent(articleData.author.name || '')}` : null
+              name: articleData.author?.name,
+              url: articleData.author?.id
+                ? `${window.location.origin}/authors/${articleData.author.id}?name=${encodeURIComponent(articleData.author.name || "")}`
+                : null,
             },
-            "publisher": {
+            publisher: {
               "@type": "Organization",
-              "name": "CHC",
-              "logo": {
+              name: "Centre for Human Sciences, Rishihood University",
+              logo: {
                 "@type": "ImageObject",
-                "url": `${window.location.origin}/logo.png`
-              }
+                url: `${window.location.origin}/logo.png`,
+              },
             },
-            "keywords": tags.map(tag => tag.name).join(", "),
-            "articleSection": categories.map(cat => cat.name).join(", "),
-            ...(coAuthors.length > 0 ? {
-              "coAuthors": coAuthors.map(coAuthor => ({
-                "@type": "Person",
-                "name": coAuthor.name,
-                "url": `${window.location.origin}/authors/${coAuthor.id}?name=${encodeURIComponent(coAuthor.name || '')}`
-              }))
-            } : {})
+            keywords: tags.map((tag) => tag.name).join(", "),
+            articleSection: categories.map((cat) => cat.name).join(", "),
+            ...(coAuthors.length > 0
+              ? {
+                  coAuthors: coAuthors.map((coAuthor) => ({
+                    "@type": "Person",
+                    name: coAuthor.name,
+                    url: `${window.location.origin}/authors/${coAuthor.id}?name=${encodeURIComponent(coAuthor.name || "")}`,
+                  })),
+                }
+              : {}),
           })}
         </script>
       </Helmet>

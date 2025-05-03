@@ -125,7 +125,7 @@ const AuthorProfile: React.FC = () => {
   return (
     <PublicLayout>
       <Helmet>
-        <title>{author.name} - Author Profile | CHC</title>
+        <title>{author.name} - Author Profile | Centre for Human Sciences | Rishihood University</title>
         <meta
           name="description"
           content={`${author.name}'s profile and articles`}
