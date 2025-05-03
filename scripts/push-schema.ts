@@ -1,5 +1,5 @@
-import * as schema from "../shared/schema.js";
-import { db } from "../server/db.js";
+import * as schema from "../shared/schema";
+import { db } from "../server/db";
 import { sql } from "drizzle-orm";
 
 async function main() {
@@ -29,6 +29,7 @@ async function main() {
       CREATE TABLE IF NOT EXISTS articles (
         id SERIAL PRIMARY KEY,
         title TEXT NOT NULL,
+        slug TEXT NOT NULL,
         content TEXT NOT NULL,
         excerpt TEXT,
         author_id INTEGER NOT NULL REFERENCES users(id),
@@ -38,12 +39,15 @@ async function main() {
         meta_title TEXT,
         meta_description TEXT,
         keywords JSONB DEFAULT '[]',
+        canonical_url TEXT,
+        scheduled_publish_at TIMESTAMP WITH TIME ZONE,
         view_count INTEGER NOT NULL DEFAULT 0,
         review_remarks TEXT,
         reviewed_by INTEGER REFERENCES users(id),
         reviewed_at TIMESTAMP WITH TIME ZONE,
         created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-        updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+        updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+        published_at TIMESTAMP WITH TIME ZONE
       )
     `);
 
@@ -123,10 +127,34 @@ async function main() {
         title TEXT NOT NULL,
         message TEXT NOT NULL,
         article_id INTEGER REFERENCES articles(id),
+        comment_id INTEGER, -- To be modified after comments table is created
         read BOOLEAN NOT NULL DEFAULT false,
+        created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+      )
+    `);
+    
+    console.log('Creating comments table...');
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS comments (
+        id SERIAL PRIMARY KEY,
+        content TEXT NOT NULL,
+        author_name TEXT NOT NULL,
+        author_email TEXT NOT NULL,
+        article_id INTEGER NOT NULL REFERENCES articles(id),
+        parent_id INTEGER REFERENCES comments(id),
+        reply_count INTEGER NOT NULL DEFAULT 0,
+        is_approved BOOLEAN NOT NULL DEFAULT true,
         created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
       )
+    `);
+    
+    // Now that the comments table exists, add the foreign key reference to notifications
+    console.log('Adding comment_id foreign key to notifications...');
+    await db.execute(sql`
+      ALTER TABLE notifications
+      ADD CONSTRAINT fk_notifications_comment_id
+      FOREIGN KEY (comment_id) REFERENCES comments(id)
     `);
 
     console.log('Schema pushed successfully!');
