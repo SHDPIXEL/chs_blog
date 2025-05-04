@@ -195,15 +195,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const currentDate = new Date();
         const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
         
-        const postsThisMonthResult = await db
-          .select({ count: sql`count(*)` })
-          .from(articles)
-          .where(
-            and(
-              eq(articles.published, true),
-              gte(articles.publishedAt, firstDayOfMonth)
-            )
-          );
+        // Calculate posts this month using raw SQL since we need date comparison
+        const postsThisMonthQuery = `
+          SELECT COUNT(*) as count
+          FROM articles
+          WHERE published = true
+          AND published_at >= '${firstDayOfMonth.toISOString()}'
+        `;
+        
+        const postsThisMonthResult = await db.execute(sql.raw(postsThisMonthQuery));
         
         // Get popular categories
         const categoryStatsQuery = `
@@ -424,14 +424,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           totalUsers: Number(usersCount[0].count),
           totalPosts: Number(articlesCount[0].count),
           totalViews: Number(viewsResult[0].totalViews) || 0,
-          postsThisMonth: Number(postsThisMonthResult[0].count) || 0,
+          postsThisMonth: Number(postsThisMonthResult.rows[0]?.count) || 0,
           popularCategories: popularCategoriesResult.rows.map(row => ({
-            name: row.name,
-            count: parseInt(row.count, 10)
+            name: String(row.name),
+            count: Number(row.count)
           })),
           postsByStatus: postsByStatusResult.rows.map(row => ({
-            status: row.status,
-            count: parseInt(row.count, 10)
+            status: String(row.status),
+            count: Number(row.count)
           })),
           viewsOverTime,
           recentActivity: activityItems,
