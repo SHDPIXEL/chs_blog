@@ -57,18 +57,23 @@ const BlogDetail: React.FC = () => {
       if (!contentRef.current) return;
 
       const element = contentRef.current;
-      const totalHeight = element.scrollHeight;
+      const commentsSection = document.getElementById("comments-section");
+      
+      // Get content dimensions
+      const totalHeight = commentsSection 
+        ? commentsSection.offsetTop - element.offsetTop - 100 // End before comments section
+        : element.scrollHeight;
       const windowHeight = window.innerHeight;
       const scrollTop = window.scrollY || document.documentElement.scrollTop;
       const contentBox = element.getBoundingClientRect();
       const contentStart = contentBox.top + scrollTop - 100;
-      const contentBottom = contentStart + totalHeight;
+      const contentEnd = contentStart + totalHeight;
       let progress = 0;
 
       if (totalHeight > 0) {
         if (scrollTop < contentStart) {
           progress = 0;
-        } else if (scrollTop >= contentBottom - windowHeight) {
+        } else if (scrollTop >= contentEnd - windowHeight) {
           progress = 100;
         } else {
           progress =

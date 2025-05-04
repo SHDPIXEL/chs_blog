@@ -99,18 +99,21 @@ const Blogs: React.FC = () => {
     <PublicLayout>
       <Helmet>
         <title>Blog | Centre for Human Sciences | Rishihood University</title>
-        <meta name="description" content="Explore academic articles and research papers from the Centre for Human Sciences at Rishihood University." />
+        <meta
+          name="description"
+          content="Explore academic articles and research papers from the Centre for Human Sciences at Rishihood University."
+        />
         <meta name="robots" content="index, follow" />
       </Helmet>
 
       <div className="py-12">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h1 className="font-serif text-4xl font-bold text-[#CC0033] mb-3">
+            <h1 className="font-garamond text-4xl font-bold text-[#CC0033] mb-3">
               Blog
             </h1>
             <div className="w-24 h-1 bg-[#DB5527] mx-auto mb-6"></div>
-            <p className="font-sans text-lg text-[#333A3D] max-w-3xl mx-auto">
+            <p className="font-montserrat text-lg text-[#333A3D] max-w-3xl mx-auto">
               Insightful articles and scholarly reflections from our faculty and
               research community.
             </p>
@@ -214,7 +217,7 @@ const Blogs: React.FC = () => {
                               </div>
                             </div>
 
-                            <h2 className="font-serif text-2xl md:text-3xl font-bold text-[#333A3D] mb-3 group-hover:text-[#CC0033] transition-colors duration-300">
+                            <h2 className="font-sans text-2xl md:text-3xl font-bold text-[#333A3D] mb-3 group-hover:text-[#CC0033] transition-colors duration-300">
                               {filteredArticles[0].title}
                             </h2>
                             <p className="font-sans text-[#333A3D]/80 mb-4">
@@ -291,7 +294,7 @@ const Blogs: React.FC = () => {
                                 {formatDate(article.createdAt.toString())}
                               </span>
                             </div>
-                            <h3 className="font-serif text-xl font-bold mb-2 text-[#333A3D] group-hover:text-[#CC0033] transition-colors duration-300">
+                            <h3 className="font-sans text-xl font-bold mb-2 text-[#333A3D] group-hover:text-[#CC0033] transition-colors duration-300">
                               {article.title}
                             </h3>
                             <p className="font-sans text-sm text-[#333A3D]/80 mb-4 line-clamp-2">
@@ -375,7 +378,7 @@ const Blogs: React.FC = () => {
                           )}
                       </div>
 
-                      <h1 className="font-serif text-3xl font-bold text-[#333A3D] mb-6">
+                      <h1 className="font-sans text-3xl font-bold text-[#333A3D] mb-6">
                         {filteredArticles[0].title}
                       </h1>
 
