@@ -117,6 +117,16 @@ const AssetManager: React.FC = () => {
       page: 1,
     });
   };
+  
+  // Handle search type filter
+  const handleFilterByType = (type: string) => {
+    setSelectedType(type);
+    searchAssets({
+      query: searchQuery,
+      mimetype: type !== 'all' ? getMimeTypeFilter(type) : undefined,
+      page: 1,
+    });
+  };
 
   // Handle selecting an asset
   const handleSelectAsset = (asset: Asset) => {
@@ -183,17 +193,53 @@ const AssetManager: React.FC = () => {
           </TabsList>
 
           <TabsContent value="browse" className="flex-1 flex flex-col overflow-hidden">
-            <div className="flex gap-2 mb-4">
-              <Input
-                placeholder="Search assets..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="flex-1"
-                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-              />
-              <Button onClick={handleSearch} size="icon">
-                <Search className="h-4 w-4" />
-              </Button>
+            <div className="mb-4 space-y-2">
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Search assets..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="flex-1"
+                  onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                />
+                <Button onClick={handleSearch} size="icon">
+                  <Search className="h-4 w-4" />
+                </Button>
+              </div>
+              
+              <div className="flex flex-wrap gap-1">
+                <Badge 
+                  variant={selectedType === 'all' ? 'default' : 'outline'} 
+                  className="cursor-pointer"
+                  onClick={() => handleFilterByType('all')}
+                >
+                  All
+                </Badge>
+                <Badge 
+                  variant={selectedType === 'image' ? 'default' : 'outline'} 
+                  className="cursor-pointer"
+                  onClick={() => handleFilterByType('image')}
+                >
+                  <Image className="h-3 w-3 mr-1" />
+                  Images
+                </Badge>
+                <Badge 
+                  variant={selectedType === 'document' ? 'default' : 'outline'} 
+                  className="cursor-pointer"
+                  onClick={() => handleFilterByType('document')}
+                >
+                  <FileText className="h-3 w-3 mr-1" />
+                  Documents
+                </Badge>
+                <Badge 
+                  variant={selectedType === 'video' ? 'default' : 'outline'} 
+                  className="cursor-pointer"
+                  onClick={() => handleFilterByType('video')}
+                >
+                  <Video className="h-3 w-3 mr-1" />
+                  Videos
+                </Badge>
+              </div>
             </div>
 
             <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4 overflow-hidden">

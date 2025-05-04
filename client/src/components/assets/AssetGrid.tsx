@@ -61,21 +61,21 @@ const AssetGrid: React.FC<AssetGridProps> = ({
   }
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="space-y-2">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
         {filteredAssets.map((asset) => (
           <Card 
             key={asset.id} 
             className={cn(
-              "overflow-hidden cursor-pointer transition-all hover:ring-2 hover:ring-primary/50",
+              "overflow-hidden cursor-pointer transition-all hover:ring-2 hover:ring-primary/50 shadow-sm",
               (selectedAsset?.id === asset.id || (multiSelect && selectedAssets.some(a => a.id === asset.id))) && "ring-2 ring-primary"
             )}
             onClick={() => multiSelect && onToggleSelect ? onToggleSelect(asset) : onSelect(asset)}
           >
-            <div className="relative aspect-square w-full overflow-hidden bg-gray-100">
+            <div className="relative aspect-video w-full overflow-hidden bg-gray-100">
               {multiSelect && selectedAssets.some(a => a.id === asset.id) && (
-                <div className="absolute top-2 right-2 z-10 bg-primary text-white rounded-full p-1">
-                  <CheckCircle2 className="h-5 w-5" />
+                <div className="absolute top-1 right-1 z-10 bg-primary text-white rounded-full p-0.5">
+                  <CheckCircle2 className="h-4 w-4" />
                 </div>
               )}
               {asset.mimetype.startsWith('image/') ? (
@@ -85,35 +85,35 @@ const AssetGrid: React.FC<AssetGridProps> = ({
                   className="h-full w-full object-cover transition-all"
                 />
               ) : (
-                <div className="h-full w-full flex flex-col items-center justify-center p-4">
+                <div className="h-full w-full flex flex-col items-center justify-center p-2">
                   {getAssetIcon(asset.mimetype)}
-                  <span className="mt-2 text-sm text-gray-500 truncate max-w-full">
-                    {asset.originalName}
+                  <span className="mt-1 text-xs text-gray-500 truncate max-w-full">
+                    {asset.originalName.length > 15 ? asset.originalName.substring(0, 15) + '...' : asset.originalName}
                   </span>
                 </div>
               )}
             </div>
             
-            <CardContent className="p-3">
-              <h3 className="font-medium truncate">
+            <CardContent className="p-2">
+              <h3 className="font-medium text-sm truncate">
                 {asset.title || asset.originalName}
               </h3>
-              <p className="text-xs text-gray-500 truncate mt-1">
+              <p className="text-xs text-gray-500 truncate">
                 {new Date(asset.createdAt).toLocaleDateString()}
               </p>
             </CardContent>
             
-            <CardFooter className="p-3 pt-0 flex flex-wrap gap-2">
+            <CardFooter className="p-2 pt-0 flex flex-wrap gap-1">
               {Array.isArray(asset.tags) && asset.tags.length > 0 && 
-                asset.tags.slice(0, 2).map((tag: string, index: number) => (
-                  <Badge key={index} variant="secondary" className="text-xs">
+                asset.tags.slice(0, 1).map((tag: string, index: number) => (
+                  <Badge key={index} variant="secondary" className="text-xs px-1 py-0">
                     {tag}
                   </Badge>
                 ))
               }
-              {Array.isArray(asset.tags) && asset.tags.length > 2 && (
-                <Badge variant="outline" className="text-xs">
-                  +{asset.tags.length - 2}
+              {Array.isArray(asset.tags) && asset.tags.length > 1 && (
+                <Badge variant="outline" className="text-xs px-1 py-0">
+                  +{asset.tags.length - 1}
                 </Badge>
               )}
             </CardFooter>
