@@ -50,6 +50,14 @@ const AssetDetails: React.FC<AssetDetailsProps> = ({ asset }) => {
   const [tags, setTags] = useState<string[]>(
     Array.isArray(asset.tags) ? [...asset.tags] : []
   );
+  
+  // Reset form values and exit edit mode when a new asset is selected
+  React.useEffect(() => {
+    setIsEditing(false);
+    setTitle(asset.title || '');
+    setDescription(asset.description || '');
+    setTags(Array.isArray(asset.tags) ? [...asset.tags] : []);
+  }, [asset.id]);
 
   // Format file size for display
   const formatFileSize = (bytes: number) => {

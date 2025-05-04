@@ -164,7 +164,7 @@ const AssetManager: React.FC = () => {
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && closeAssetManager()}>
-      <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col">
+      <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle>Asset Manager</DialogTitle>
           <DialogDescription>
@@ -182,7 +182,7 @@ const AssetManager: React.FC = () => {
             <TabsTrigger value="upload">Upload New</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="browse" className="flex-1 flex flex-col">
+          <TabsContent value="browse" className="flex-1 flex flex-col overflow-hidden">
             <div className="flex gap-2 mb-4">
               <Input
                 placeholder="Search assets..."
@@ -196,8 +196,8 @@ const AssetManager: React.FC = () => {
               </Button>
             </div>
 
-            <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4 min-h-0">
-              <div className="col-span-2 overflow-y-auto border rounded-md p-4">
+            <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4 overflow-hidden">
+              <div className="col-span-2 border rounded-md p-4 overflow-y-auto max-h-[50vh]">
                 <AssetGrid
                   assets={assets}
                   isLoading={isLoading}
@@ -209,7 +209,7 @@ const AssetManager: React.FC = () => {
                 />
               </div>
 
-              <div className="col-span-1 border rounded-md p-4">
+              <div className="col-span-1 border rounded-md p-4 overflow-y-auto max-h-[50vh]">
                 {selectedAsset ? (
                   <AssetDetails asset={selectedAsset} />
                 ) : (
@@ -221,7 +221,7 @@ const AssetManager: React.FC = () => {
               </div>
             </div>
 
-            <div className="mt-4 flex justify-end gap-2">
+            <div className="mt-4 flex justify-end gap-2 pt-2 border-t">
               <Button variant="outline" onClick={closeAssetManager}>
                 Cancel
               </Button>
@@ -252,8 +252,8 @@ const AssetManager: React.FC = () => {
             </div>
           </TabsContent>
 
-          <TabsContent value="upload" className="flex-1">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <TabsContent value="upload" className="flex-1 flex flex-col overflow-hidden">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 overflow-y-auto max-h-[60vh] pb-4">
               <div className="border rounded-md p-4">
                 <h3 className="text-lg font-medium mb-4">Upload File</h3>
 
@@ -397,6 +397,11 @@ const AssetManager: React.FC = () => {
                   </div>
                 </div>
               </div>
+            </div>
+            <div className="mt-4 flex justify-end gap-2 pt-2 border-t">
+              <Button variant="outline" onClick={closeAssetManager}>
+                Cancel
+              </Button>
             </div>
           </TabsContent>
         </Tabs>

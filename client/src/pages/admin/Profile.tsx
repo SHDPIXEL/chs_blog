@@ -25,11 +25,13 @@ import {
   CameraIcon,
   Link as LinkIcon,
   ImageIcon,
-  Shield
+  Shield,
 } from "lucide-react";
 import { AssetPickerButton } from "@/components/assets";
 import { Helmet } from "react-helmet-async";
-import SocialLinksEditor, { SocialLinksDisplay } from "@/components/ui/social-links-editor";
+import SocialLinksEditor, {
+  SocialLinksDisplay,
+} from "@/components/ui/social-links-editor";
 
 type ProfileData = {
   id: number;
@@ -136,12 +138,10 @@ const AdminProfilePage = () => {
   // Using the SocialLinksDisplay component from our UI kit
   const SocialLinks = () => {
     if (!profile?.socialLinks) return null;
-    
+
     // We import and use the new SocialLinksDisplay component from our UI kit
     // This is now handled by the separate component
-    return (
-      <SocialLinksDisplay value={profile.socialLinks} className="mt-2" />
-    );
+    return <SocialLinksDisplay value={profile.socialLinks} className="mt-2" />;
   };
 
   // Helper function to get initials from name
@@ -156,7 +156,9 @@ const AdminProfilePage = () => {
   return (
     <AdminLayout>
       <Helmet>
-        <title>Admin Profile | Centre for Human Sciences | Rishihood University</title>
+        <title>
+          Admin Profile | Centre for Human Sciences | Rishihood University
+        </title>
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
       <div className="py-6 px-4 sm:px-6 lg:px-8">
@@ -313,13 +315,13 @@ const AdminProfilePage = () => {
                                 }
                               }}
                               selectMode={true}
-                              accept="all"
+                              accept="image"
                               variant="outline"
                             >
                               <ImageIcon className="h-4 w-4 mr-2" />
                               {formData.bannerUrl
                                 ? "Change Banner"
-                                : "Select Banner (Image or Video)"}
+                                : "Select Banner"}
                             </AssetPickerButton>
 
                             {formData.bannerUrl && (
@@ -344,8 +346,11 @@ const AdminProfilePage = () => {
 
                       <SocialLinksEditor
                         value={formData.socialLinks}
-                        onChange={(value) => 
-                          setFormData(prev => ({ ...prev, socialLinks: value }))
+                        onChange={(value) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            socialLinks: value,
+                          }))
                         }
                       />
                     </CardContent>
@@ -400,17 +405,19 @@ const AdminProfilePage = () => {
                             />
                           ) : (
                             <AvatarFallback className="bg-rose-100 text-rose-700">
-                              {profile?.name 
-                                ? getInitials(profile.name) 
-                                : user?.name 
-                                  ? getInitials(user.name) 
+                              {profile?.name
+                                ? getInitials(profile.name)
+                                : user?.name
+                                  ? getInitials(user.name)
                                   : "AD"}
                             </AvatarFallback>
                           )}
                         </Avatar>
 
                         <div className="flex items-center space-x-2 mb-2">
-                          <h1 className="text-2xl font-bold">{profile?.name}</h1>
+                          <h1 className="text-2xl font-bold">
+                            {profile?.name}
+                          </h1>
                           <Shield className="h-5 w-5 text-blue-600" />
                         </div>
 
@@ -420,7 +427,11 @@ const AdminProfilePage = () => {
 
                         <div className="text-gray-500 text-sm mb-4">
                           <p>Email: {profile?.email}</p>
-                          <p>Member since: {profile?.createdAt && new Date(profile.createdAt).toLocaleDateString()}</p>
+                          <p>
+                            Member since:{" "}
+                            {profile?.createdAt &&
+                              new Date(profile.createdAt).toLocaleDateString()}
+                          </p>
                         </div>
 
                         <SocialLinks />
@@ -462,7 +473,9 @@ const AdminProfilePage = () => {
                             <Label>Member Since</Label>
                             <div className="p-2 bg-gray-50 rounded border border-gray-200">
                               {profile?.createdAt &&
-                                new Date(profile.createdAt).toLocaleDateString()}
+                                new Date(
+                                  profile.createdAt,
+                                ).toLocaleDateString()}
                             </div>
                           </div>
                         </CardContent>
@@ -488,7 +501,7 @@ const AdminProfilePage = () => {
                       {profile?.email}
                     </div>
                   </div>
-                  
+
                   <div className="space-y-1">
                     <Label>Role</Label>
                     <div className="p-2 bg-blue-50 rounded border border-blue-200 capitalize font-medium text-blue-800 flex items-center">
