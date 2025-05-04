@@ -7,11 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, MessageSquare, Share2, Eye } from "lucide-react";
+import { ArrowLeft, MessageSquare, Share2, Eye, Check } from "lucide-react";
 import PublicLayout from "@/components/layout/PublicLayout";
 import { CommentsList } from "@/components/comments/CommentsList";
 import { ContentRenderer } from "@/components/blog/ContentRenderer";
 import { getInitials } from "@/lib/avatarUtils";
+import { useToast } from "@/hooks/use-toast";
 
 const BlogDetail: React.FC = () => {
   const [match, params] = useRoute("/blogs/:id/:slug");
@@ -19,7 +20,9 @@ const BlogDetail: React.FC = () => {
   const articleId = parseInt(params?.id || "0");
   const urlSlug = params?.slug || "";
   const [readingProgress, setReadingProgress] = useState(0);
+  const [copied, setCopied] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
 
   // Fetch article details
   const {
@@ -155,6 +158,28 @@ const BlogDetail: React.FC = () => {
 
   // Create the canonical URL with the correct format (blog/id/slug)
   const canonicalUrl = `${window.location.origin}/blogs/${articleId}/${articleSlug}`;
+
+  // Handle copying article URL to clipboard
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(canonicalUrl)
+      .then(() => {
+        setCopied(true);
+        toast({
+          title: "URL copied to clipboard!",
+          description: "You can now share this article with others.",
+          variant: "default"
+        });
+        // Reset copy status after 2 seconds
+        setTimeout(() => setCopied(false), 2000);
+      })
+      .catch(() => {
+        toast({
+          title: "Failed to copy URL",
+          description: "Please try again or copy the URL manually.",
+          variant: "destructive"
+        });
+      });
+  };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -418,8 +443,22 @@ const BlogDetail: React.FC = () => {
               </Button>
             </div>
             <div className="flex gap-3">
-              <Button variant="ghost" size="icon">
-                <Share2 className="h-5 w-5" />
+              <Button 
+                variant="ghost" 
+                className="flex items-center gap-1 transition-all"
+                onClick={copyToClipboard}
+              >
+                {copied ? (
+                  <>
+                    <Check className="h-5 w-5 text-green-600" />
+                    <span className="text-green-600">Copied!</span>
+                  </>
+                ) : (
+                  <>
+                    <Share2 className="h-5 w-5" />
+                    <span>Share</span>
+                  </>
+                )}
               </Button>
             </div>
           </div>
