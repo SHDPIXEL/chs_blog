@@ -51,6 +51,7 @@ const AssetManager: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState<string>("browse");
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [selectedType, setSelectedType] = useState<string>("all");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploadMetadata, setUploadMetadata] = useState<AssetMetadata>({
@@ -59,7 +60,6 @@ const AssetManager: React.FC = () => {
     tags: [],
   });
   const [newTag, setNewTag] = useState<string>("");
-  const [selectedType, setSelectedType] = useState<string>("all");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Handle file selection

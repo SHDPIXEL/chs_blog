@@ -287,11 +287,6 @@ const AssetDetails: React.FC<AssetDetailsProps> = ({ asset }) => {
             )}
 
             <div className="pt-2 border-t border-gray-100 flex space-x-2">
-              <Button variant="outline" size="sm" onClick={copyToClipboard}>
-                <Copy className="h-4 w-4 mr-2" />
-                Copy URL
-              </Button>
-              
               <Button 
                 variant="outline" 
                 size="sm" 
