@@ -182,15 +182,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const [usersCount, articlesCount, commentsCount] = await Promise.all([
           db.select({ count: sql`count(*)` }).from(users),
           db.select({ count: sql`count(*)` }).from(articles),
-          db.select({ count: sql`count(*)` }).from(comments)
+          db.select({ count: sql`count(*)` }).from(comments),
         ]);
-        
+
         // Calculate total page views by summing all article view counts
         const viewsResult = await db
           .select({ totalViews: sql`COALESCE(SUM(view_count), 0)` })
           .from(articles)
           .where(eq(articles.published, true));
-        
+
         // Get recent activities from multiple sources
         // 1. Recent articles (created/published/updated)
         const recentArticles = await db
@@ -204,19 +204,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
             updatedAt: articles.updatedAt,
             publishedAt: articles.publishedAt,
             reviewedAt: articles.reviewedAt,
-            reviewedBy: articles.reviewedBy
+            reviewedBy: articles.reviewedBy,
           })
           .from(articles)
           .orderBy(desc(articles.updatedAt))
           .limit(5);
-          
+
         // 2. Recent users (new registrations)
         const recentUsers = await db
           .select({
             id: users.id,
             name: users.name,
             role: users.role,
-            createdAt: users.createdAt
+            createdAt: users.createdAt,
           })
           .from(users)
           .orderBy(desc(users.createdAt))
@@ -231,12 +231,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             authorEmail: comments.authorEmail,
             articleId: comments.articleId,
             parentId: comments.parentId,
-            createdAt: comments.createdAt
+            createdAt: comments.createdAt,
           })
           .from(comments)
           .orderBy(desc(comments.createdAt))
           .limit(5);
-          
+
         // 4. Recent notifications (for additional activity context)
         const recentNotifications = await db
           .select({
@@ -246,103 +246,120 @@ export async function registerRoutes(app: Express): Promise<Server> {
             userId: notifications.userId,
             articleId: notifications.articleId,
             commentId: notifications.commentId,
-            createdAt: notifications.createdAt
+            createdAt: notifications.createdAt,
           })
           .from(notifications)
           .orderBy(desc(notifications.createdAt))
           .limit(5);
-          
+
         // Get article titles for comments to make activities more descriptive
-        const articleIds = Array.from(new Set(recentComments.map(comment => comment.articleId)));
-        
+        const articleIds = Array.from(
+          new Set(recentComments.map((comment) => comment.articleId)),
+        );
+
         const articleTitles = await db
           .select({
             id: articles.id,
             title: articles.title,
-            slug: articles.slug
+            slug: articles.slug,
           })
           .from(articles)
           .where(inArray(articles.id, articleIds));
-          
+
         const articleTitlesMap = Object.fromEntries(
-          articleTitles.map(article => [article.id, { title: article.title, slug: article.slug }])
+          articleTitles.map((article) => [
+            article.id,
+            { title: article.title, slug: article.slug },
+          ]),
         );
-        
+
         // Get user names for activities
         const userIds = [
-          ...recentArticles.map(article => article.authorId),
-          ...recentArticles.filter(article => article.reviewedBy !== null).map(article => article.reviewedBy)
-        ].filter(id => id !== null && id !== undefined);
-        
+          ...recentArticles.map((article) => article.authorId),
+          ...recentArticles
+            .filter((article) => article.reviewedBy !== null)
+            .map((article) => article.reviewedBy),
+        ].filter((id) => id !== null && id !== undefined);
+
         const usersData = await db
           .select({
             id: users.id,
-            name: users.name
+            name: users.name,
           })
           .from(users)
           .where(inArray(users.id, userIds));
-          
+
         const usersMap = Object.fromEntries(
-          usersData.map(user => [user.id, user.name])
+          usersData.map((user) => [user.id, user.name]),
         );
-            
+
         // Format activities with enriched information
         const activityItems = [
           // Articles activities
-          ...recentArticles.map(article => {
-            const authorName = usersMap[article.authorId] || 'Unknown';
-            let action = '';
-            
+          ...recentArticles.map((article) => {
+            const authorName = usersMap[article.authorId] || "Unknown";
+            let action = "";
+
             // Determine the most relevant action based on article state
             if (article.reviewedAt && article.reviewedBy) {
-              const reviewerName = usersMap[article.reviewedBy] || 'Administrator';
-              action = article.status === 'published' 
-                ? `${reviewerName} approved "${article.title}"`
-                : `${reviewerName} reviewed "${article.title}"`;
+              const reviewerName =
+                usersMap[article.reviewedBy] || "Administrator";
+              action =
+                article.status === "published"
+                  ? `${reviewerName} approved "${article.title}"`
+                  : `${reviewerName} reviewed "${article.title}"`;
             } else if (article.published && article.publishedAt) {
               action = `${authorName} published "${article.title}"`;
-            } else if (article.status === 'review') {
+            } else if (article.status === "review") {
               action = `${authorName} submitted "${article.title}" for review`;
             } else {
               action = `${authorName} created "${article.title}"`;
             }
-            
+
             return {
               id: `article-${article.id}-${article.status}`,
               action: action,
-              user: article.reviewedBy ? usersMap[article.reviewedBy] : authorName,
+              user: article.reviewedBy
+                ? usersMap[article.reviewedBy]
+                : authorName,
               timestamp: (
-                article.reviewedAt || 
-                article.publishedAt || 
-                article.updatedAt || 
+                article.reviewedAt ||
+                article.publishedAt ||
+                article.updatedAt ||
                 article.createdAt
-              ).toISOString()
+              ).toISOString(),
             };
           }),
-          
+
           // User registration activities
-          ...recentUsers.map(user => ({
+          ...recentUsers.map((user) => ({
             id: `user-${user.id}`,
             action: `New ${user.role} account registered`,
             user: user.name,
-            timestamp: user.createdAt.toISOString()
+            timestamp: user.createdAt.toISOString(),
           })),
-          
+
           // Comment activities
-          ...recentComments.map(comment => {
-            const articleInfo = articleTitlesMap[comment.articleId] || { title: 'Unknown article' };
+          ...recentComments.map((comment) => {
+            const articleInfo = articleTitlesMap[comment.articleId] || {
+              title: "Unknown article",
+            };
             const isReply = comment.parentId !== null;
             return {
               id: `comment-${comment.id}`,
-              action: isReply 
+              action: isReply
                 ? `${comment.authorName} replied to a comment on "${articleInfo.title}"`
                 : `${comment.authorName} commented on "${articleInfo.title}"`,
               user: comment.authorName,
-              timestamp: comment.createdAt.toISOString()
+              timestamp: comment.createdAt.toISOString(),
             };
-          })
-        ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-         .slice(0, 10); // Get the 10 most recent activities
+          }),
+        ]
+          .sort(
+            (a, b) =>
+              new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+          )
+          .slice(0, 10); // Get the 10 most recent activities
 
         return res.json({
           stats: {
@@ -351,11 +368,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             pageViews: Number(viewsResult[0].totalViews) || 0,
             comments: Number(commentsCount[0].count),
           },
-          recentActivity: activityItems
+          recentActivity: activityItems,
         });
       } catch (error) {
         console.error("Error fetching admin dashboard data:", error);
-        return res.status(500).json({ message: "Error fetching dashboard data" });
+        return res
+          .status(500)
+          .json({ message: "Error fetching dashboard data" });
       }
     },
   );
@@ -377,11 +396,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Calculate stats
         const published = articles.filter((a) => a.published).length;
         const drafts = articles.filter((a) => !a.published).length;
-        
+
         // Calculate actual total views from author's published articles
         // Instead of direct DB query, use filtered articles and sum their view counts
-        const publishedArticles = articles.filter(a => a.published && a.status === ArticleStatus.PUBLISHED);
-        const totalViews = publishedArticles.reduce((sum, article) => sum + (article.viewCount || 0), 0);
+        const publishedArticles = articles.filter(
+          (a) => a.published && a.status === ArticleStatus.PUBLISHED,
+        );
+        const totalViews = publishedArticles.reduce(
+          (sum, article) => sum + (article.viewCount || 0),
+          0,
+        );
 
         return res.json({
           stats: {
@@ -1048,17 +1072,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Increment view count asynchronously with proper logging
       let currentViewCount = article.viewCount || 0;
       let newViewCount = currentViewCount + 1;
-      
+
       try {
         // Record the view in logs with timestamp and article info
-        console.log(`Updating article ${article.id} with data:`, { viewCount: newViewCount });
-        
-        // Update the article view count in the database
-        storage.updateArticle(article.id, { viewCount: newViewCount }).catch((err) => {
-          console.error(`Failed to update view count for article ${article.id}:`, err);
+        console.log(`Updating article ${article.id} with data:`, {
+          viewCount: newViewCount,
         });
+
+        // Update the article view count in the database
+        storage
+          .updateArticle(article.id, { viewCount: newViewCount })
+          .catch((err) => {
+            console.error(
+              `Failed to update view count for article ${article.id}:`,
+              err,
+            );
+          });
       } catch (viewCountError) {
-        console.error(`Error processing view count for article ${article.id}:`, viewCountError);
+        console.error(
+          `Error processing view count for article ${article.id}:`,
+          viewCountError,
+        );
         // Don't fail the request if view counting fails
       }
 
@@ -1098,72 +1132,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Preview endpoint for articles - requires authentication and permission check
-  app.get("/api/articles/:id/preview", authenticateToken, async (req: AuthRequest, res) => {
-    try {
-      const articleId = parseInt(req.params.id);
-      if (isNaN(articleId)) {
-        return res.status(400).json({ message: "Invalid article ID" });
-      }
-      
-      if (!req.user) {
-        return res.status(401).json({ message: "Authentication required" });
-      }
-      
-      // Get article and relations
-      const fullArticle = await storage.getArticleWithRelations(articleId);
-      if (!fullArticle) {
-        return res.status(404).json({ message: "Article not found" });
-      }
-      
-      const article = fullArticle.article;
-      const userId = req.user.id;
-      const userRole = req.user.role;
-      
-      // Permission check:
-      // 1. User is an admin, or
-      // 2. User is the author, or
-      // 3. User is a co-author
-      const isAdmin = userRole === UserRole.ADMIN;
-      const isAuthor = article.authorId === userId;
-      const isCoAuthor = fullArticle.coAuthors.some(coAuthor => coAuthor.id === userId);
-      
-      console.log(`Preview access check for article ${articleId}:`, { 
-        userId, 
-        userRole, 
-        isAdmin, 
-        isAuthor, 
-        isCoAuthor 
-      });
-      
-      if (!isAdmin && !isAuthor && !isCoAuthor) {
-        return res.status(403).json({ 
-          message: "You don't have permission to preview this article"
+  app.get(
+    "/api/articles/:id/preview",
+    authenticateToken,
+    async (req: AuthRequest, res) => {
+      try {
+        const articleId = parseInt(req.params.id);
+        if (isNaN(articleId)) {
+          return res.status(400).json({ message: "Invalid article ID" });
+        }
+
+        if (!req.user) {
+          return res.status(401).json({ message: "Authentication required" });
+        }
+
+        // Get article and relations
+        const fullArticle = await storage.getArticleWithRelations(articleId);
+        if (!fullArticle) {
+          return res.status(404).json({ message: "Article not found" });
+        }
+
+        const article = fullArticle.article;
+        const userId = req.user.id;
+        const userRole = req.user.role;
+
+        // Permission check:
+        // 1. User is an admin, or
+        // 2. User is the author, or
+        // 3. User is a co-author
+        const isAdmin = userRole === UserRole.ADMIN;
+        const isAuthor = article.authorId === userId;
+        const isCoAuthor = fullArticle.coAuthors.some(
+          (coAuthor) => coAuthor.id === userId,
+        );
+
+        console.log(`Preview access check for article ${articleId}:`, {
+          userId,
+          userRole,
+          isAdmin,
+          isAuthor,
+          isCoAuthor,
         });
+
+        if (!isAdmin && !isAuthor && !isCoAuthor) {
+          return res.status(403).json({
+            message: "You don't have permission to preview this article",
+          });
+        }
+
+        // Get full author info
+        const author = await storage.getUser(article.authorId);
+
+        // Return article with full details for preview
+        return res.json({
+          ...fullArticle,
+          article: {
+            ...article,
+            author: author
+              ? {
+                  id: author.id,
+                  name: author.name,
+                  avatarUrl: author.avatarUrl,
+                  bio: author.bio,
+                }
+              : null,
+          },
+        });
+      } catch (error) {
+        console.error("Error fetching article preview:", error);
+        res.status(500).json({ message: "Failed to fetch article preview" });
       }
-      
-      // Get full author info
-      const author = await storage.getUser(article.authorId);
-      
-      // Return article with full details for preview
-      return res.json({
-        ...fullArticle,
-        article: {
-          ...article,
-          author: author
-            ? {
-                id: author.id,
-                name: author.name,
-                avatarUrl: author.avatarUrl,
-                bio: author.bio,
-              }
-            : null,
-        },
-      });
-    } catch (error) {
-      console.error("Error fetching article preview:", error);
-      res.status(500).json({ message: "Failed to fetch article preview" });
-    }
-  });
+    },
+  );
 
   // Public endpoint for author profile and published articles
   app.get("/api/authors/:id/public", async (req, res) => {
@@ -1823,77 +1863,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
   );
 
   // Dashboard stats
-  app.get(
-    "/api/admin/dashboard",
-    authenticateToken,
-    requireAdmin,
-    async (req: AuthRequest, res) => {
-      try {
-        if (!req.user?.id) {
-          return res.status(401).json({ message: "Authentication required" });
-        }
+  // app.get(
+  //   "/api/admin/dashboard",
+  //   authenticateToken,
+  //   requireAdmin,
+  //   async (req: AuthRequest, res) => {
+  //     try {
+  //       if (!req.user?.id) {
+  //         return res.status(401).json({ message: "Authentication required" });
+  //       }
 
-        // Get user count
-        const users = await storage.getUsers();
-        const totalUsers = users.length;
+  //       // Get user count
+  //       const users = await storage.getUsers();
+  //       const totalUsers = users.length;
 
-        // Get post count
-        const articles = await storage.getPublishedArticles();
-        const totalPosts = articles.length;
+  //       // Get post count
+  //       const articles = await storage.getPublishedArticles();
+  //       const totalPosts = articles.length;
 
-        // Sample data for dashboard - in a real app, these would be calculated from the database
-        const dashboardData = {
-          totalUsers,
-          totalPosts,
-          totalViews: 1245, // Sample data
-          postsThisMonth: 12, // Sample data
-          popularCategories: [
-            { name: "Technology", count: 8 },
-            { name: "Business", count: 6 },
-            { name: "Design", count: 4 },
-            { name: "Marketing", count: 3 },
-          ],
-          recentActivity: [
-            {
-              id: 1,
-              action: "Published new article",
-              user: "Sarah Johnson",
-              timestamp: new Date().toISOString(),
-            },
-            {
-              id: 2,
-              action: "Updated profile",
-              user: "John Smith",
-              timestamp: new Date(Date.now() - 3600000).toISOString(),
-            },
-            {
-              id: 3,
-              action: "Created new category",
-              user: "Admin User",
-              timestamp: new Date(Date.now() - 86400000).toISOString(),
-            },
-          ],
-          postsByStatus: [
-            { status: "Published", count: 15 },
-            { status: "Draft", count: 8 },
-            { status: "Review", count: 3 },
-          ],
-          viewsOverTime: Array.from({ length: 14 }, (_, i) => {
-            const date = new Date();
-            date.setDate(date.getDate() - (13 - i));
-            return {
-              date: date.toISOString().split("T")[0],
-              views: Math.floor(Math.random() * 100) + 50,
-            };
-          }),
-        };
+  //       // Sample data for dashboard - in a real app, these would be calculated from the database
+  //       const dashboardData = {
+  //         totalUsers,
+  //         totalPosts,
+  //         totalViews: 1245, // Sample data
+  //         postsThisMonth: 12, // Sample data
+  //         popularCategories: [
+  //           { name: "Technology", count: 8 },
+  //           { name: "Business", count: 6 },
+  //           { name: "Design", count: 4 },
+  //           { name: "Marketing", count: 3 },
+  //         ],
+  //         recentActivity: [
+  //           {
+  //             id: 1,
+  //             action: "Published new article",
+  //             user: "Sarah Johnson",
+  //             timestamp: new Date().toISOString(),
+  //           },
+  //           {
+  //             id: 2,
+  //             action: "Updated profile",
+  //             user: "John Smith",
+  //             timestamp: new Date(Date.now() - 3600000).toISOString(),
+  //           },
+  //           {
+  //             id: 3,
+  //             action: "Created new category",
+  //             user: "Admin User",
+  //             timestamp: new Date(Date.now() - 86400000).toISOString(),
+  //           },
+  //         ],
+  //         postsByStatus: [
+  //           { status: "Published", count: 15 },
+  //           { status: "Draft", count: 8 },
+  //           { status: "Review", count: 3 },
+  //         ],
+  //         viewsOverTime: Array.from({ length: 14 }, (_, i) => {
+  //           const date = new Date();
+  //           date.setDate(date.getDate() - (13 - i));
+  //           return {
+  //             date: date.toISOString().split("T")[0],
+  //             views: Math.floor(Math.random() * 100) + 50,
+  //           };
+  //         }),
+  //       };
 
-        return res.json(dashboardData);
-      } catch (error) {
-        return res.status(500).json({ message: "Server error" });
-      }
-    },
-  );
+  //       return res.json(dashboardData);
+  //     } catch (error) {
+  //       return res.status(500).json({ message: "Server error" });
+  //     }
+  //   },
+  // );
 
   // Get all authors with extended info
   app.get(
@@ -1910,16 +1950,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const users = await storage.getUsers(UserRole.AUTHOR);
 
         // Add extended info with actual data
-        const authorsWithExtendedInfo = await Promise.all(users.map(async (user) => {
-          // Get actual article count for this author
-          const authorArticles = await storage.getArticlesByAuthor(user.id);
-          
-          return {
-            ...user,
-            postCount: authorArticles.length, // Actual article count from database
-            activeStatus: true, // We'll keep this as true for now, could be replaced with a real status field later
-          };
-        }));
+        const authorsWithExtendedInfo = await Promise.all(
+          users.map(async (user) => {
+            // Get actual article count for this author
+            const authorArticles = await storage.getArticlesByAuthor(user.id);
+
+            return {
+              ...user,
+              postCount: authorArticles.length, // Actual article count from database
+              activeStatus: true, // We'll keep this as true for now, could be replaced with a real status field later
+            };
+          }),
+        );
 
         return res.json(authorsWithExtendedInfo);
       } catch (error) {
@@ -1938,20 +1980,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (!req.user?.id) {
           return res.status(401).json({ message: "Authentication required" });
         }
-        
+
         const { name, email, password, bio, canPublish } = req.body;
-        
+
         // Basic validation
         if (!name || !email || !password) {
-          return res.status(400).json({ message: "Name, email and password are required" });
+          return res
+            .status(400)
+            .json({ message: "Name, email and password are required" });
         }
-        
+
         // Check if email already exists
         const existingUser = await storage.getUserByEmail(email);
         if (existingUser) {
-          return res.status(400).json({ message: "A user with this email already exists" });
+          return res
+            .status(400)
+            .json({ message: "A user with this email already exists" });
         }
-        
+
         // Create the new author
         const newAuthor = await storage.createUser({
           name,
@@ -1959,18 +2005,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           password,
           role: UserRole.AUTHOR,
           bio: bio || null,
-          canPublish: canPublish || false
+          canPublish: canPublish || false,
         });
-        
+
         // Remove password from response
         const { password: _, ...authorWithoutPassword } = newAuthor;
-        
+
         return res.status(201).json(authorWithoutPassword);
       } catch (error) {
         console.error("Error creating author:", error);
         return res.status(500).json({ message: "Server error" });
       }
-    }
+    },
   );
 
   // Update author status (active/inactive)
@@ -2547,102 +2593,120 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create a new comment or reply with optional authentication
-  app.post("/api/articles/:id/comments", async (req: Request & Partial<AuthRequest>, res) => {
-    try {
-      const articleId = parseInt(req.params.id);
-      if (isNaN(articleId)) {
-        return res.status(400).json({ message: "Invalid article ID" });
-      }
-
-      // Check if the article exists and is published
-      const article = await storage.getArticle(articleId);
-      if (!article) {
-        return res.status(404).json({ message: "Article not found" });
-      }
-
-      if (!article.published) {
-        return res
-          .status(403)
-          .json({ message: "Cannot comment on unpublished articles" });
-      }
-
-      // Check for authenticated user
-      const authHeader = req.headers.authorization;
-      let authenticatedUser = null;
-      
-      if (authHeader) {
-        const token = authHeader.split(' ')[1];
-        try {
-          const decoded = jwt.verify(token, JWT_SECRET) as { id: number };
-          authenticatedUser = await storage.getUser(decoded.id);
-        } catch (e) {
-          // Invalid token, continue as anonymous user
-          console.log("Invalid auth token for comment, continuing as anonymous");
+  app.post(
+    "/api/articles/:id/comments",
+    async (req: Request & Partial<AuthRequest>, res) => {
+      try {
+        const articleId = parseInt(req.params.id);
+        if (isNaN(articleId)) {
+          return res.status(400).json({ message: "Invalid article ID" });
         }
-      }
-      
-      // Auto-fill author name and email for authenticated users
-      let commentData = { ...req.body, articleId };
-      
-      if (authenticatedUser) {
-        // If authenticated user, use their info and add role label
-        const roleLabel = authenticatedUser.role === UserRole.ADMIN ? "[Admin]" : 
-                          authenticatedUser.role === UserRole.AUTHOR ? "[Author]" : "";
-        
-        commentData.authorName = `${roleLabel} ${authenticatedUser.name}`.trim();
-        commentData.authorEmail = authenticatedUser.email;
-      }
 
-      // Validate the comment data
-      const validatedData = insertCommentSchema.parse(commentData);
+        // Check if the article exists and is published
+        const article = await storage.getArticle(articleId);
+        if (!article) {
+          return res.status(404).json({ message: "Article not found" });
+        }
 
-      // Create the comment
-      const comment = await storage.createComment(validatedData);
-      
-      // Create a notification for the article author only if commenter is not the author
-      const isCommentByAuthor = authenticatedUser && authenticatedUser.id === article.authorId;
-      
-      if (article.authorId && !isCommentByAuthor) {
-        try {
-          // Get article slug for the notification URL
-          const notificationTitle = validatedData.parentId 
-            ? "New Reply to Comment" 
-            : "New Comment on Article";
-          const notificationMessage = validatedData.parentId 
-            ? `${validatedData.authorName} replied to a comment on your article "${article.title}"` 
-            : `${validatedData.authorName} commented on your article "${article.title}"`;
-          
-          // Use the extended notification schema to include the article slug
-          await storage.createNotification({
-            userId: article.authorId,
-            type: "comment_received",
-            title: notificationTitle,
-            message: notificationMessage,
-            articleId: article.id,
-            commentId: comment.id,
-            articleSlug: article.slug // Add slug for better navigation
+        if (!article.published) {
+          return res
+            .status(403)
+            .json({ message: "Cannot comment on unpublished articles" });
+        }
+
+        // Check for authenticated user
+        const authHeader = req.headers.authorization;
+        let authenticatedUser = null;
+
+        if (authHeader) {
+          const token = authHeader.split(" ")[1];
+          try {
+            const decoded = jwt.verify(token, JWT_SECRET) as { id: number };
+            authenticatedUser = await storage.getUser(decoded.id);
+          } catch (e) {
+            // Invalid token, continue as anonymous user
+            console.log(
+              "Invalid auth token for comment, continuing as anonymous",
+            );
+          }
+        }
+
+        // Auto-fill author name and email for authenticated users
+        let commentData = { ...req.body, articleId };
+
+        if (authenticatedUser) {
+          // If authenticated user, use their info and add role label
+          const roleLabel =
+            authenticatedUser.role === UserRole.ADMIN
+              ? "[Admin]"
+              : authenticatedUser.role === UserRole.AUTHOR
+                ? "[Author]"
+                : "";
+
+          commentData.authorName =
+            `${roleLabel} ${authenticatedUser.name}`.trim();
+          commentData.authorEmail = authenticatedUser.email;
+        }
+
+        // Validate the comment data
+        const validatedData = insertCommentSchema.parse(commentData);
+
+        // Create the comment
+        const comment = await storage.createComment(validatedData);
+
+        // Create a notification for the article author only if commenter is not the author
+        const isCommentByAuthor =
+          authenticatedUser && authenticatedUser.id === article.authorId;
+
+        if (article.authorId && !isCommentByAuthor) {
+          try {
+            // Get article slug for the notification URL
+            const notificationTitle = validatedData.parentId
+              ? "New Reply to Comment"
+              : "New Comment on Article";
+            const notificationMessage = validatedData.parentId
+              ? `${validatedData.authorName} replied to a comment on your article "${article.title}"`
+              : `${validatedData.authorName} commented on your article "${article.title}"`;
+
+            // Use the extended notification schema to include the article slug
+            await storage.createNotification({
+              userId: article.authorId,
+              type: "comment_received",
+              title: notificationTitle,
+              message: notificationMessage,
+              articleId: article.id,
+              commentId: comment.id,
+              articleSlug: article.slug, // Add slug for better navigation
+            });
+            console.log(
+              `Created notification for author ID ${article.authorId} for new comment`,
+            );
+          } catch (notificationError) {
+            console.error(
+              "Error creating comment notification:",
+              notificationError,
+            );
+            // Don't fail the whole request if notification creation fails
+          }
+        } else if (isCommentByAuthor) {
+          console.log(
+            `Skipping notification since comment is by the article author (${authenticatedUser?.id})`,
+          );
+        }
+
+        return res.status(201).json(comment);
+      } catch (error) {
+        console.error("Error creating comment:", error);
+        if (error instanceof z.ZodError) {
+          return res.status(400).json({
+            message: "Validation error",
+            errors: error.errors,
           });
-          console.log(`Created notification for author ID ${article.authorId} for new comment`);
-        } catch (notificationError) {
-          console.error("Error creating comment notification:", notificationError);
-          // Don't fail the whole request if notification creation fails
         }
-      } else if (isCommentByAuthor) {
-        console.log(`Skipping notification since comment is by the article author (${authenticatedUser?.id})`);
+        return res.status(500).json({ message: "Server error" });
       }
-      
-      return res.status(201).json(comment);
-    } catch (error) {
-      console.error("Error creating comment:", error);
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({
-          message: "Validation error",
-          errors: error.errors,
-        });
-      }
-      return res.status(500).json({ message: "Server error" });
-    }
-  });
+    },
+  );
 
   // Update a comment (admin only)
   app.patch(
