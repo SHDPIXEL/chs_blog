@@ -20,9 +20,7 @@ import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useAssetManager } from '@/context/AssetManagerContext';
 import { 
   Calendar, 
-  Copy, 
   Download, 
-  Edit, 
   FileText, 
   Image, 
   Info, 
@@ -96,15 +94,7 @@ const AssetDetails: React.FC<AssetDetailsProps> = ({ asset }) => {
     setTags(tags.filter(tag => tag !== tagToRemove));
   };
 
-  // Copy asset URL to clipboard
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(asset.url).then(() => {
-      toast({
-        title: "URL Copied",
-        description: "Asset URL copied to clipboard",
-      });
-    });
-  };
+  // The copy URL functionality has been removed as requested
 
   // Handle saving metadata changes
   const handleSaveChanges = async () => {
