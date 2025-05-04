@@ -29,9 +29,10 @@ import {
   articles,
   users,
   comments,
+  notifications,
 } from "@shared/schema";
 import { z } from "zod";
-import { sql, eq, and, desc } from "drizzle-orm";
+import { sql, eq, and, desc, inArray } from "drizzle-orm";
 import {
   authenticateToken,
   requireAdmin,
@@ -190,17 +191,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .from(articles)
           .where(eq(articles.published, true));
         
-        // Get recent activities (latest articles and user registrations)
+        // Get recent activities from multiple sources
+        // 1. Recent articles (created/published/updated)
         const recentArticles = await db
           .select({
             id: articles.id,
             title: articles.title,
-            createdAt: articles.createdAt
+            authorId: articles.authorId,
+            status: articles.status,
+            published: articles.published,
+            createdAt: articles.createdAt,
+            updatedAt: articles.updatedAt,
+            publishedAt: articles.publishedAt,
+            reviewedAt: articles.reviewedAt,
+            reviewedBy: articles.reviewedBy
           })
           .from(articles)
-          .orderBy(desc(articles.createdAt))
-          .limit(3);
+          .orderBy(desc(articles.updatedAt))
+          .limit(5);
           
+        // 2. Recent users (new registrations)
         const recentUsers = await db
           .select({
             id: users.id,
@@ -211,24 +221,128 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .from(users)
           .orderBy(desc(users.createdAt))
           .limit(3);
+
+        // 3. Recent comments on articles
+        const recentComments = await db
+          .select({
+            id: comments.id,
+            content: comments.content,
+            authorName: comments.authorName,
+            authorEmail: comments.authorEmail,
+            articleId: comments.articleId,
+            parentId: comments.parentId,
+            createdAt: comments.createdAt
+          })
+          .from(comments)
+          .orderBy(desc(comments.createdAt))
+          .limit(5);
+          
+        // 4. Recent notifications (for additional activity context)
+        const recentNotifications = await db
+          .select({
+            id: notifications.id,
+            type: notifications.type,
+            title: notifications.title,
+            userId: notifications.userId,
+            articleId: notifications.articleId,
+            commentId: notifications.commentId,
+            createdAt: notifications.createdAt
+          })
+          .from(notifications)
+          .orderBy(desc(notifications.createdAt))
+          .limit(5);
+          
+        // Get article titles for comments to make activities more descriptive
+        const articleIds = Array.from(new Set(recentComments.map(comment => comment.articleId)));
         
-        // Format activities
-        const recentActivity = [
-          ...recentArticles.map(article => ({
-            id: `article-${article.id}`,
-            type: "postPublished",
-            title: article.title,
-            timestamp: article.createdAt.toISOString()
-          })),
+        const articleTitles = await db
+          .select({
+            id: articles.id,
+            title: articles.title,
+            slug: articles.slug
+          })
+          .from(articles)
+          .where(inArray(articles.id, articleIds));
+          
+        const articleTitlesMap = Object.fromEntries(
+          articleTitles.map(article => [article.id, { title: article.title, slug: article.slug }])
+        );
+        
+        // Get user names for activities
+        const userIds = [
+          ...recentArticles.map(article => article.authorId),
+          ...recentArticles.filter(article => article.reviewedBy !== null).map(article => article.reviewedBy)
+        ].filter(id => id !== null && id !== undefined);
+        
+        const usersData = await db
+          .select({
+            id: users.id,
+            name: users.name
+          })
+          .from(users)
+          .where(inArray(users.id, userIds));
+          
+        const usersMap = Object.fromEntries(
+          usersData.map(user => [user.id, user.name])
+        );
+            
+        // Format activities with enriched information
+        const activityItems = [
+          // Articles activities
+          ...recentArticles.map(article => {
+            const authorName = usersMap[article.authorId] || 'Unknown';
+            let action = '';
+            
+            // Determine the most relevant action based on article state
+            if (article.reviewedAt && article.reviewedBy) {
+              const reviewerName = usersMap[article.reviewedBy] || 'Administrator';
+              action = article.status === 'published' 
+                ? `${reviewerName} approved "${article.title}"`
+                : `${reviewerName} reviewed "${article.title}"`;
+            } else if (article.published && article.publishedAt) {
+              action = `${authorName} published "${article.title}"`;
+            } else if (article.status === 'review') {
+              action = `${authorName} submitted "${article.title}" for review`;
+            } else {
+              action = `${authorName} created "${article.title}"`;
+            }
+            
+            return {
+              id: `article-${article.id}-${article.status}`,
+              action: action,
+              user: article.reviewedBy ? usersMap[article.reviewedBy] : authorName,
+              timestamp: (
+                article.reviewedAt || 
+                article.publishedAt || 
+                article.updatedAt || 
+                article.createdAt
+              ).toISOString()
+            };
+          }),
+          
+          // User registration activities
           ...recentUsers.map(user => ({
             id: `user-${user.id}`,
-            type: "userRegistered",
+            action: `New ${user.role} account registered`,
             user: user.name,
-            role: user.role,
             timestamp: user.createdAt.toISOString()
-          }))
+          })),
+          
+          // Comment activities
+          ...recentComments.map(comment => {
+            const articleInfo = articleTitlesMap[comment.articleId] || { title: 'Unknown article' };
+            const isReply = comment.parentId !== null;
+            return {
+              id: `comment-${comment.id}`,
+              action: isReply 
+                ? `${comment.authorName} replied to a comment on "${articleInfo.title}"`
+                : `${comment.authorName} commented on "${articleInfo.title}"`,
+              user: comment.authorName,
+              timestamp: comment.createdAt.toISOString()
+            };
+          })
         ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-         .slice(0, 5); // Get the 5 most recent activities
+         .slice(0, 10); // Get the 10 most recent activities
 
         return res.json({
           stats: {
@@ -237,7 +351,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             pageViews: Number(viewsResult[0].totalViews) || 0,
             comments: Number(commentsCount[0].count),
           },
-          recentActivity
+          recentActivity: activityItems
         });
       } catch (error) {
         console.error("Error fetching admin dashboard data:", error);
