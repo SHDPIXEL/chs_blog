@@ -51,7 +51,7 @@ export async function seed() {
         github: "https://github.com/sarahjohnson",
         linkedin: "https://linkedin.com/in/sarahjohnson"
       })
-    }).returning();
+    });
     
     authorId = newAuthor.id;
     console.log("Author user created with profile details.");
@@ -140,7 +140,7 @@ export async function seed() {
           github: `https://github.com/${authorNames[i].toLowerCase().replace(' ', '')}`,
           linkedin: `https://linkedin.com/in/${authorNames[i].toLowerCase().replace(' ', '')}`
         })
-      }).returning();
+      });
       
       additionalAuthorIds.push(newAuthor.id);
       console.log(`Created author: ${authorNames[i]}`);
@@ -169,7 +169,7 @@ export async function seed() {
     console.log("Creating categories...");
     
     for (const category of categoryData) {
-      const [newCategory] = await db.insert(categories).values(category).returning();
+      const [newCategory] = await db.insert(categories).values(category);
       categoryIds.push(newCategory.id);
       console.log(`Created category: ${category.name}`);
     }
@@ -202,7 +202,7 @@ export async function seed() {
     console.log("Creating tags...");
     
     for (const tag of tagData) {
-      const [newTag] = await db.insert(tags).values(tag).returning();
+      const [newTag] = await db.insert(tags).values(tag);
       tagIds.push(newTag.id);
       console.log(`Created tag: ${tag.name}`);
     }
@@ -839,7 +839,7 @@ By applying these principles, you'll create interfaces that are not only visuall
     
     for (let i = 0; i < additionalBlogContent.length; i++) {
       const blog = additionalBlogContent[i];
-      const [newArticle] = await db.insert(articles).values(blog).returning();
+      const [newArticle] = await db.insert(articles).values(blog);
       console.log(`Created blog: ${blog.title}`);
       
       // Assign categories to each blog
