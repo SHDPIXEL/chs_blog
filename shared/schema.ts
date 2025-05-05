@@ -133,7 +133,7 @@ export const articleCategories = pgTable("article_categories", {
 
 // Article-Tag relation (many-to-many)
 export const articleTags = pgTable("article_tags", {
-  articleId: integer("article_id").references(() => articles.id).notNull(),
+  articleId: integer("article_id", { unsigned: true }).references(() => articles.id).notNull(),
   tagId: integer("tag_id").references(() => tags.id).notNull(),
 }, (t) => ({
   pk: primaryKey({ columns: [t.articleId, t.tagId] }),
@@ -141,7 +141,7 @@ export const articleTags = pgTable("article_tags", {
 
 // Article-CoAuthor relation (many-to-many)
 export const articleCoAuthors = pgTable("article_co_authors", {
-  articleId: integer("article_id").references(() => articles.id).notNull(),
+  articleId: integer("article_id", { unsigned: true }).references(() => articles.id).notNull(),
   userId: integer("user_id").references(() => users.id).notNull(),
 }, (t) => ({
   pk: primaryKey({ columns: [t.articleId, t.userId] }),
@@ -168,7 +168,7 @@ export const notifications = pgTable("notifications", {
   type: text("type",{ length: 512 }).notNull(),
   title: text("title",{ length: 512 }).notNull(),
   message: text("message",{ length: 512 }).notNull(),
-  articleId: integer("article_id").references(() => articles.id),
+  articleId: integer("article_id", { unsigned: true }).references(() => articles.id),
   commentId: integer("comment_id").references(() => comments.id), // Reference to the comment if notification is about a comment
   articleSlug: text("article_slug",{ length: 512 }), // Store article slug for better navigation URLs
   read: text("read",{ length: 512 }).default('false').notNull(),
