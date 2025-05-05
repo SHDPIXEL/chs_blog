@@ -263,7 +263,7 @@ export class DatabaseStorage implements IStorage {
     return await db
       .select()
       .from(articles)
-      .where(eq(articles.published, "true"))
+      .where(eq(articles.published, 1))
       .orderBy(desc(articles.createdAt));
   }
 
