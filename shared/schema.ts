@@ -134,7 +134,7 @@ export const articleCategories = pgTable("article_categories", {
 // Article-Tag relation (many-to-many)
 export const articleTags = pgTable("article_tags", {
   articleId: integer("article_id", { unsigned: true }).references(() => articles.id).notNull(),
-  tagId: integer("tag_id").references(() => tags.id).notNull(),
+  tagId: integer("tag_id", { unsigned: true }).references(() => tags.id).notNull(),
 }, (t) => ({
   pk: primaryKey({ columns: [t.articleId, t.tagId] }),
 }));
@@ -142,7 +142,7 @@ export const articleTags = pgTable("article_tags", {
 // Article-CoAuthor relation (many-to-many)
 export const articleCoAuthors = pgTable("article_co_authors", {
   articleId: integer("article_id", { unsigned: true }).references(() => articles.id).notNull(),
-  userId: integer("user_id").references(() => users.id).notNull(),
+  userId: integer("user_id", { unsigned: true }).references(() => users.id).notNull(),
 }, (t) => ({
   pk: primaryKey({ columns: [t.articleId, t.userId] }),
 }));
@@ -164,7 +164,7 @@ export const comments = pgTable("comments", {
 // Notifications table
 export const notifications = pgTable("notifications", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id).notNull(),
+  userId: integer("user_id", { unsigned: true }).references(() => users.id).notNull(),
   type: text("type",{ length: 512 }).notNull(),
   title: text("title",{ length: 512 }).notNull(),
   message: text("message",{ length: 512 }).notNull(),
