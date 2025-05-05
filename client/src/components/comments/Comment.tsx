@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { formatDistanceToNow } from "date-fns";
 import { Comment } from "@shared/schema";
 import { createInitialsAvatar } from "@/lib/avatarUtils";
 import { Button } from "@/components/ui/button";
@@ -9,6 +8,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { MessageSquare } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { UserRole } from "@shared/schema";
+import { getFormatDistanceToNow } from "@/utils/distanceToNow";
 
 // Comment already has an optional replyCount property from schema.ts
 interface CommentProps {
@@ -35,7 +35,7 @@ export function CommentComponent({
 
   // Format the date nicely
   const formattedDate = comment.createdAt
-    ? formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })
+    ? getFormatDistanceToNow(comment.createdAt)
     : "";
 
   // Generate avatar from author name

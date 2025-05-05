@@ -159,7 +159,7 @@ const NewBlog: React.FC = () => {
         authorId: user?.id ? Number(user.id) : undefined,
         featuredImage,
         // For admin, published is set based on status
-        published: values.status === ArticleStatus.PUBLISHED,
+        published:  (values.status === ArticleStatus.PUBLISHED).toString(),
         // Convert customTags to the expected tags format for the API
         tags: values.customTags,
       };
@@ -331,7 +331,7 @@ const NewBlog: React.FC = () => {
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)}>
                 <Tabs defaultValue="content" className="space-y-4">
-                  <TabsList className="mt-2 px-4">
+                  <TabsList className="mt-2 mx-4">
                     <TabsTrigger value="content">
                       <Layout className="w-4 h-4 mr-2" />
                       Content

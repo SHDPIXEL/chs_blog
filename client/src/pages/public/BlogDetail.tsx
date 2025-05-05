@@ -61,9 +61,9 @@ const BlogDetail: React.FC = () => {
 
       const element = contentRef.current;
       const commentsSection = document.getElementById("comments-section");
-      
+
       // Get content dimensions
-      const totalHeight = commentsSection 
+      const totalHeight = commentsSection
         ? commentsSection.offsetTop - element.offsetTop - 100 // End before comments section
         : element.scrollHeight;
       const windowHeight = window.innerHeight;
@@ -161,13 +161,14 @@ const BlogDetail: React.FC = () => {
 
   // Handle copying article URL to clipboard
   const copyToClipboard = () => {
-    navigator.clipboard.writeText(canonicalUrl)
+    navigator.clipboard
+      .writeText(canonicalUrl)
       .then(() => {
         setCopied(true);
         toast({
           title: "URL copied to clipboard!",
           description: "You can now share this article with others.",
-          variant: "default"
+          variant: "default",
         });
         // Reset copy status after 2 seconds
         setTimeout(() => setCopied(false), 2000);
@@ -176,7 +177,7 @@ const BlogDetail: React.FC = () => {
         toast({
           title: "Failed to copy URL",
           description: "Please try again or copy the URL manually.",
-          variant: "destructive"
+          variant: "destructive",
         });
       });
   };
@@ -201,7 +202,7 @@ const BlogDetail: React.FC = () => {
         <link rel="canonical" href={canonicalUrl} />
         <meta property="og:url" content={canonicalUrl} />
         <meta name="robots" content="index, follow" />
-        {articleData.keywords && (
+        {Array.isArray(articleData.keywords) && (
           <meta name="keywords" content={articleData.keywords.join(", ")} />
         )}
         <meta property="og:title" content={articleData.title} />
@@ -234,7 +235,9 @@ const BlogDetail: React.FC = () => {
               "@type": "Person",
               name: articleData.author?.name,
               url: articleData.author?.id
-                ? `${window.location.origin}/authors/${articleData.author.id}?name=${encodeURIComponent(articleData.author.name || "")}`
+                ? `${window.location.origin}/authors/${
+                    articleData.author.id
+                  }?name=${encodeURIComponent(articleData.author.name || "")}`
                 : null,
             },
             publisher: {
@@ -255,8 +258,10 @@ const BlogDetail: React.FC = () => {
                     (coAuthor: { id: number; name: string }) => ({
                       "@type": "Person",
                       name: coAuthor.name,
-                      url: `${window.location.origin}/authors/${coAuthor.id}?name=${encodeURIComponent(coAuthor.name || "")}`,
-                    }),
+                      url: `${window.location.origin}/authors/${
+                        coAuthor.id
+                      }?name=${encodeURIComponent(coAuthor.name || "")}`,
+                    })
                   ),
                 }
               : {}),
@@ -341,7 +346,7 @@ const BlogDetail: React.FC = () => {
                           name: string;
                           avatarUrl?: string;
                         },
-                        index: number,
+                        index: number
                       ) => (
                         <Avatar
                           key={index}
@@ -355,7 +360,7 @@ const BlogDetail: React.FC = () => {
                             {getInitials(coAuthor.name)}
                           </AvatarFallback>
                         </Avatar>
-                      ),
+                      )
                     )}
                     {coAuthors.length > 3 && (
                       <div className="h-6 w-6 rounded-full bg-gray-200 flex items-center justify-center text-xs border-2 border-white">
@@ -443,8 +448,8 @@ const BlogDetail: React.FC = () => {
               </Button>
             </div>
             <div className="flex gap-3">
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 className="flex items-center gap-1 transition-all"
                 onClick={copyToClipboard}
               >
@@ -550,7 +555,7 @@ const BlogDetail: React.FC = () => {
                         </div>
                       </CardContent>
                     </Card>
-                  ),
+                  )
                 )}
               </div>
             )}

@@ -223,20 +223,17 @@ const BlogManagement: React.FC = () => {
           .filter((id) => !isNaN(id) && id > 0);
 
         console.log("Filtered numeric IDs for update:", numericIds);
-        
+
         // Make sure we have valid IDs to update
         if (numericIds.length === 0) {
           throw new Error("No valid article IDs to update");
         }
 
-        const res = await apiRequest(
-          "PATCH",
-          "/api/admin/articles/bulk/status",
-          {
-            ids: numericIds,
-            status,
-          },
-        );
+        const res = await apiRequest("PATCH", "/api/admin/articles/bulk/status/update", {
+          ids: numericIds,
+          status,
+        });
+
 
         // Handle the response - clone it to prevent "body stream already read" errors
         const clonedRes = res.clone();
@@ -323,7 +320,7 @@ const BlogManagement: React.FC = () => {
         "Sending bulk featured toggle with IDs:",
         blogIds,
         "featured:",
-        featured,
+        featured
       );
 
       try {
@@ -342,7 +339,7 @@ const BlogManagement: React.FC = () => {
           {
             ids: numericIds,
             featured,
-          },
+          }
         );
 
         // Handle the response - clone it to prevent "body stream already read" errors
@@ -494,7 +491,7 @@ const BlogManagement: React.FC = () => {
       "Toggling selection for blog ID:",
       numericBlogId,
       "type:",
-      typeof numericBlogId,
+      typeof numericBlogId
     );
 
     setSelectedBlogs((prev) => {
@@ -521,7 +518,7 @@ const BlogManagement: React.FC = () => {
     console.log("Selected blog IDs:", selectedBlogs);
     console.log(
       "Types of selected blogs:",
-      selectedBlogs.map((id) => typeof id),
+      selectedBlogs.map((id) => typeof id)
     );
     console.log("Status information:", bulkAction);
 
@@ -600,7 +597,7 @@ const BlogManagement: React.FC = () => {
             <CardHeader>
               <CardTitle>All Blog Posts</CardTitle>
               <CardDescription>
-                Manage, filter, and bulk update blog posts.
+                Manage, filter, and update blog posts.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -608,7 +605,6 @@ const BlogManagement: React.FC = () => {
                 {/* Search and filter UI */}
                 <div className="flex flex-col sm:flex-row justify-between gap-4">
                   <div className="flex items-center flex-1">
-                    <Search className="mr-2 h-4 w-4 text-muted-foreground" />
                     <Input
                       placeholder="Search blogs by title..."
                       value={searchQuery}
@@ -675,25 +671,7 @@ const BlogManagement: React.FC = () => {
                             <FileText className="mr-2 h-4 w-4" />
                             Move to Draft
                           </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setBulkAction("feature");
-                              setBulkActionDialogOpen(true);
-                            }}
-                          >
-                            <Star className="mr-2 h-4 w-4 text-yellow-500" />
-                            Feature
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setBulkAction("unfeature");
-                              setBulkActionDialogOpen(true);
-                            }}
-                          >
-                            <Star className="mr-2 h-4 w-4" />
-                            Unfeature
-                          </DropdownMenuItem>
+
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
                             onClick={() => {
@@ -740,7 +718,7 @@ const BlogManagement: React.FC = () => {
                         <TableHead>Status</TableHead>
                         <TableHead>Views</TableHead>
                         <TableHead>Date</TableHead>
-                        <TableHead>Featured</TableHead>
+
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -750,7 +728,7 @@ const BlogManagement: React.FC = () => {
                           <TableCell>
                             <Checkbox
                               checked={selectedBlogs.some(
-                                (id) => Number(id) === Number(blog.id),
+                                (id) => Number(id) === Number(blog.id)
                               )}
                               onCheckedChange={() =>
                                 handleToggleSelect(blog.id)
@@ -784,13 +762,7 @@ const BlogManagement: React.FC = () => {
                           <TableCell>
                             {new Date(blog.createdAt).toLocaleDateString()}
                           </TableCell>
-                          <TableCell>
-                            {blog.featured ? (
-                              <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-                            ) : (
-                              <Star className="h-4 w-4 text-muted-foreground" />
-                            )}
-                          </TableCell>
+
                           <TableCell className="text-right">
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
@@ -809,19 +781,19 @@ const BlogManagement: React.FC = () => {
                                 >
                                   <Eye className="mr-2 h-4 w-4" /> Preview
                                 </DropdownMenuItem>
-                                {blog.published && (
+                                {blog.published ? (
                                   <DropdownMenuItem
                                     onClick={() =>
                                       window.open(
                                         `/blogs/${blog.id}/${blog.slug}`,
-                                        "_blank",
+                                        "_blank"
                                       )
                                     }
                                   >
                                     <Eye className="mr-2 h-4 w-4" /> View
                                     Published
                                   </DropdownMenuItem>
-                                )}
+                                ) : null}
                                 <DropdownMenuItem
                                   onClick={() =>
                                     navigate(`/admin/blogs/${blog.id}`)
@@ -855,18 +827,7 @@ const BlogManagement: React.FC = () => {
                                     Unpublish
                                   </DropdownMenuItem>
                                 )}
-                                <DropdownMenuItem
-                                  onClick={() =>
-                                    toggleFeaturedMutation.mutate({
-                                      blogId: blog.id,
-                                      featured: !blog.featured,
-                                    })
-                                  }
-                                >
-                                  <Star className="mr-2 h-4 w-4" />
-                                  {blog.featured ? "Unfeature" : "Feature"}
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
+
                                 <DropdownMenuItem
                                   onClick={() => {
                                     setBlogToDelete(blog.id);

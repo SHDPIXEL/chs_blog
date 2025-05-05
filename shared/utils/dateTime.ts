@@ -1,6 +1,25 @@
 /**
  * Utility functions for date and time handling with time zone support
  */
+import * as dateFnsTz from 'date-fns-tz';
+
+const IST_TIMEZONE = 'Asia/Kolkata';
+
+// Convert UTC to IST
+export function utcToIst(utcDate: Date | string | null): Date | null {
+  if (!utcDate) return null;
+
+  const date = typeof utcDate === 'string' ? new Date(utcDate) : utcDate;
+  return dateFnsTz.toZonedTime(date, IST_TIMEZONE);
+}
+
+// Convert IST to UTC
+export function istToUtc(istDate: Date | string | null): Date | null {
+  if (!istDate) return null;
+
+  const date = typeof istDate === 'string' ? new Date(istDate) : istDate;
+  return dateFnsTz.zonedTimeToUtc(date, IST_TIMEZONE);
+}
 
 // IST is UTC+5:30
 const IST_OFFSET = 5.5 * 60 * 60 * 1000; // 5.5 hours in milliseconds
@@ -10,28 +29,34 @@ const IST_OFFSET = 5.5 * 60 * 60 * 1000; // 5.5 hours in milliseconds
  * @param utcDate Date in UTC
  * @returns Date in IST
  */
-export function utcToIst(utcDate: Date | string | null): Date | null {
-  if (!utcDate) return null;
-  
-  const date = typeof utcDate === 'string' ? new Date(utcDate) : utcDate;
-  const utcMs = date.getTime();
-  const istMs = utcMs + IST_OFFSET;
-  return new Date(istMs);
+export function getNowInIst(): Date {
+  const now = new Date();
+  return new Date(now.getTime() + (5.5 * 60 * 60 * 1000)); // add 5.5 hours
 }
 
-/**
- * Convert an IST date to UTC date
- * @param istDate Date in IST
- * @returns Date in UTC
- */
-export function istToUtc(istDate: Date | string | null): Date | null {
-  if (!istDate) return null;
+// export function utcToIst(utcDate: Date | string | null): Date | null {
+//   if (!utcDate) return null;
+
+//   const date = typeof utcDate === 'string' ? new Date(utcDate) : utcDate;
+
+//   // Use toLocaleString to get IST time string, then convert back to Date object
+//   const istString = date.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
+//   return new Date(istString);
+// }
+
+// /**
+//  * Convert an IST date to UTC date
+//  * @param istDate Date in IST
+//  * @returns Date in UTC
+//  */
+// export function istToUtc(istDate: Date | string | null): Date | null {
+//   if (!istDate) return null;
   
-  const date = typeof istDate === 'string' ? new Date(istDate) : istDate;
-  const istMs = date.getTime();
-  const utcMs = istMs - IST_OFFSET;
-  return new Date(utcMs);
-}
+//   const date = typeof istDate === 'string' ? new Date(istDate) : istDate;
+//   const istMs = date.getTime();
+//   const utcMs = istMs - IST_OFFSET;
+//   return new Date(utcMs);
+// }
 
 /**
  * Format a date for display in IST

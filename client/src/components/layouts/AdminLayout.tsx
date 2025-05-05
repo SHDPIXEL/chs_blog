@@ -54,7 +54,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       current: location === "/admin/blogs",
     },
     {
-      name: "My Blogs",
+      name: "Admin Blogs",
       href: "/admin/my-blogs",
       icon: FileText,
       current: location === "/admin/my-blogs",
@@ -241,7 +241,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       {/* Content area */}
       <div className="flex flex-1 flex-col w-0 overflow-hidden">
         <div className="relative z-10 flex h-16 flex-shrink-0 border-b bg-background">
-          <div className="flex items-center justify-between flex-1 px-4">
+          <div className="flex items-center flex-1 px-4 justify-between lg:justify-end">
             {/* Mobile menu button */}
             <div className="lg:hidden">
               <Button
@@ -259,7 +259,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             </div>
 
             {/* Right side of navbar */}
-            <div className="flex items-center">
+            <div className="flex items-center ">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -277,19 +277,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link href="/admin/profile">
-                      <Users className="mr-2 h-4 w-4" />
-                      Profile
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/admin/settings">
-                      <Settings className="mr-2 h-4 w-4" />
-                      Settings
-                    </Link>
-                  </DropdownMenuItem>
+                  
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={handleLogout}

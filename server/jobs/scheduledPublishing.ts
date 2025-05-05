@@ -1,18 +1,23 @@
 import { db } from '../db';
 import { articles, ArticleStatus } from '@shared/schema';
-import { eq, and, lte, isNotNull, sql } from 'drizzle-orm';
+import { eq, and, lte, isNotNull } from 'drizzle-orm';
 import { log } from '../vite';
-import { utcToIst, formatIstDate } from '@shared/utils/dateTime';
+import { utcToIst, formatIstDate, getNowInIst } from '@shared/utils/dateTime';
+import { notEqual } from 'assert';
 
 /**
  * Check for scheduled posts that need to be published
  * This function finds articles with a scheduledPublishAt date in the past
  * and marks them as actually published
  */
+
+
 export async function processScheduledArticles() {
   try {
-    const now = new Date();
+    const now = getNowInIst();
     const nowIst = utcToIst(now);
+
+    log(`now : ${now}, nowist : ${nowIst}`);
     log(`Checking for scheduled articles to publish at ${now.toISOString()} (${formatIstDate(now)})`, 'scheduler');
     
     // First, let's get all articles with scheduledPublishAt for debugging
@@ -27,6 +32,8 @@ export async function processScheduledArticles() {
       .from(articles)
       .where(
         and(
+          eq(articles.status, "published"),
+          eq(articles.published, "false"),
           isNotNull(articles.scheduledPublishAt)
         )
       );
@@ -37,11 +44,16 @@ export async function processScheduledArticles() {
         const scheduleTime = article.scheduledPublishAt instanceof Date 
           ? article.scheduledPublishAt.toISOString() 
           : article.scheduledPublishAt;
-        const scheduleTimeIst = formatIstDate(article.scheduledPublishAt);
-        
-        log(`- Article ID ${article.id}: "${article.title}" status=${article.status}, published=${article.published}
-           UTC: ${scheduleTime}
-           IST: ${scheduleTimeIst}`, 'scheduler');
+
+        // Ensure the date is valid before logging
+        if (scheduleTime && !isNaN(new Date(scheduleTime).getTime())) {
+          const scheduleTimeIst = formatIstDate(article.scheduledPublishAt);
+          log(`- Article ID ${article.id}: "${article.title}" status=${article.status}, published=${article.published}
+             UTC: ${scheduleTime}
+             IST: ${scheduleTimeIst}`, 'scheduler');
+        } else {
+          log(`- Article ID ${article.id}: "${article.title}" has an invalid scheduledPublishAt date`, 'scheduler');
+        }
       }
     } else {
       log(`Debug: No articles with scheduledPublishAt dates found`, 'scheduler');
@@ -57,7 +69,7 @@ export async function processScheduledArticles() {
       .where(
         and(
           eq(articles.status, ArticleStatus.PUBLISHED),
-          eq(articles.published, false),
+          eq(articles.published, "false"),
           isNotNull(articles.scheduledPublishAt),
           lte(articles.scheduledPublishAt, now)
         )
@@ -72,20 +84,26 @@ export async function processScheduledArticles() {
     
     // Update each article to be published
     for (const article of scheduledArticles) {
-      await db
-        .update(articles)
-        .set({ 
-          published: true,
-          publishedAt: now // Set the actual publish time
-        })
-        .where(eq(articles.id, article.id));
-      
-      const scheduledTimeIst = formatIstDate(article.scheduledPublishAt);
-      const publishTimeIst = formatIstDate(now);
-      
-      log(`Published scheduled article: ${article.title} (ID: ${article.id})
-         Scheduled for: ${scheduledTimeIst}
-         Published at: ${publishTimeIst}`, 'scheduler');
+
+      log(`update for Arcticle : ${article.publishedAt?.toISOString()}, ${article.id} , ${article.title}, ${article.published}, ${article.status}, ${article.scheduledPublishAt?.toISOString()}`);
+      if (article.scheduledPublishAt && !isNaN(new Date(article.scheduledPublishAt).getTime())) {
+        await db
+          .update(articles)
+          .set({ 
+            published: "true",
+            publishedAt: now // Set the actual publish time
+          })
+          .where(eq(articles.id, article.id));
+        
+        const scheduledTimeIst = formatIstDate(article.scheduledPublishAt);
+        const publishTimeIst = formatIstDate(now);
+        
+        log(`Published scheduled article: ${article.title} (ID: ${article.id})
+           Scheduled for: ${scheduledTimeIst}
+           Published at: ${publishTimeIst}`, 'scheduler');
+      } else {
+        log(`Article ID ${article.id} has an invalid scheduledPublishAt date, skipping publish`, 'scheduler');
+      }
     }
     
     return { 
@@ -102,3 +120,4 @@ export async function processScheduledArticles() {
     };
   }
 }
+

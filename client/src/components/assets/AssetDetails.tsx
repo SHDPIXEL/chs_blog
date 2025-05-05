@@ -1,36 +1,36 @@
-import React, { useState } from 'react';
-import { Asset } from '@shared/schema';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle 
-} from '@/components/ui/dialog';
-import { useToast } from '@/hooks/use-toast';
-import { useMutation } from '@tanstack/react-query';
-import { apiRequest, queryClient } from '@/lib/queryClient';
-import { useAssetManager } from '@/context/AssetManagerContext';
-import { 
-  Calendar, 
-  Download, 
-  FileText, 
-  Image, 
-  Info, 
-  Music, 
-  Pencil, 
-  Tag, 
-  Trash2, 
-  User, 
-  Video 
-} from 'lucide-react';
+import React, { useState } from "react";
+import { Asset } from "@shared/schema";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useAssetManager } from "@/context/AssetManagerContext";
+import {
+  Calendar,
+  Download,
+  FileText,
+  Image,
+  Info,
+  Music,
+  Pencil,
+  Tag,
+  Trash2,
+  User,
+  Video,
+} from "lucide-react";
 
 interface AssetDetailsProps {
   asset: Asset;
@@ -39,42 +39,45 @@ interface AssetDetailsProps {
 const AssetDetails: React.FC<AssetDetailsProps> = ({ asset }) => {
   const { toast } = useToast();
   const { deleteAsset, updateAssetMetadata } = useAssetManager();
-  
+
   const [isEditing, setIsEditing] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [title, setTitle] = useState(asset.title || '');
-  const [description, setDescription] = useState(asset.description || '');
-  const [tagInput, setTagInput] = useState('');
+  const [title, setTitle] = useState(asset.title || "");
+  const [description, setDescription] = useState(asset.description || "");
+  const [tagInput, setTagInput] = useState("");
   const [tags, setTags] = useState<string[]>(
     Array.isArray(asset.tags) ? [...asset.tags] : []
   );
-  
+
   // Reset form values and exit edit mode when a new asset is selected
   React.useEffect(() => {
     setIsEditing(false);
-    setTitle(asset.title || '');
-    setDescription(asset.description || '');
+    setTitle(asset.title || "");
+    setDescription(asset.description || "");
     setTags(Array.isArray(asset.tags) ? [...asset.tags] : []);
   }, [asset.id]);
 
   // Format file size for display
   const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
+    if (bytes === 0) return "0 Bytes";
     const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const sizes = ["Bytes", "KB", "MB", "GB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
   // Get appropriate icon for file type
   const getAssetIcon = (mimetype: string) => {
-    if (mimetype.startsWith('image/')) {
+    if (mimetype.startsWith("image/")) {
       return <Image className="h-5 w-5" />;
-    } else if (mimetype.startsWith('application/pdf') || mimetype.startsWith('text/')) {
+    } else if (
+      mimetype.startsWith("application/pdf") ||
+      mimetype.startsWith("text/")
+    ) {
       return <FileText className="h-5 w-5" />;
-    } else if (mimetype.startsWith('video/')) {
+    } else if (mimetype.startsWith("video/")) {
       return <Video className="h-5 w-5" />;
-    } else if (mimetype.startsWith('audio/')) {
+    } else if (mimetype.startsWith("audio/")) {
       return <Music className="h-5 w-5" />;
     } else {
       return <FileText className="h-5 w-5" />;
@@ -85,13 +88,13 @@ const AssetDetails: React.FC<AssetDetailsProps> = ({ asset }) => {
   const addTag = () => {
     if (tagInput.trim() && !tags.includes(tagInput.trim())) {
       setTags([...tags, tagInput.trim()]);
-      setTagInput('');
+      setTagInput("");
     }
   };
 
   // Remove a tag from the list
   const removeTag = (tagToRemove: string) => {
-    setTags(tags.filter(tag => tag !== tagToRemove));
+    setTags(tags.filter((tag) => tag !== tagToRemove));
   };
 
   // The copy URL functionality has been removed as requested
@@ -104,7 +107,7 @@ const AssetDetails: React.FC<AssetDetailsProps> = ({ asset }) => {
         description,
         tags,
       });
-      
+
       setIsEditing(false);
       toast({
         title: "Changes Saved",
@@ -113,7 +116,8 @@ const AssetDetails: React.FC<AssetDetailsProps> = ({ asset }) => {
     } catch (error) {
       toast({
         title: "Update Failed",
-        description: error instanceof Error ? error.message : "Failed to update asset",
+        description:
+          error instanceof Error ? error.message : "Failed to update asset",
         variant: "destructive",
       });
     }
@@ -131,7 +135,8 @@ const AssetDetails: React.FC<AssetDetailsProps> = ({ asset }) => {
     } catch (error) {
       toast({
         title: "Deletion Failed",
-        description: error instanceof Error ? error.message : "Failed to delete asset",
+        description:
+          error instanceof Error ? error.message : "Failed to delete asset",
         variant: "destructive",
       });
     }
@@ -140,7 +145,7 @@ const AssetDetails: React.FC<AssetDetailsProps> = ({ asset }) => {
   return (
     <div className="space-y-4">
       {/* Image preview for image assets */}
-      {asset.mimetype.startsWith('image/') && (
+      {asset.mimetype?.startsWith("image/") && (
         <div className="border rounded-md overflow-hidden">
           <img
             src={asset.url}
@@ -184,7 +189,7 @@ const AssetDetails: React.FC<AssetDetailsProps> = ({ asset }) => {
                   onChange={(e) => setTagInput(e.target.value)}
                   placeholder="Add tags"
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
+                    if (e.key === "Enter") {
                       e.preventDefault();
                       addTag();
                     }
@@ -194,7 +199,7 @@ const AssetDetails: React.FC<AssetDetailsProps> = ({ asset }) => {
                   Add
                 </Button>
               </div>
-              
+
               <div className="flex flex-wrap gap-2 mt-2">
                 {tags.map((tag, index) => (
                   <Badge key={index} variant="secondary" className="px-2 py-1">
@@ -214,9 +219,7 @@ const AssetDetails: React.FC<AssetDetailsProps> = ({ asset }) => {
               <Button variant="outline" onClick={() => setIsEditing(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleSaveChanges}>
-                Save Changes
-              </Button>
+              <Button onClick={handleSaveChanges}>Save Changes</Button>
             </div>
           </CardContent>
         </Card>
@@ -242,12 +245,12 @@ const AssetDetails: React.FC<AssetDetailsProps> = ({ asset }) => {
                 <Info className="w-4 h-4 text-gray-400" />
                 <span>{asset.mimetype}</span>
               </div>
-              
+
               <div className="flex gap-2 items-center">
                 <Calendar className="w-4 h-4 text-gray-400" />
                 <span>{new Date(asset.createdAt).toLocaleString()}</span>
               </div>
-              
+
               <div className="flex gap-2 items-center">
                 <FileText className="w-4 h-4 text-gray-400" />
                 <span>{formatFileSize(asset.size)}</span>
@@ -277,10 +280,10 @@ const AssetDetails: React.FC<AssetDetailsProps> = ({ asset }) => {
             )}
 
             <div className="pt-2 border-t border-gray-100 flex space-x-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="text-red-500 hover:text-red-600" 
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-red-500 hover:text-red-600"
                 onClick={() => setShowDeleteDialog(true)}
               >
                 <Trash2 className="h-4 w-4 mr-2" />
@@ -297,11 +300,15 @@ const AssetDetails: React.FC<AssetDetailsProps> = ({ asset }) => {
           <DialogHeader>
             <DialogTitle>Delete Asset</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this asset? This action cannot be undone.
+              Are you sure you want to delete this asset? This action cannot be
+              undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteDialog(false)}
+            >
               Cancel
             </Button>
             <Button variant="destructive" onClick={handleDelete}>

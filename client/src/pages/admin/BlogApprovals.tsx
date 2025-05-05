@@ -39,7 +39,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { format, formatDistanceToNow } from "date-fns";
+import { format } from "date-fns";
 import {
   MoreHorizontal,
   Eye,
@@ -59,6 +59,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
+import { getFormatDistanceToNow } from "@/utils/distanceToNow";
 
 interface ExtendedArticle extends Article {
   author: string;
@@ -340,7 +341,7 @@ const BlogApprovals: React.FC = () => {
               <div className="flex flex-col space-y-4">
                 {/* Search UI */}
                 <div className="flex items-center">
-                  <Search className="mr-2 h-4 w-4 text-muted-foreground" />
+                 
                   <Input
                     placeholder="Search blogs by title..."
                     value={searchQuery}
@@ -375,9 +376,7 @@ const BlogApprovals: React.FC = () => {
                                 : "Uncategorized"}
                             </TableCell>
                             <TableCell>
-                              {formatDistanceToNow(new Date(blog.updatedAt), {
-                                addSuffix: true,
-                              })}
+                              {getFormatDistanceToNow(blog.updatedAt)}
                             </TableCell>
                             <TableCell>
                               <div className="flex items-center space-x-2">

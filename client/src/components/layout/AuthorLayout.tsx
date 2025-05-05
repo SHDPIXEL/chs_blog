@@ -80,34 +80,7 @@ const AuthorLayout: React.FC<AuthorLayoutProps> = ({ children }) => {
             <Menu className="h-6 w-6" />
           </Button>
           
-          <div className="flex-1 px-4 flex justify-between">
-            <div className="flex-1 flex">
-              <div className="w-full flex md:ml-0">
-                <label htmlFor="search-field" className="sr-only">Search</label>
-                <div className="relative w-full text-[#333a3d]/60 focus-within:text-[#333a3d]">
-                  <div className="absolute inset-y-0 left-0 flex items-center pointer-events-none px-3">
-                    <Search className="h-5 w-5" />
-                  </div>
-                  <Input
-                    id="search-field"
-                    className="block w-full h-full pl-10 pr-3 py-2 border-transparent text-[#333a3d] placeholder-[#333a3d]/50 focus:outline-none focus:ring-0 focus:border-transparent sm:text-sm"
-                    placeholder="Search"
-                    type="search"
-                  />
-                </div>
-              </div>
-            </div>
-            
-            <div className="ml-4 flex items-center md:ml-6">
-              <Button
-                variant="ghost"
-                className="p-1 rounded-full text-[#333a3d]/70 hover:text-[#333a3d]"
-              >
-                <span className="sr-only">View notifications</span>
-                <Bell className="h-6 w-6" />
-              </Button>
-            </div>
-          </div>
+        
         </div>
 
         <main className="flex-1 relative overflow-y-auto focus:outline-none bg-white">

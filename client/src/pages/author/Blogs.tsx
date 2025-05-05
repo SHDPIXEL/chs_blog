@@ -26,7 +26,8 @@ import {
   Plus,
   Loader2,
 } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow , format, parseISO} from "date-fns";
+
 import { ArticleStatusType } from "@shared/schema";
 import {
   Dialog,
@@ -36,6 +37,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { getFormatDistanceToNow } from "@/utils/distanceToNow";
 
 type ArticleStatusFilter = "all" | ArticleStatusType;
 
@@ -259,8 +261,8 @@ const BlogItem: React.FC<BlogItemProps> = ({ article }) => {
             <Clock className="mr-1 h-4 w-4" />
             <span>
               {article.status === "published"
-                ? `Published ${formatDistanceToNow(new Date(article.createdAt), { addSuffix: true })}`
-                : `Last edited ${formatDistanceToNow(new Date(article.updatedAt), { addSuffix: true })}`}
+                ? `Published ${getFormatDistanceToNow(article.createdAt)}`
+                : `Last edited ${getFormatDistanceToNow(article.updatedAt)}`}
             </span>
 
             {article.status === "published" && (

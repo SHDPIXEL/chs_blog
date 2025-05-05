@@ -161,7 +161,7 @@ const Header = ({ isTransparent = false }: HeaderProps) => {
                   <Link
                     onClick={handleLinkClick}
                     href="/about"
-                    className={`flex items-center px-3 py-2 rounded-md transition-colors duration-200 font-semibold group-hover:text-[#CC0033] 
+                    className={`flex items-center px-3 py-2 rounded-md transition-colors duration-200 font-semibold font-montserrat group-hover:text-[#CC0033] 
                   ${isActive("/about") ? "text-[#CC0033]" : ""}
                   ${isTransparent && atTop ? "hover:bg-white/10 text-white" : "hover:bg-gray-50 text-[#333A3D]"}`}
                   >
@@ -338,7 +338,7 @@ const Header = ({ isTransparent = false }: HeaderProps) => {
                     onClick={handleLinkClick}
                     href="/blogs"
                     className={`px-3 py-2 rounded-md transition-colors duration-200 font-semibold hover:text-[#CC0033] block
-                  ${isActive("/blogs") ? "text-[#CC0033]" : ""}
+                  text-[#CC0033]
                   ${isTransparent && atTop ? "hover:bg-white/10 text-white" : "hover:bg-gray-50 text-[#333A3D]"}`}
                   >
                     Blogs

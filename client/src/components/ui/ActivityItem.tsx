@@ -1,8 +1,8 @@
 import React from 'react';
-import { formatDistanceToNow } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { User, FileText, Clock } from 'lucide-react';
 import { ActivityItem as ActivityItemType } from '@/types/auth';
+import { getFormatDistanceToNow } from '@/utils/distanceToNow';
 
 interface ActivityItemProps {
   activity: ActivityItemType;
@@ -34,7 +34,7 @@ const ActivityItem: React.FC<ActivityItemProps> = ({ activity }) => {
   // Format the timestamp
   const getFormattedTime = () => {
     try {
-      return formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true });
+      return getFormatDistanceToNow(activity.timestamp);
     } catch (error) {
       return 'recently';
     }

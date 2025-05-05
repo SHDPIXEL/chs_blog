@@ -117,13 +117,13 @@ const AssetManager: React.FC = () => {
       page: 1,
     });
   };
-  
+
   // Handle search type filter
   const handleFilterByType = (type: string) => {
     setSelectedType(type);
     searchAssets({
       query: searchQuery,
-      mimetype: type !== 'all' ? getMimeTypeFilter(type) : undefined,
+      mimetype: type !== "all" ? getMimeTypeFilter(type) : undefined,
       page: 1,
     });
   };
@@ -174,7 +174,7 @@ const AssetManager: React.FC = () => {
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && closeAssetManager()}>
-      <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col overflow-hidden p-0">
+      <DialogContent className="sm:max-w-4xl max-h-[90vh] h-[90vh] flex flex-col overflow-hidden p-0">
         <DialogHeader className="px-6 pt-6 pb-2">
           <DialogTitle>Asset Manager</DialogTitle>
           <DialogDescription>
@@ -187,13 +187,16 @@ const AssetManager: React.FC = () => {
           onValueChange={setActiveTab}
           className="flex-1 flex flex-col"
         >
-          <TabsList className="grid grid-cols-2 px-6 mb-2">
+          <TabsList className="grid grid-cols-2 mb-2 mx-6">
             <TabsTrigger value="browse">Browse Assets</TabsTrigger>
             <TabsTrigger value="upload">Upload New</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="browse" className="flex-1 flex flex-col overflow-hidden">
-            <div className="px-6 pb-4 flex flex-col h-full overflow-hidden">
+          <TabsContent
+            value="browse"
+            className={`flex-1 flex flex-col overflow-y-auto ${activeTab !== "browse" ? "hidden" : ""}`}
+          >
+            <div className="px-6 pb-4 flex flex-col h-full">
               <div className="mb-4 space-y-2 sticky top-0 bg-white z-10 py-2">
                 <div className="flex gap-2">
                   <Input
@@ -207,8 +210,8 @@ const AssetManager: React.FC = () => {
                     <Search className="h-4 w-4" />
                   </Button>
                 </div>
-                
-                <div className="flex flex-wrap gap-1">
+
+                {/* <div className="flex flex-wrap gap-1">
                   <Badge 
                     variant={selectedType === 'all' ? 'default' : 'outline'} 
                     className="cursor-pointer"
@@ -241,9 +244,10 @@ const AssetManager: React.FC = () => {
                     Videos
                   </Badge>
                 </div>
+                 */}
               </div>
 
-              <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4 min-h-0 overflow-hidden">
+              <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4 min-h-0">
                 <div className="col-span-2 border rounded-md p-3 overflow-y-auto">
                   <AssetGrid
                     assets={assets}
@@ -256,18 +260,20 @@ const AssetManager: React.FC = () => {
                   />
                 </div>
 
-                <div className="col-span-1 border rounded-md p-3 overflow-y-auto">
-                  {selectedAsset ? (
-                    <AssetDetails asset={selectedAsset} />
-                  ) : (
-                    <div className="flex flex-col items-center justify-center h-full text-gray-500 text-center">
-                      <FileIcon className="h-10 w-10 mb-2" />
-                      <p>Select an asset to view details</p>
-                    </div>
-                  )}
+                <div className="col-span-1 border rounded-md p-3 flex flex-col h-[calc(100vh-400px)]">
+                  <div className="flex-1 overflow-y-auto">
+                    {selectedAsset ? (
+                      <AssetDetails asset={selectedAsset} />
+                    ) : (
+                      <div className="flex flex-col items-center justify-center h-full text-gray-500 text-center">
+                        <FileIcon className="h-10 w-10 mb-2" />
+                        <p>Select an asset to view details</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-              
+
               <div className="sticky bottom-0 mt-4 flex justify-end gap-2 pt-3 border-t bg-white">
                 <Button variant="outline" onClick={closeAssetManager}>
                   Cancel
@@ -300,13 +306,16 @@ const AssetManager: React.FC = () => {
             </div>
           </TabsContent>
 
-          <TabsContent value="upload" className="flex-1 flex flex-col overflow-hidden">
+          <TabsContent
+            value="upload"
+            className={`flex-1 flex flex-col overflow-hidden ${activeTab !== "upload" ? "hidden" : ""}`}
+          >
             <div className="px-6 pb-4 flex flex-col h-full overflow-hidden">
               <div className="flex-1 overflow-y-auto">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
                   <div className="border rounded-md p-4">
                     <h3 className="text-lg font-medium mb-4">Upload File</h3>
-    
+
                     {uploadFile ? (
                       <div className="mb-4 p-4 border rounded-md flex items-center justify-between">
                         <div className="flex items-center">
@@ -348,7 +357,9 @@ const AssetManager: React.FC = () => {
                         <p className="text-gray-500 mb-1">
                           Click to select a file or drag and drop
                         </p>
-                        <p className="text-xs text-gray-400">Max file size: 5MB</p>
+                        <p className="text-xs text-gray-400">
+                          Max file size: 5MB
+                        </p>
                         <input
                           type="file"
                           ref={fileInputRef}
@@ -358,7 +369,7 @@ const AssetManager: React.FC = () => {
                         />
                       </div>
                     )}
-    
+
                     <Button
                       className="w-full"
                       disabled={!uploadFile || isUploading}
@@ -367,10 +378,10 @@ const AssetManager: React.FC = () => {
                       {isUploading ? "Uploading..." : "Upload Asset"}
                     </Button>
                   </div>
-    
+
                   <div className="border rounded-md p-4">
                     <h3 className="text-lg font-medium mb-4">Asset Details</h3>
-    
+
                     <div className="space-y-4">
                       <div>
                         <label className="block text-sm font-medium mb-1">
@@ -387,7 +398,7 @@ const AssetManager: React.FC = () => {
                           placeholder="Asset title"
                         />
                       </div>
-    
+
                       <div>
                         <label className="block text-sm font-medium mb-1">
                           Description
@@ -401,10 +412,12 @@ const AssetManager: React.FC = () => {
                             }))
                           }
                           placeholder="Brief description of the asset"
-                          className="w-full rounded-md border p-2 min-h-[80px] text-sm"
+                          className="w-full p-2 border bg-white rounded-md  focus:outline-none focus:ring-2 focus:ring-[#CC0033] text-base leading-relaxed font-sans placeholder:text-base placeholder:font-sans
+
+                          "
                         />
                       </div>
-    
+
                       <div>
                         <label className="block text-sm font-medium mb-1">
                           Tags
@@ -415,7 +428,9 @@ const AssetManager: React.FC = () => {
                             onChange={(e) => setNewTag(e.target.value)}
                             placeholder="Add a tag"
                             className="flex-1"
-                            onKeyDown={(e) => e.key === "Enter" && handleAddTag()}
+                            onKeyDown={(e) =>
+                              e.key === "Enter" && handleAddTag()
+                            }
                           />
                           <Button
                             variant="outline"
@@ -425,7 +440,7 @@ const AssetManager: React.FC = () => {
                             <Plus className="h-4 w-4" />
                           </Button>
                         </div>
-    
+
                         <div className="flex flex-wrap gap-2">
                           {uploadMetadata.tags?.map((tag) => (
                             <Badge
@@ -449,7 +464,7 @@ const AssetManager: React.FC = () => {
                   </div>
                 </div>
               </div>
-              
+
               <div className="sticky bottom-0 mt-4 flex justify-end gap-2 pt-3 border-t bg-white">
                 <Button variant="outline" onClick={closeAssetManager}>
                   Cancel
@@ -457,6 +472,7 @@ const AssetManager: React.FC = () => {
               </div>
             </div>
           </TabsContent>
+          
         </Tabs>
       </DialogContent>
     </Dialog>

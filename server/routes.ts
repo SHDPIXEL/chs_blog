@@ -40,10 +40,12 @@ import {
   requireAuth,
   type AuthRequest,
 } from "./middleware/auth";
-import { istToUtc, utcToIst, formatIstDate } from "@shared/utils/dateTime";
+import { istToUtc, utcToIst, formatIstDate, getNowInIst } from "@shared/utils/dateTime";
 
 // JWT Secret
 const JWT_SECRET = process.env.JWT_SECRET || "blog-platform-jwt-secret";
+
+
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
@@ -89,7 +91,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Verify password
       const isValidPassword = await bcrypt.compare(
         validatedData.password,
-        user.password,
+        user.password
       );
       if (!isValidPassword) {
         return res.status(401).json({ message: "Invalid credentials" });
@@ -99,7 +101,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const token = jwt.sign(
         { id: user.id, email: user.email, role: user.role },
         JWT_SECRET,
-        { expiresIn: "24h" },
+        { expiresIn: "24h" }
       );
 
       // Return user info and token
@@ -168,7 +170,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .status(500)
           .json({ message: "Server error while retrieving permissions" });
       }
-    },
+    }
   );
 
   // Admin routes
@@ -178,35 +180,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     requireAdmin,
     async (req, res) => {
       try {
-        // Get real stats from database
-        const [usersCount, articlesCount, commentsCount] = await Promise.all([
-          db.select({ count: sql`count(*)` }).from(users),
-          db.select({ count: sql`count(*)` }).from(articles),
-          db.select({ count: sql`count(*)` }).from(comments),
-        ]);
+      // Get real stats from database
+      const [usersCount, articlesCount, commentsCount] = await Promise.all([
+        db.select({ count: sql`count(*)` }).from(users),
+        db.select({ count: sql`count(*)` }).from(articles),
+        db.select({ count: sql`count(*)` }).from(comments),
+      ]);
 
-        // Calculate total page views by summing all article view counts
-        const viewsResult = await db
-          .select({ totalViews: sql`COALESCE(SUM(view_count), 0)` })
-          .from(articles)
-          .where(eq(articles.published, true));
-          
-        // Get posts this month
-        const currentDate = new Date();
-        const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-        
-        // Calculate posts this month using raw SQL since we need date comparison
-        const postsThisMonthQuery = `
+      // Calculate total page views by summing all article view counts
+      const viewsResult = await db
+        .select({ totalViews: sql`COALESCE(SUM(view_count), 0)` })
+        .from(articles)
+        .where(eq(articles.published, true));
+
+      // Get posts this month
+      const currentDate = new Date();
+      const firstDayOfMonth = new Date(
+        currentDate.getFullYear(),
+        currentDate.getMonth(),
+        1
+      );
+
+      // Calculate posts this month using raw SQL since we need date comparison
+      const postsThisMonthQuery = `
           SELECT COUNT(*) as count
           FROM articles
           WHERE published = true
           AND published_at >= '${firstDayOfMonth.toISOString()}'
         `;
-        
-        const postsThisMonthResult = await db.execute(sql.raw(postsThisMonthQuery));
-        
-        // Get popular categories
-        const categoryStatsQuery = `
+
+      const postsThisMonthResult = await db.execute(
+        sql.raw(postsThisMonthQuery)
+      );
+
+      // Get popular categories
+      const categoryStatsQuery = `
           SELECT c.id, c.name, COUNT(ac.article_id) as count
           FROM categories c
           JOIN article_categories ac ON c.id = ac.category_id
@@ -216,233 +224,236 @@ export async function registerRoutes(app: Express): Promise<Server> {
           ORDER BY count DESC
           LIMIT 5
         `;
-        
-        const popularCategoriesResult = await db.execute(sql.raw(categoryStatsQuery));
-        
-        // Get post status counts
-        const postsByStatusQuery = `
+
+      const popularCategoriesResult = await db.execute(
+        sql.raw(categoryStatsQuery)
+      );
+
+      // Get post status counts
+      const postsByStatusQuery = `
           SELECT status, COUNT(*) as count
           FROM articles
           GROUP BY status
           ORDER BY count DESC
         `;
-        
-        const postsByStatusResult = await db.execute(sql.raw(postsByStatusQuery));
-        
-        // Generate views over time (last 14 days)
-        const viewsOverTime = [];
-        
-        for (let i = 13; i >= 0; i--) {
-          const date = new Date();
-          date.setDate(date.getDate() - i);
-          const formattedDate = date.toISOString().split('T')[0];
-          
-          // In a real implementation, we would query daily view data from a table
-          // For now, calculate a realistic value based on total views
-          const totalViewsValue = Number(viewsResult[0].totalViews) || 0;
-          const baseViews = Math.floor(totalViewsValue / 20); // Base daily views
-          const randomFactor = 0.5 + Math.random(); // Random factor between 0.5 and 1.5
-          const dailyViews = Math.floor(baseViews * randomFactor);
-          
-          viewsOverTime.push({
-            date: formattedDate,
-            views: dailyViews
-          });
-        }
 
-        // Get recent activities from multiple sources
-        // 1. Recent articles (created/published/updated)
-        const recentArticles = await db
-          .select({
-            id: articles.id,
-            title: articles.title,
-            authorId: articles.authorId,
-            status: articles.status,
-            published: articles.published,
-            createdAt: articles.createdAt,
-            updatedAt: articles.updatedAt,
-            publishedAt: articles.publishedAt,
-            reviewedAt: articles.reviewedAt,
-            reviewedBy: articles.reviewedBy,
-          })
-          .from(articles)
-          .orderBy(desc(articles.updatedAt))
-          .limit(5);
+      const postsByStatusResult = await db.execute(sql.raw(postsByStatusQuery));
 
-        // 2. Recent users (new registrations)
-        const recentUsers = await db
-          .select({
-            id: users.id,
-            name: users.name,
-            role: users.role,
-            createdAt: users.createdAt,
-          })
-          .from(users)
-          .orderBy(desc(users.createdAt))
-          .limit(3);
+      // Generate views over time (last 14 days)
+      const viewsOverTime = [];
 
-        // 3. Recent comments on articles
-        const recentComments = await db
-          .select({
-            id: comments.id,
-            content: comments.content,
-            authorName: comments.authorName,
-            authorEmail: comments.authorEmail,
-            articleId: comments.articleId,
-            parentId: comments.parentId,
-            createdAt: comments.createdAt,
-          })
-          .from(comments)
-          .orderBy(desc(comments.createdAt))
-          .limit(5);
+      for (let i = 13; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        const formattedDate = date.toISOString().split("T")[0];
 
-        // 4. Recent notifications (for additional activity context)
-        const recentNotifications = await db
-          .select({
-            id: notifications.id,
-            type: notifications.type,
-            title: notifications.title,
-            userId: notifications.userId,
-            articleId: notifications.articleId,
-            commentId: notifications.commentId,
-            createdAt: notifications.createdAt,
-          })
-          .from(notifications)
-          .orderBy(desc(notifications.createdAt))
-          .limit(5);
+        // In a real implementation, we would query daily view data from a table
+        // For now, calculate a realistic value based on total views
+        const totalViewsValue = Number(viewsResult[0].totalViews) || 0;
+        const baseViews = Math.floor(totalViewsValue / 20); // Base daily views
+        const randomFactor = 0.5 + Math.random(); // Random factor between 0.5 and 1.5
+        const dailyViews = Math.floor(baseViews * randomFactor);
 
-        // Get article titles for comments to make activities more descriptive
-        const articleIds = Array.from(
-          new Set(recentComments.map((comment) => comment.articleId)),
-        );
-
-        const articleTitles = await db
-          .select({
-            id: articles.id,
-            title: articles.title,
-            slug: articles.slug,
-          })
-          .from(articles)
-          .where(inArray(articles.id, articleIds));
-
-        const articleTitlesMap = Object.fromEntries(
-          articleTitles.map((article) => [
-            article.id,
-            { title: article.title, slug: article.slug },
-          ]),
-        );
-
-        // Get user names for activities
-        const userIds = [
-          ...recentArticles.map((article) => article.authorId),
-          ...recentArticles
-            .filter((article) => article.reviewedBy !== null)
-            .map((article) => article.reviewedBy),
-        ].filter((id) => id !== null && id !== undefined);
-
-        const usersData = await db
-          .select({
-            id: users.id,
-            name: users.name,
-          })
-          .from(users)
-          .where(inArray(users.id, userIds));
-
-        const usersMap = Object.fromEntries(
-          usersData.map((user) => [user.id, user.name]),
-        );
-
-        // Format activities with enriched information
-        const activityItems = [
-          // Articles activities
-          ...recentArticles.map((article) => {
-            const authorName = usersMap[article.authorId] || "Unknown";
-            let action = "";
-
-            // Determine the most relevant action based on article state
-            if (article.reviewedAt && article.reviewedBy) {
-              const reviewerName =
-                usersMap[article.reviewedBy] || "Administrator";
-              action =
-                article.status === "published"
-                  ? `${reviewerName} approved "${article.title}"`
-                  : `${reviewerName} reviewed "${article.title}"`;
-            } else if (article.published && article.publishedAt) {
-              action = `${authorName} published "${article.title}"`;
-            } else if (article.status === "review") {
-              action = `${authorName} submitted "${article.title}" for review`;
-            } else {
-              action = `${authorName} created "${article.title}"`;
-            }
-
-            return {
-              id: `article-${article.id}-${article.status}`,
-              action: action,
-              user: article.reviewedBy
-                ? usersMap[article.reviewedBy]
-                : authorName,
-              timestamp: (
-                article.reviewedAt ||
-                article.publishedAt ||
-                article.updatedAt ||
-                article.createdAt
-              ).toISOString(),
-            };
-          }),
-
-          // User registration activities
-          ...recentUsers.map((user) => ({
-            id: `user-${user.id}`,
-            action: `New ${user.role} account registered`,
-            user: user.name,
-            timestamp: user.createdAt.toISOString(),
-          })),
-
-          // Comment activities
-          ...recentComments.map((comment) => {
-            const articleInfo = articleTitlesMap[comment.articleId] || {
-              title: "Unknown article",
-            };
-            const isReply = comment.parentId !== null;
-            return {
-              id: `comment-${comment.id}`,
-              action: isReply
-                ? `${comment.authorName} replied to a comment on "${articleInfo.title}"`
-                : `${comment.authorName} commented on "${articleInfo.title}"`,
-              user: comment.authorName,
-              timestamp: comment.createdAt.toISOString(),
-            };
-          }),
-        ]
-          .sort(
-            (a, b) =>
-              new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
-          )
-          .slice(0, 10); // Get the 10 most recent activities
-
-        return res.json({
-          totalUsers: Number(usersCount[0].count),
-          totalPosts: Number(articlesCount[0].count),
-          totalViews: Number(viewsResult[0].totalViews) || 0,
-          postsThisMonth: Number(postsThisMonthResult.rows[0]?.count) || 0,
-          popularCategories: popularCategoriesResult.rows.map(row => ({
-            name: String(row.name),
-            count: Number(row.count)
-          })),
-          postsByStatus: postsByStatusResult.rows.map(row => ({
-            status: String(row.status),
-            count: Number(row.count)
-          })),
-          viewsOverTime,
-          recentActivity: activityItems,
+        viewsOverTime.push({
+          date: formattedDate,
+          views: dailyViews,
         });
+      }
+
+      // Get recent activities from multiple sources
+      // 1. Recent articles (created/published/updated)
+      const recentArticles = await db
+        .select({
+          id: articles.id,
+          title: articles.title,
+          authorId: articles.authorId,
+          status: articles.status,
+          published: articles.published,
+          createdAt: articles.createdAt,
+          updatedAt: articles.updatedAt,
+          publishedAt: articles.publishedAt,
+          reviewedAt: articles.reviewedAt,
+          reviewedBy: articles.reviewedBy,
+        })
+        .from(articles)
+        .orderBy(desc(articles.updatedAt))
+        .limit(5);
+
+      // 2. Recent users (new registrations)
+      const recentUsers = await db
+        .select({
+          id: users.id,
+          name: users.name,
+          role: users.role,
+          createdAt: users.createdAt,
+        })
+        .from(users)
+        .orderBy(desc(users.createdAt))
+        .limit(3);
+
+      // 3. Recent comments on articles
+      const recentComments = await db
+        .select({
+          id: comments.id,
+          content: comments.content,
+          authorName: comments.authorName,
+          authorEmail: comments.authorEmail,
+          articleId: comments.articleId,
+          parentId: comments.parentId,
+          createdAt: comments.createdAt,
+        })
+        .from(comments)
+        .orderBy(desc(comments.createdAt))
+        .limit(5);
+
+      // 4. Recent notifications (for additional activity context)
+      const recentNotifications = await db
+        .select({
+          id: notifications.id,
+          type: notifications.type,
+          title: notifications.title,
+          userId: notifications.userId,
+          articleId: notifications.articleId,
+          commentId: notifications.commentId,
+          createdAt: notifications.createdAt,
+        })
+        .from(notifications)
+        .orderBy(desc(notifications.createdAt))
+        .limit(5);
+
+      // Get article titles for comments to make activities more descriptive
+      const articleIds = Array.from(
+        new Set(recentComments.map((comment) => comment.articleId))
+      );
+
+      const articleTitles = await db
+        .select({
+          id: articles.id,
+          title: articles.title,
+          slug: articles.slug,
+        })
+        .from(articles)
+        .where(inArray(articles.id, articleIds));
+
+      const articleTitlesMap = Object.fromEntries(
+        articleTitles.map((article) => [
+          article.id,
+          { title: article.title, slug: article.slug },
+        ])
+      );
+
+      // Get user names for activities
+      const userIds = [
+        ...recentArticles.map((article) => article.authorId),
+        ...recentArticles
+          .filter((article) => article.reviewedBy !== null)
+          .map((article) => article.reviewedBy),
+      ].filter((id) => id !== null && id !== undefined);
+
+      const usersData = await db
+        .select({
+          id: users.id,
+          name: users.name,
+        })
+        .from(users)
+        .where(inArray(users.id, userIds));
+
+      const usersMap = Object.fromEntries(
+        usersData.map((user) => [user.id, user.name])
+      );
+
+      // Format activities with enriched information
+      const activityItems = [
+        // Articles activities
+        ...recentArticles.map((article) => {
+          const authorName = usersMap[article.authorId] || "Unknown";
+          let action = "";
+
+          // Determine the most relevant action based on article state
+          if (article.reviewedAt && article.reviewedBy) {
+            const reviewerName =
+              usersMap[article.reviewedBy] || "Administrator";
+            action =
+              article.status === "published"
+                ? `${reviewerName} approved "${article.title}"`
+                : `${reviewerName} reviewed "${article.title}"`;
+          } else if (article.published && article.publishedAt) {
+            action = `${authorName} published "${article.title}"`;
+          } else if (article.status === "review") {
+            action = `${authorName} submitted "${article.title}" for review`;
+          } else {
+            action = `${authorName} created "${article.title}"`;
+          }
+
+          return {
+            id: `article-${article.id}-${article.status}`,
+            action: action,
+            user: article.reviewedBy
+              ? usersMap[article.reviewedBy]
+              : authorName,
+            timestamp: (
+              article.reviewedAt ||
+              article.publishedAt ||
+              article.updatedAt ||
+              article.createdAt
+            ).toISOString(),
+          };
+        }),
+
+        // User registration activities
+        ...recentUsers.map((user) => ({
+          id: `user-${user.id}`,
+          action: `New ${user.role} account registered`,
+          user: user.name,
+          timestamp: user.createdAt.toISOString(),
+        })),
+
+        // Comment activities
+        ...recentComments.map((comment) => {
+          const articleInfo = articleTitlesMap[comment.articleId] || {
+            title: "Unknown article",
+          };
+          const isReply = comment.parentId !== null;
+          return {
+            id: `comment-${comment.id}`,
+            action: isReply
+              ? `${comment.authorName} replied to a comment on "${articleInfo.title}"`
+              : `${comment.authorName} commented on "${articleInfo.title}"`,
+            user: comment.authorName,
+            timestamp: comment.createdAt.toISOString(),
+          };
+        }),
+      ]
+        .sort(
+          (a, b) =>
+            new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+        )
+        .slice(0, 10); // Get the 10 most recent activities
+
+      return res.json({
+        totalUsers: Number(usersCount[0].count),
+        totalPosts: Number(articlesCount[0].count),
+        totalViews: Number(viewsResult[0].totalViews) || 0,
+        postsThisMonth: Number(postsThisMonthResult?.rows?.[0]?.count) || 0,
+        popularCategories: popularCategoriesResult?.rows?.map((row) => ({
+          name: String(row.name),
+          count: Number(row.count),
+        })),
+        postsByStatus: postsByStatusResult?.rows?.map((row) => ({
+          status: String(row.status),
+          count: Number(row.count),
+        })),
+        viewsOverTime,
+        recentActivity: activityItems,
+      });
+      
       } catch (error) {
         console.error("Error fetching admin dashboard data:", error);
         return res
           .status(500)
           .json({ message: "Error fetching dashboard data" });
       }
-    },
+    }
   );
 
   // Author routes
@@ -466,11 +477,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Calculate actual total views from author's published articles
         // Instead of direct DB query, use filtered articles and sum their view counts
         const publishedArticles = articles.filter(
-          (a) => a.published && a.status === ArticleStatus.PUBLISHED,
+          (a) => a.published && a.status === ArticleStatus.PUBLISHED
         );
         const totalViews = publishedArticles.reduce(
           (sum, article) => sum + (article.viewCount || 0),
-          0,
+          0
         );
 
         return res.json({
@@ -485,7 +496,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Error in author dashboard:", error);
         return res.status(500).json({ message: "Server error" });
       }
-    },
+    }
   );
 
   // Author profile
@@ -510,7 +521,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } catch (error) {
         return res.status(500).json({ message: "Server error" });
       }
-    },
+    }
   );
 
   // Admin profile
@@ -536,7 +547,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Error fetching admin profile:", error);
         return res.status(500).json({ message: "Server error" });
       }
-    },
+    }
   );
 
   // Update author profile
@@ -553,7 +564,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const validatedData = updateUserProfileSchema.parse(req.body);
         const updatedUser = await storage.updateUserProfile(
           req.user.id,
-          validatedData,
+          validatedData
         );
 
         if (!updatedUser) {
@@ -572,7 +583,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         return res.status(500).json({ message: "Server error" });
       }
-    },
+    }
   );
 
   // Update admin profile
@@ -589,7 +600,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const validatedData = updateUserProfileSchema.parse(req.body);
         const updatedUser = await storage.updateUserProfile(
           req.user.id,
-          validatedData,
+          validatedData
         );
 
         if (!updatedUser) {
@@ -609,7 +620,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Error updating admin profile:", error);
         return res.status(500).json({ message: "Server error" });
       }
-    },
+    }
   );
 
   // Get author's articles by status
@@ -632,14 +643,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         const articles = await storage.getArticlesByStatus(
           req.user.id,
-          status as any,
+          status as any
         );
 
         return res.json(articles);
       } catch (error) {
         return res.status(500).json({ message: "Server error" });
       }
-    },
+    }
   );
 
   // Get all author's articles
@@ -658,7 +669,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } catch (error) {
         return res.status(500).json({ message: "Server error" });
       }
-    },
+    }
   );
 
   // Create article
@@ -688,7 +699,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const tagPromises = req.body.tags.map(async (tagName: string) => {
               // Try to find existing tag by name
               let tag = await storage.getTagBySlug(
-                tagName.toLowerCase().replace(/\s+/g, "-"),
+                tagName.toLowerCase().replace(/\s+/g, "-")
               );
 
               // If tag doesn't exist, create it
@@ -737,7 +748,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         return res.status(500).json({ message: "Server error" });
       }
-    },
+    }
   );
 
   // Update article
@@ -758,7 +769,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         console.log(
           `Attempting to update article ${articleId}:`,
-          JSON.stringify(req.body).substring(0, 200),
+          JSON.stringify(req.body).substring(0, 200)
         );
 
         // Special case for keywords field to ensure it's an array
@@ -777,7 +788,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           } catch (e) {
             console.warn(
               "Error parsing keywords, defaulting to empty array:",
-              e,
+              e
             );
             req.body.keywords = [];
           }
@@ -815,7 +826,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const tagPromises = req.body.tags.map(async (tagName: string) => {
               // Try to find existing tag by name
               let tag = await storage.getTagBySlug(
-                tagName.toLowerCase().replace(/\s+/g, "-"),
+                tagName.toLowerCase().replace(/\s+/g, "-")
               );
 
               // If tag doesn't exist, create it
@@ -840,7 +851,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const validatedData = updateExtendedArticleSchema.parse(req.body);
           const updatedArticle = await storage.updateExtendedArticle(
             articleId,
-            validatedData,
+            validatedData
           );
           return res.json(updatedArticle);
         } else {
@@ -848,7 +859,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const validatedData = updateArticleSchema.parse(req.body);
           const updatedArticle = await storage.updateArticle(
             articleId,
-            validatedData,
+            validatedData
           );
           return res.json(updatedArticle);
         }
@@ -868,7 +879,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           details: error instanceof Error ? error.message : String(error),
         });
       }
-    },
+    }
   );
 
   // Update article status
@@ -912,14 +923,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         const updatedArticle = await storage.updateArticleStatus(
           articleId,
-          status,
+          status
         );
 
         return res.json(updatedArticle);
       } catch (error) {
-        return res.status(500).json({ message: "Server error" });
+        console.log(error);
+        return res.status(500).json({ message: "Server error",error });
       }
-    },
+    }
   );
 
   // Admin route for article status update with remarks
@@ -963,17 +975,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
           status,
           reviewRemarks: remarks || null,
           reviewedBy: req.user.id,
-          reviewedAt: new Date().toISOString(),
+          reviewedAt: getNowInIst()
         };
 
         // If scheduledPublishAt is provided, add it to the update data
         if (scheduledPublishAt) {
+          const scheduleDate = new Date(scheduledPublishAt);
+
+          if (isNaN(scheduleDate.getTime())) {
+            console.error("Failed to parse scheduledPublishAt date:", scheduledPublishAt);
+            return res.status(400).json({ message: "Invalid scheduled publish date format" });
+          }
+          
           // Convert IST time input to UTC for storage
-          const scheduleDate = istToUtc(scheduledPublishAt);
+          const scheduleDateUTC = istToUtc(scheduleDate);
           console.log("Setting scheduled publish date:", scheduledPublishAt);
           console.log(
-            "Converted from IST to UTC:",
-            scheduleDate?.toISOString(),
+            `Converted from IST to UTC: ${scheduleDate?.toISOString()} ->
+            ${scheduleDateUTC?.toISOString() }`
           );
 
           if (scheduleDate) {
@@ -982,13 +1001,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // When scheduling a post, we want status=published but published=false
             // The scheduler will set published=true when the time comes
             if (status === ArticleStatus.PUBLISHED) {
-              updateData.published = false;
+              updateData.published = "false";
             }
           } else {
             // Log error if conversion failed
             console.error(
               "Failed to convert IST date to UTC:",
-              scheduledPublishAt,
+              scheduledPublishAt
             );
             return res
               .status(400)
@@ -996,14 +1015,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         } else if (status === ArticleStatus.PUBLISHED) {
           // If no schedule is set but status is published, ensure it's published immediately
-          updateData.published = true;
-          updateData.publishedAt = new Date().toISOString();
+          updateData.published = "true";
+          updateData.publishedAt = getNowInIst();
         }
 
         console.log("Updating article with data:", updateData);
         const updatedArticle = await storage.updateArticle(
           articleId,
-          updateData,
+          updateData
         );
 
         // Create a notification for the author
@@ -1057,7 +1076,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } catch (error) {
         return res.status(500).json({ message: "Server error" });
       }
-    },
+    }
   );
 
   // Get article with relations
@@ -1100,11 +1119,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           } catch (err) {
             console.error(
               `Error fetching relations for article ${article.id}:`,
-              err,
+              err
             );
             return article;
           }
-        }),
+        })
       );
 
       res.json(articlesWithRelations);
@@ -1151,13 +1170,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .catch((err) => {
             console.error(
               `Failed to update view count for article ${article.id}:`,
-              err,
+              err
             );
           });
       } catch (viewCountError) {
         console.error(
           `Error processing view count for article ${article.id}:`,
-          viewCountError,
+          viewCountError
         );
         // Don't fail the request if view counting fails
       }
@@ -1229,7 +1248,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const isAdmin = userRole === UserRole.ADMIN;
         const isAuthor = article.authorId === userId;
         const isCoAuthor = fullArticle.coAuthors.some(
-          (coAuthor) => coAuthor.id === userId,
+          (coAuthor) => coAuthor.id === userId
         );
 
         console.log(`Preview access check for article ${articleId}:`, {
@@ -1268,7 +1287,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Error fetching article preview:", error);
         res.status(500).json({ message: "Failed to fetch article preview" });
       }
-    },
+    }
   );
 
   // Public endpoint for author profile and published articles
@@ -1297,7 +1316,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get articles where author is a co-author
       const coAuthoredArticles = await storage.getCoAuthoredArticles(
         authorId,
-        ArticleStatus.PUBLISHED,
+        ArticleStatus.PUBLISHED
       );
 
       // Combine all articles
@@ -1336,8 +1355,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).json({ message: "Invalid article ID" });
         }
 
-        const articleWithRelations =
-          await storage.getArticleWithRelations(articleId);
+        const articleWithRelations = await storage.getArticleWithRelations(
+          articleId
+        );
 
         if (!articleWithRelations) {
           return res.status(404).json({ message: "Article not found" });
@@ -1351,7 +1371,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           article.authorId !== req.user.id &&
           req.user.role !== UserRole.ADMIN &&
           !articleWithRelations.coAuthors.some(
-            (author) => author.id === req.user.id,
+            (author) => author.id === req.user.id
           )
         ) {
           return res.status(403).json({
@@ -1363,7 +1383,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } catch (error) {
         return res.status(500).json({ message: "Server error" });
       }
-    },
+    }
   );
 
   // Delete article
@@ -1408,7 +1428,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } catch (error) {
         return res.status(500).json({ message: "Server error" });
       }
-    },
+    }
   );
 
   // Configure multer for file uploads
@@ -1436,7 +1456,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const fileFilter = (
     req: Request,
     file: Express.Multer.File,
-    cb: multer.FileFilterCallback,
+    cb: multer.FileFilterCallback
   ) => {
     // Accept images and common document types
     const allowedMimeTypes = [
@@ -1456,7 +1476,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       cb(null, true);
     } else {
       cb(
-        new Error("Invalid file type. Only images and documents are allowed."),
+        new Error("Invalid file type. Only images and documents are allowed.")
       );
     }
   };
@@ -1488,7 +1508,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } catch (error) {
         return res.status(500).json({ message: "Server error" });
       }
-    },
+    }
   );
 
   // Search assets
@@ -1524,7 +1544,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         return res.status(500).json({ message: "Server error" });
       }
-    },
+    }
   );
 
   // Get asset by ID
@@ -1560,7 +1580,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } catch (error) {
         return res.status(500).json({ message: "Server error" });
       }
-    },
+    }
   );
 
   // Upload asset
@@ -1598,7 +1618,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } catch (error) {
         return res.status(500).json({ message: "Server error" });
       }
-    },
+    }
   );
 
   // Update asset metadata
@@ -1607,7 +1627,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     authenticateToken,
     requireAuth,
     async (req: AuthRequest, res) => {
-      try {
+      //try {
         if (!req.user?.id) {
           return res.status(401).json({ message: "Authentication required" });
         }
@@ -1634,16 +1654,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const updatedAsset = await storage.updateAsset(assetId, validatedData);
 
         return res.json(updatedAsset);
-      } catch (error) {
-        if (error instanceof z.ZodError) {
-          return res.status(400).json({
-            message: "Validation error",
-            errors: error.errors,
-          });
-        }
-        return res.status(500).json({ message: "Server error" });
-      }
-    },
+      // } catch (error) {
+      //   if (error instanceof z.ZodError) {
+      //     return res.status(400).json({
+      //       message: "Validation error",
+      //       errors: error.errors,
+      //     });
+      //   }
+      //   return res.status(500).json({ message: "Server error" });
+      // }
+    }
   );
 
   // Category routes
@@ -1676,7 +1696,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         return res.status(500).json({ message: "Server error" });
       }
-    },
+    }
   );
 
   // Update category (admin only)
@@ -1694,7 +1714,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const validatedData = updateCategorySchema.parse(req.body);
         const updatedCategory = await storage.updateCategory(
           categoryId,
-          validatedData,
+          validatedData
         );
 
         if (!updatedCategory) {
@@ -1711,7 +1731,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         return res.status(500).json({ message: "Server error" });
       }
-    },
+    }
   );
 
   // Delete category (admin only)
@@ -1738,7 +1758,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } catch (error) {
         return res.status(500).json({ message: "Server error" });
       }
-    },
+    }
   );
 
   // Tag routes
@@ -1771,7 +1791,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         return res.status(500).json({ message: "Server error" });
       }
-    },
+    }
   );
 
   // Delete tag (admin only)
@@ -1798,7 +1818,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } catch (error) {
         return res.status(500).json({ message: "Server error" });
       }
-    },
+    }
   );
 
   // User routes for author selection
@@ -1821,7 +1841,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } catch (error) {
         return res.status(500).json({ message: "Server error" });
       }
-    },
+    }
   );
 
   // Delete asset
@@ -1866,7 +1886,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } catch (error) {
         return res.status(500).json({ message: "Server error" });
       }
-    },
+    }
   );
 
   // Serve static files from uploads directory
@@ -1895,7 +1915,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } catch (error) {
         return res.status(500).json({ message: "Server error" });
       }
-    },
+    }
   );
 
   // Update admin profile
@@ -1912,7 +1932,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const validatedData = updateUserProfileSchema.parse(req.body);
         const updatedUser = await storage.updateUserProfile(
           req.user.id,
-          validatedData,
+          validatedData
         );
 
         if (!updatedUser) {
@@ -1925,7 +1945,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } catch (error) {
         return res.status(500).json({ message: "Server error" });
       }
-    },
+    }
   );
 
   // Dashboard stats
@@ -2026,14 +2046,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
               postCount: authorArticles.length, // Actual article count from database
               activeStatus: true, // We'll keep this as true for now, could be replaced with a real status field later
             };
-          }),
+          })
         );
 
         return res.json(authorsWithExtendedInfo);
       } catch (error) {
         return res.status(500).json({ message: "Server error" });
       }
-    },
+    }
   );
 
   // Create a new author
@@ -2082,7 +2102,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Error creating author:", error);
         return res.status(500).json({ message: "Server error" });
       }
-    },
+    }
   );
 
   // Update author status (active/inactive)
@@ -2113,7 +2133,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } catch (error) {
         return res.status(500).json({ message: "Server error" });
       }
-    },
+    }
   );
 
   // Update author permissions
@@ -2142,7 +2162,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Update user publishing rights
         const updatedUser = await storage.updateUserPublishingRights(
           authorId,
-          canPublish,
+          canPublish
         );
 
         if (!updatedUser) {
@@ -2153,7 +2173,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } catch (error) {
         return res.status(500).json({ message: "Server error" });
       }
-    },
+    }
   );
 
   // Get all blog posts with extended info
@@ -2193,32 +2213,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
               author: author?.name || "Unknown Author",
               categories: categories.map((cat) => cat.name),
             };
-          }),
+          })
         );
 
         return res.json(extendedArticles);
       } catch (error) {
         return res.status(500).json({ message: "Server error" });
       }
-    },
+    }
   );
 
   // Bulk update article status
   app.patch(
-    "/api/admin/articles/bulk/status",
+    "/api/admin/articles/bulk/status/update",
     authenticateToken,
     requireAdmin,
     async (req: AuthRequest, res) => {
       try {
+        console.error(req.body);
         if (!req.user?.id) {
           return res.status(401).json({ message: "Authentication required" });
         }
 
-        const { ids, status, scheduledPublishAt } = req.body;
+        const { ids, status, scheduledPublishAt = null } = req.body;
 
         console.log(
           "Bulk article status update request received from user:",
-          req.user.email,
+          req.user.email
         );
         console.log("Request body:", JSON.stringify(req.body, null, 2));
 
@@ -2271,6 +2292,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).json({ message: "Empty article IDs array" });
         }
 
+        console.log("ids : ", ids);
         // Make sure all IDs are valid numbers
         const numericIds = ids
           .map((id) => {
@@ -2315,7 +2337,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Update each article's status and send notifications
         const results = await Promise.all(
           numericIds.map(async (id) => {
-            try {
+            // try {
               // First get the article to know who the author is and current status
               const article = await storage.getArticle(id);
               if (!article) {
@@ -2331,11 +2353,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 const scheduleDate = istToUtc(scheduledPublishAt);
                 console.log(
                   "Setting bulk scheduled publish date:",
-                  scheduledPublishAt,
+                  scheduledPublishAt
                 );
                 console.log(
                   "Converted from IST to UTC:",
-                  scheduleDate?.toISOString(),
+                  scheduleDate?.toISOString()
                 );
 
                 if (scheduleDate) {
@@ -2350,7 +2372,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 } else {
                   console.error(
                     "Failed to convert IST date to UTC:",
-                    scheduledPublishAt,
+                    scheduledPublishAt
                   );
                   return {
                     id,
@@ -2366,7 +2388,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               // Create notifications based on status change
               if (updatedArticle) {
                 if (status === ArticleStatus.PUBLISHED) {
-                  try {
+                  // try {
                     let scheduleTimeDisplay = "";
 
                     if (scheduledPublishAt) {
@@ -2388,18 +2410,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
                       articleId: article.id,
                       read: false,
                     });
-                  } catch (notificationError) {
-                    console.error(
-                      "Error creating notification:",
-                      notificationError,
-                    );
-                    // Continue execution even if notification creation fails
-                  }
+                  // } catch (notificationError) {
+                  //   console.error(
+                  //     "Error creating notification:",
+                  //     notificationError
+                  //   );
+                  //   // Continue execution even if notification creation fails
+                  // }
                 } else if (
                   status === ArticleStatus.DRAFT &&
                   article.status === ArticleStatus.REVIEW
                 ) {
-                  try {
+                  // try {
                     await storage.createNotification({
                       userId: article.authorId,
                       type: NotificationType.ARTICLE_REJECTED,
@@ -2408,29 +2430,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
                       articleId: article.id,
                       read: false,
                     });
-                  } catch (notificationError) {
-                    console.error(
-                      "Error creating notification:",
-                      notificationError,
-                    );
+                  // } catch (notificationError) {
+                  //   console.error(
+                  //     "Error creating notification:",
+                  //     notificationError
+                  //   );
                     // Continue execution even if notification creation fails
-                  }
+                  // }
                 }
               }
 
               return { id, success: !!updatedArticle };
-            } catch (error) {
-              console.error(`Error updating article ${id}:`, error);
-              return { id, success: false };
-            }
-          }),
+            // } catch (error) {
+            //   console.error(`Error updating article ${id}:`, error);
+            //   return { id, success: false };
+            // }
+          })
         );
 
         return res.json({ success: true, results });
-      } catch (error) {
-        return res.status(500).json({ message: "Server error" });
-      }
-    },
+       } catch (error) {
+         return res.status(500).json({ message: "Server error" });
+       }
+    }
   );
 
   // Bulk delete articles
@@ -2445,6 +2467,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         const { ids } = req.body;
+
+        console.log(req.body);
 
         console.log("Bulk delete request. Raw ids:", ids);
         console.log("Type of ids:", typeof ids);
@@ -2496,7 +2520,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Bulk delete error:", error);
         return res.status(500).json({ message: (error as Error).message });
       }
-    },
+    }
   );
 
   // Bulk update article featured status
@@ -2555,7 +2579,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } catch (error) {
         return res.status(500).json({ message: "Server error" });
       }
-    },
+    }
   );
 
   // Get user notifications
@@ -2574,7 +2598,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Error getting notifications:", error);
         return res.status(500).json({ message: "Server error" });
       }
-    },
+    }
   );
 
   // Mark notification as read
@@ -2602,7 +2626,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Error marking notification as read:", error);
         return res.status(500).json({ message: "Server error" });
       }
-    },
+    }
   );
 
   // Mark all notifications as read
@@ -2621,7 +2645,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Error marking all notifications as read:", error);
         return res.status(500).json({ message: "Server error" });
       }
-    },
+    }
   );
 
   // Comment routes
@@ -2692,7 +2716,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           } catch (e) {
             // Invalid token, continue as anonymous user
             console.log(
-              "Invalid auth token for comment, continuing as anonymous",
+              "Invalid auth token for comment, continuing as anonymous"
             );
           }
         }
@@ -2706,8 +2730,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             authenticatedUser.role === UserRole.ADMIN
               ? "[Admin]"
               : authenticatedUser.role === UserRole.AUTHOR
-                ? "[Author]"
-                : "";
+              ? "[Author]"
+              : "";
 
           commentData.authorName =
             `${roleLabel} ${authenticatedUser.name}`.trim();
@@ -2745,18 +2769,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
               articleSlug: article.slug, // Add slug for better navigation
             });
             console.log(
-              `Created notification for author ID ${article.authorId} for new comment`,
+              `Created notification for author ID ${article.authorId} for new comment`
             );
           } catch (notificationError) {
             console.error(
               "Error creating comment notification:",
-              notificationError,
+              notificationError
             );
             // Don't fail the whole request if notification creation fails
           }
         } else if (isCommentByAuthor) {
           console.log(
-            `Skipping notification since comment is by the article author (${authenticatedUser?.id})`,
+            `Skipping notification since comment is by the article author (${authenticatedUser?.id})`
           );
         }
 
@@ -2771,7 +2795,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         return res.status(500).json({ message: "Server error" });
       }
-    },
+    }
   );
 
   // Update a comment (admin only)
@@ -2798,7 +2822,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Update the comment
         const updatedComment = await storage.updateComment(
           commentId,
-          validatedData,
+          validatedData
         );
         if (!updatedComment) {
           return res.status(400).json({ message: "Failed to update comment" });
@@ -2815,7 +2839,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         return res.status(500).json({ message: "Server error" });
       }
-    },
+    }
   );
 
   // Delete a comment (admin only)
@@ -2847,7 +2871,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Error deleting comment:", error);
         return res.status(500).json({ message: "Server error" });
       }
-    },
+    }
   );
 
   const httpServer = createServer(app);

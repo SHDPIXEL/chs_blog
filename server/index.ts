@@ -1,7 +1,31 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-import { scheduler } from "./services/scheduler";
+import { startCronJobs } from './services/scheduler';
+
+class SchedulerService {
+  private isRunning: boolean = false;
+
+  constructor() {}
+
+  public start(): void {
+    if (this.isRunning) {
+      log('Scheduler service is already running', 'scheduler');
+      return;
+    }
+
+    this.isRunning = true;
+    log('Starting scheduler service', 'scheduler');
+
+    // Start cron jobs (with retry logic)
+    startCronJobs(); // Start cron jobs with retry mechanism
+  }
+
+  public stop(): void {
+    // Implement your stop logic for cron jobs here, if necessary
+  }
+}
+
 
 const app = express();
 app.use(express.json());
@@ -60,7 +84,7 @@ app.use((req, res, next) => {
   // ALWAYS serve the app on port 5000
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
-  const port = 5000;
+  const port = 5002;
   server.listen({
     port,
     host: "0.0.0.0",
@@ -69,6 +93,10 @@ app.use((req, res, next) => {
     log(`serving on port ${port}`);
     
     // Start the scheduler service to handle scheduled publishing
+        
+    // Create an instance and start it
+    const scheduler = new SchedulerService();
     scheduler.start();
+
   });
 })();

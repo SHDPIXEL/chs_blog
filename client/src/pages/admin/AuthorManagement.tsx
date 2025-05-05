@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
-import { useLocation } from 'wouter';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { apiRequest, queryClient } from '@/lib/queryClient';
-import AdminLayout from '@/components/layouts/AdminLayout';
-import { Helmet } from 'react-helmet-async';
-import { useAuth } from '@/hooks/use-auth';
-import { usePermissions } from '@/hooks/use-permissions';
+import React, { useState } from "react";
+import { Link, useLocation } from "wouter";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import AdminLayout from "@/components/layouts/AdminLayout";
+import { Helmet } from "react-helmet-async";
+import { useAuth } from "@/hooks/use-auth";
+import { usePermissions } from "@/hooks/use-permissions";
 import {
   Card,
   CardContent,
@@ -13,7 +13,7 @@ import {
   CardHeader,
   CardTitle,
   CardFooter,
-} from '@/components/ui/card';
+} from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -21,7 +21,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,7 +29,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 import {
   Dialog,
   DialogContent,
@@ -37,7 +37,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -47,21 +47,21 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+} from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useToast } from '@/hooks/use-toast';
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useToast } from "@/hooks/use-toast";
 import {
   MoreHorizontal,
   Search,
@@ -73,8 +73,8 @@ import {
   UserMinus,
   Pencil,
   Key,
-} from 'lucide-react';
-import { User } from '@/types/auth';
+} from "lucide-react";
+import { User } from "@/types/auth";
 
 interface ExtendedUser extends User {
   postCount: number;
@@ -85,87 +85,102 @@ const AuthorManagement: React.FC = () => {
   const { toast } = useToast();
   const { user, refreshUserData } = useAuth();
   const [, navigate] = useLocation();
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [permissionDialogOpen, setPermissionDialogOpen] = useState(false);
-  const [selectedAuthor, setSelectedAuthor] = useState<ExtendedUser | null>(null);
+  const [selectedAuthor, setSelectedAuthor] = useState<ExtendedUser | null>(
+    null
+  );
   const [canPublish, setCanPublish] = useState(false);
   const [roleFilter, setRoleFilter] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
 
   // Fetch authors
   const { data: authors, isLoading } = useQuery<ExtendedUser[]>({
-    queryKey: ['/api/admin/authors'],
+    queryKey: ["/api/admin/authors"],
     queryFn: async () => {
-      const res = await apiRequest('GET', '/api/admin/authors');
+      const res = await apiRequest("GET", "/api/admin/authors");
       return res.json();
-    }
+    },
   });
 
   // Update author status
   const statusMutation = useMutation({
     mutationFn: async ({ id, active }: { id: number; active: boolean }) => {
-      const res = await apiRequest('PATCH', `/api/admin/authors/${id}/status`, { active });
+      const res = await apiRequest("PATCH", `/api/admin/authors/${id}/status`, {
+        active,
+      });
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/authors'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/authors"] });
       toast({
-        title: 'Status updated',
-        description: 'Author status has been updated successfully',
-        variant: 'default',
+        title: "Status updated",
+        description: "Author status has been updated successfully",
+        variant: "default",
       });
     },
     onError: (error: Error) => {
       toast({
-        title: 'Update failed',
+        title: "Update failed",
         description: error.message,
-        variant: 'destructive',
+        variant: "destructive",
       });
-    }
+    },
   });
 
   // Use the permissions hook for up-to-date permission data
   const { refreshPermissions } = usePermissions();
-  
+
   // Update publishing permissions
   const permissionsMutation = useMutation({
-    mutationFn: async ({ id, canPublish }: { id: number; canPublish: boolean }) => {
-      const res = await apiRequest('PATCH', `/api/admin/authors/${id}/permissions`, { canPublish });
+    mutationFn: async ({
+      id,
+      canPublish,
+    }: {
+      id: number;
+      canPublish: boolean;
+    }) => {
+      const res = await apiRequest(
+        "PATCH",
+        `/api/admin/authors/${id}/permissions`,
+        { canPublish }
+      );
       return res.json();
     },
     onSuccess: async () => {
       setPermissionDialogOpen(false);
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/authors'] });
-      
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/authors"] });
+
       // If the current user had their permissions updated, refresh their data
       if (user && selectedAuthor && user.id === selectedAuthor.id) {
         // Refresh both the user data and permissions data
         await refreshUserData();
         await refreshPermissions();
-        
+
         toast({
-          title: 'Your permissions updated',
-          description: 'Your publishing rights have been updated. Changes are now reflected in your account.',
-          variant: 'default',
+          title: "Your permissions updated",
+          description:
+            "Your publishing rights have been updated. Changes are now reflected in your account.",
+          variant: "default",
         });
-        
+
         // Also invalidate the permissions cache
-        queryClient.invalidateQueries({ queryKey: ['/api/auth/permissions'] });
+        queryClient.invalidateQueries({ queryKey: ["/api/auth/permissions"] });
       } else {
         toast({
-          title: 'Permissions updated',
-          description: 'Author publishing rights have been updated',
-          variant: 'default',
+          title: "Permissions updated",
+          description: "Author publishing rights have been updated",
+          variant: "default",
         });
       }
     },
     onError: (error: Error) => {
       toast({
-        title: 'Update failed',
+        title: "Update failed",
         description: error.message,
-        variant: 'destructive',
+        variant: "destructive",
       });
-    }
+    },
   });
 
   // Handle permissions dialog open
@@ -194,29 +209,30 @@ const AuthorManagement: React.FC = () => {
   };
 
   // Filter authors based on search query and filters
-  const filteredAuthors = authors?.filter(author => {
+  const filteredAuthors = authors?.filter((author) => {
     // Text search filter
-    const matchesSearch = !searchQuery || 
+    const matchesSearch =
+      !searchQuery ||
       author.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       author.email.toLowerCase().includes(searchQuery.toLowerCase());
-    
+
     // Role filter
     const matchesRole = !roleFilter || author.role === roleFilter;
-    
+
     // Status filter
-    const matchesStatus = 
-      !statusFilter || 
-      (statusFilter === 'active' && author.activeStatus) ||
-      (statusFilter === 'inactive' && !author.activeStatus);
-    
+    const matchesStatus =
+      !statusFilter ||
+      (statusFilter === "active" && author.activeStatus) ||
+      (statusFilter === "inactive" && !author.activeStatus);
+
     return matchesSearch && matchesRole && matchesStatus;
   });
 
   const getUserInitials = (name: string) => {
     return name
-      .split(' ')
-      .map(n => n[0])
-      .join('')
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
       .toUpperCase();
   };
 
@@ -224,7 +240,9 @@ const AuthorManagement: React.FC = () => {
     return (
       <AdminLayout>
         <Helmet>
-          <title>Author Management | Centre for Human Sciences | Rishihood University</title>
+          <title>
+            Author Management | Centre for Human Sciences | Rishihood University
+          </title>
           <meta name="robots" content="noindex, nofollow" />
         </Helmet>
         <div className="p-6">
@@ -239,14 +257,16 @@ const AuthorManagement: React.FC = () => {
   return (
     <AdminLayout>
       <Helmet>
-        <title>Author Management | Centre for Human Sciences | Rishihood University</title>
+        <title>
+          Author Management | Centre for Human Sciences | Rishihood University
+        </title>
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
       <div className="p-6">
         <div className="flex flex-col">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-3xl font-bold">Author Management</h1>
-            <Button onClick={() => navigate('/admin/authors/add')}>
+            <Button onClick={() => navigate("/admin/authors/add")}>
               <UserPlus className="mr-2 h-4 w-4" />
               Add New Author
             </Button>
@@ -264,7 +284,7 @@ const AuthorManagement: React.FC = () => {
                 {/* Search and filter UI */}
                 <div className="flex flex-col sm:flex-row justify-between gap-4">
                   <div className="flex items-center flex-1">
-                    <Search className="mr-2 h-4 w-4 text-muted-foreground" />
+                    {/* <Search className="mr-2 h-4 w-4 text-muted-foreground" /> */}
                     <Input
                       placeholder="Search authors..."
                       value={searchQuery}
@@ -273,9 +293,11 @@ const AuthorManagement: React.FC = () => {
                     />
                   </div>
                   <div className="flex items-center space-x-2">
-                    <Select
-                      value={roleFilter || 'all_roles'}
-                      onValueChange={(value) => setRoleFilter(value === 'all_roles' ? null : value)}
+                    {/* <Select
+                      value={roleFilter || "all_roles"}
+                      onValueChange={(value) =>
+                        setRoleFilter(value === "all_roles" ? null : value)
+                      }
                     >
                       <SelectTrigger className="w-[130px]">
                         <SelectValue placeholder="Filter Role" />
@@ -285,10 +307,12 @@ const AuthorManagement: React.FC = () => {
                         <SelectItem value="admin">Admin</SelectItem>
                         <SelectItem value="author">Author</SelectItem>
                       </SelectContent>
-                    </Select>
-                    <Select
-                      value={statusFilter || 'all_status'}
-                      onValueChange={(value) => setStatusFilter(value === 'all_status' ? null : value)}
+                    </Select> */}
+                    {/* <Select
+                      value={statusFilter || "all_status"}
+                      onValueChange={(value) =>
+                        setStatusFilter(value === "all_status" ? null : value)
+                      }
                     >
                       <SelectTrigger className="w-[130px]">
                         <SelectValue placeholder="Filter Status" />
@@ -298,7 +322,7 @@ const AuthorManagement: React.FC = () => {
                         <SelectItem value="active">Active</SelectItem>
                         <SelectItem value="inactive">Inactive</SelectItem>
                       </SelectContent>
-                    </Select>
+                    </Select> */}
                   </div>
                 </div>
 
@@ -322,39 +346,55 @@ const AuthorManagement: React.FC = () => {
                           <TableCell className="flex items-center space-x-3">
                             <Avatar>
                               <AvatarImage
-                                src={author.avatarUrl || ''}
+                                src={author.avatarUrl || ""}
                                 alt={author.name}
                               />
-                              <AvatarFallback>{getUserInitials(author.name)}</AvatarFallback>
+                              <AvatarFallback>
+                                {getUserInitials(author.name)}
+                              </AvatarFallback>
                             </Avatar>
                             <div>
                               <div className="font-medium">{author.name}</div>
-                              <div className="text-xs text-muted-foreground">{author.email}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {author.email}
+                              </div>
                             </div>
                           </TableCell>
                           <TableCell>
                             <Badge
-                              variant={author.role === 'admin' ? 'default' : 'outline'}
+                              variant={
+                                author.role === "admin" ? "default" : "outline"
+                              }
                             >
-                              {author.role === 'admin' ? 'Admin' : 'Author'}
+                              {author.role === "admin" ? "Admin" : "Author"}
                             </Badge>
                           </TableCell>
                           <TableCell>{author.postCount}</TableCell>
-                          <TableCell>{new Date(author.createdAt).toLocaleDateString()}</TableCell>
+                          <TableCell>
+                            {new Date(author.createdAt).toLocaleDateString()}
+                          </TableCell>
                           <TableCell>
                             <Badge
-                              variant={author.activeStatus ? 'default' : 'secondary'}
-                              className={author.activeStatus ? 'bg-green-500' : ''}
+                              variant={
+                                author.activeStatus ? "default" : "secondary"
+                              }
+                              className={
+                                author.activeStatus ? "bg-green-500" : ""
+                              }
                             >
-                              {author.activeStatus ? 'Active' : 'Inactive'}
+                              {author.activeStatus ? "Active" : "Inactive"}
                             </Badge>
                           </TableCell>
                           <TableCell>
                             <Badge
-                              variant={author.canPublish ? 'default' : 'outline'}
-                              className={author.canPublish ? 'bg-blue-500' : ''}
+                              variant={
+                                author.canPublish ? "default" : "outline"
+                              }
+                              className={author.canPublish ? "bg-blue-500" : ""}
                             >
-                              {author.canPublish ? 'Can publish' : 'Requires approval'}
+                              {author.canPublish
+                                ? "Can publish"
+                                : "Requires approval"}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right">
@@ -368,17 +408,26 @@ const AuthorManagement: React.FC = () => {
                               <DropdownMenuContent align="end">
                                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem>
+                                {/* <DropdownMenuItem>
                                   <Pencil className="mr-2 h-4 w-4" /> Edit Profile
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleOpenPermissionsDialog(author)}>
-                                  <Key className="mr-2 h-4 w-4" /> Manage Permissions
+                                </DropdownMenuItem> */}
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    handleOpenPermissionsDialog(author)
+                                  }
+                                >
+                                  <Key className="mr-2 h-4 w-4" /> Manage
+                                  Permissions
                                 </DropdownMenuItem>
                                 <DropdownMenuItem>
-                                  <FileText className="mr-2 h-4 w-4" /> View Posts
+                                  <Link className="flex flex-row" target={`_blank`} to={`/authors/` + author.id}>
+                                    <FileText className="mr-2 h-4 w-4" />
+                                    <span className="ml-2"> View
+                                    Posts</span>
+                                  </Link>
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={() => handleToggleStatus(author)}>
+                                {/* <DropdownMenuItem onClick={() => handleToggleStatus(author)}>
                                   {author.activeStatus ? (
                                     <>
                                       <UserX className="mr-2 h-4 w-4" /> Disable Account
@@ -388,7 +437,7 @@ const AuthorManagement: React.FC = () => {
                                       <UserCheck className="mr-2 h-4 w-4" /> Enable Account
                                     </>
                                   )}
-                                </DropdownMenuItem>
+                                </DropdownMenuItem> */}
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </TableCell>
@@ -411,12 +460,16 @@ const AuthorManagement: React.FC = () => {
       </div>
 
       {/* Publishing Permissions Dialog */}
-      <Dialog open={permissionDialogOpen} onOpenChange={setPermissionDialogOpen}>
+      <Dialog
+        open={permissionDialogOpen}
+        onOpenChange={setPermissionDialogOpen}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Manage Publishing Rights</DialogTitle>
             <DialogDescription>
-              Set whether {selectedAuthor?.name} can publish posts directly or requires approval.
+              Set whether {selectedAuthor?.name} can publish posts directly or
+              requires approval.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
@@ -424,7 +477,8 @@ const AuthorManagement: React.FC = () => {
               <div className="space-y-0.5">
                 <Label htmlFor="canPublish">Allow Direct Publishing</Label>
                 <p className="text-sm text-muted-foreground">
-                  When enabled, this author can publish posts without admin approval.
+                  When enabled, this author can publish posts without admin
+                  approval.
                 </p>
               </div>
               <Switch
@@ -445,7 +499,7 @@ const AuthorManagement: React.FC = () => {
               onClick={handleUpdatePermissions}
               disabled={permissionsMutation.isPending}
             >
-              {permissionsMutation.isPending ? 'Saving...' : 'Save Changes'}
+              {permissionsMutation.isPending ? "Saving..." : "Save Changes"}
             </Button>
           </DialogFooter>
         </DialogContent>

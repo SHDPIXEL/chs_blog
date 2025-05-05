@@ -1,7 +1,16 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb, primaryKey, uuid } from "drizzle-orm/pg-core";
+import { mysqlTable as pgTable, varchar as text, int as integer, tinyint as boolean, datetime as timestamp, json as jsonb, primaryKey, serial, uuid, customType } from "drizzle-orm/mysql-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+
+const longtext = customType<{
+  data: string;
+  driverData: string;
+}>({
+  dataType() {
+    return "longtext";
+  },
+});
 
 // Define valid roles
 export const UserRole = {
@@ -32,86 +41,86 @@ export type NotificationTypeValue = typeof NotificationType[keyof typeof Notific
 // Users table
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  email: text("email").notNull().unique(),
-  password: text("password").notNull(),
-  role: text("role", { enum: [UserRole.ADMIN, UserRole.AUTHOR] }).notNull(),
-  bio: text("bio"),
-  avatarUrl: text("avatar_url"),
-  bannerUrl: text("banner_url"),
-  socialLinks: text("social_links"), // JSON string containing social media links
-  canPublish: boolean("can_publish").default(false).notNull(), // New: Permission to directly publish articles
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  name: text("name",{ length: 255 }).notNull(),
+  email: text("email",{ length: 255 }).notNull().unique(),
+  password: text("password",{ length: 255 }).notNull(),
+  role: text("role", { enum: [UserRole.ADMIN, UserRole.AUTHOR],length: 255 }).notNull(),
+  bio: text("bio",{ length: 512 }),
+  avatarUrl: text("avatar_url",{ length: 512 }),
+  bannerUrl: text("banner_url",{ length: 512 }),
+  socialLinks: text("social_links",{ length: 512 }), // JSON string containing social media links
+  canPublish: text("can_publish",{ length: 512 }).default('false').notNull(), // New: Permission to directly publish articles
+  createdAt: timestamp("created_at", { mode: "date", fsp: 3 }).default(new Date()).notNull(),
 });
 
 // Assets table
 export const assets = pgTable("assets", {
   id: serial("id").primaryKey(),
-  filename: text("filename").notNull(),
-  originalName: text("original_name").notNull(),
-  path: text("path").notNull(),
-  url: text("url").notNull(),
-  mimetype: text("mimetype").notNull(),
+  filename: text("filename",{ length: 512 }).notNull(),
+  originalName: text("original_name",{ length: 512 }).notNull(),
+  path: text("path",{ length: 512 }).notNull(),
+  url: text("url",{ length: 512 }).notNull(),
+  mimetype: text("mimetype",{ length: 512 }).notNull(),
   size: integer("size").notNull(),
   userId: integer("user_id").references(() => users.id).notNull(),
-  title: text("title"),
-  description: text("description"),
+  title: text("title",{ length: 512 }),
+  description: text("description",{ length: 512 }),
   tags: jsonb("tags").default([]),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { mode: "date", fsp: 3 }).default(new Date()).notNull(),
+  updatedAt: timestamp("updated_at", { mode: "date", fsp: 3 }).default(new Date()),
 });
 
 // Categories table
 export const categories = pgTable("categories", {
   id: serial("id").primaryKey(),
-  name: text("name").notNull().unique(),
-  slug: text("slug").notNull().unique(),
-  description: text("description"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  name: text("name",{ length: 512 }).notNull().unique(),
+  slug: text("slug",{ length: 512 }).notNull().unique(),
+  description: text("description",{ length: 512 }),
+  createdAt: timestamp("created_at", { mode: "date", fsp: 3 }).default(new Date()).notNull(),
 });
 
 // Tags table
 export const tags = pgTable("tags", {
   id: serial("id").primaryKey(),
-  name: text("name").notNull().unique(),
-  slug: text("slug").notNull().unique(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  name: text("name",{ length: 512 }).notNull().unique(),
+  slug: text("slug",{ length: 512 }).notNull().unique(),
+  createdAt: timestamp("created_at", { mode: "date", fsp: 3 }).default(new Date()).notNull(),
 });
 
 // Articles table
 export const articles = pgTable("articles", {
   id: serial("id").primaryKey(),
-  title: text("title").notNull(),
-  slug: text("slug").notNull(),
-  content: text("content").notNull(),
-  excerpt: text("excerpt"),
+  title: longtext("title",{ length: 512 }).notNull(),
+  slug: longtext("slug",{ length: 512 }).notNull(),
+  content: longtext("content").notNull(),
+  excerpt: longtext("excerpt"),
   authorId: integer("author_id").references(() => users.id).notNull(),
-  status: text("status", { enum: [ArticleStatus.DRAFT, ArticleStatus.REVIEW, ArticleStatus.PUBLISHED] })
+  status: text("status", { enum: [ArticleStatus.DRAFT, ArticleStatus.REVIEW, ArticleStatus.PUBLISHED],length: 20 })
     .default(ArticleStatus.DRAFT)
     .notNull(),
-  published: boolean("published").default(false).notNull(),
-  featuredImage: text("featured_image"),
+  published: text("published",{ length: 512 }).default('false').notNull(),
+  featuredImage: text("featured_image",{ length: 512 }),
   
   // SEO fields
-  metaTitle: text("meta_title"),
-  metaDescription: text("meta_description"),
+  metaTitle: text("meta_title",{ length: 512 }),
+  metaDescription: longtext("meta_description"),
   keywords: jsonb("keywords").default([]),
-  canonicalUrl: text("canonical_url"),
+  canonicalUrl: text("canonical_url",{ length: 512 }),
   
   // Scheduling
-  scheduledPublishAt: timestamp("scheduled_publish_at"),
+  scheduledPublishAt: timestamp("scheduled_publish_at", { fsp: 3 }),
   
   // Statistics
   viewCount: integer("view_count").default(0).notNull(),
   
   // Review and approval fields
-  reviewRemarks: text("review_remarks"),
+  reviewRemarks: text("review_remarks",{ length: 512 }),
   reviewedBy: integer("reviewed_by").references(() => users.id),
   reviewedAt: timestamp("reviewed_at"),
   
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-  publishedAt: timestamp("published_at"),
+  createdAt: timestamp("created_at", { mode: "date", fsp: 3 }).default(new Date()).notNull(),
+  updatedAt: timestamp("updated_at", { mode: "date", fsp: 3 }).default(new Date()).notNull(),
+  publishedAt: timestamp("published_at", { fsp: 3 }),
 });
 
 // Article-Category relation (many-to-many)
@@ -141,29 +150,29 @@ export const articleCoAuthors = pgTable("article_co_authors", {
 // Comments table for blog posts
 export const comments = pgTable("comments", {
   id: serial("id").primaryKey(),
-  content: text("content").notNull(),
-  authorName: text("author_name").notNull(),
-  authorEmail: text("author_email").notNull(),
+  content: longtext("content").notNull(),
+  authorName: text("author_name",{ length: 512 }).notNull(),
+  authorEmail: text("author_email",{ length: 512 }).notNull(),
   articleId: integer("article_id").references(() => articles.id).notNull(),
   parentId: integer("parent_id").references((): any => comments.id), // For nested replies
   replyCount: integer("reply_count").default(0).notNull(), // Store count of replies to this comment
-  isApproved: boolean("is_approved").default(true).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  isApproved: text("is_approved",{ length: 512 }).default('true').notNull(),
+  createdAt: timestamp("created_at", { mode: "date", fsp: 3 }).default(new Date()).notNull(),
+  updatedAt: timestamp("updated_at", { mode: "date", fsp: 3 }).default(new Date()).notNull(),
 });
 
 // Notifications table
 export const notifications = pgTable("notifications", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
-  type: text("type").notNull(),
-  title: text("title").notNull(),
-  message: text("message").notNull(),
+  type: text("type",{ length: 512 }).notNull(),
+  title: text("title",{ length: 512 }).notNull(),
+  message: text("message",{ length: 512 }).notNull(),
   articleId: integer("article_id").references(() => articles.id),
   commentId: integer("comment_id").references(() => comments.id), // Reference to the comment if notification is about a comment
-  articleSlug: text("article_slug"), // Store article slug for better navigation URLs
-  read: boolean("read").default(false).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  articleSlug: text("article_slug",{ length: 512 }), // Store article slug for better navigation URLs
+  read: text("read",{ length: 512 }).default('false').notNull(),
+  createdAt: timestamp("created_at", { mode: "date", fsp: 3 }).default(new Date()).notNull(),
 });
 
 // Define user insert schema

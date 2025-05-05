@@ -215,7 +215,7 @@ const AdminMyBlogs: React.FC = () => {
       <div className="p-6">
         <div className="flex flex-col">
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold">My Blogs</h1>
+            <h1 className="text-3xl font-bold">Admin Blogs</h1>
             <Button onClick={() => navigate("/admin/blogs/new")}>
               <Plus className="mr-2 h-4 w-4" />
               Create New Blog
@@ -224,7 +224,7 @@ const AdminMyBlogs: React.FC = () => {
 
           <Card className="mb-6">
             <CardHeader>
-              <CardTitle>My Blog Posts</CardTitle>
+              <CardTitle>Admin Blog Posts</CardTitle>
               <CardDescription>
                 Manage and edit your own blog posts as an admin.
               </CardDescription>
@@ -234,7 +234,7 @@ const AdminMyBlogs: React.FC = () => {
                 {/* Search and filter UI */}
                 <div className="flex flex-col sm:flex-row justify-between gap-4">
                   <div className="flex items-center flex-1">
-                    <Search className="mr-2 h-4 w-4 text-muted-foreground" />
+                   
                     <Input
                       placeholder="Search blogs by title..."
                       value={searchQuery}
@@ -254,7 +254,6 @@ const AdminMyBlogs: React.FC = () => {
                         <SelectItem value="all">All Posts</SelectItem>
                         <SelectItem value="published">Published</SelectItem>
                         <SelectItem value="draft">Draft</SelectItem>
-                        <SelectItem value="review">In Review</SelectItem>
                       </SelectContent>
                     </Select>
                     <Button variant="outline" size="icon">

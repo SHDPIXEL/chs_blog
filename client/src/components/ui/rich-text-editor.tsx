@@ -480,9 +480,9 @@ export const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>
   }
 
   return (
-    <div className={cn("border rounded-md overflow-hidden", className)}>
+    <div className={cn("border rounded-md overflow-hidden flex flex-col", className)}>
       {!readOnly && (
-        <div className="flex flex-wrap items-center gap-1 p-2 border-b bg-muted/50">
+        <div className="flex flex-wrap items-center gap-1 p-2 border-b bg-muted/50 sticky top-0 z-10">
           <Button
             variant="ghost"
             size="sm"
@@ -853,7 +853,7 @@ export const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>
       <EditorContent 
         editor={editor} 
         className={cn(
-          "prose max-w-none p-4 focus:outline-none min-h-[300px] max-h-[600px] overflow-y-auto",
+          "prose max-w-none p-4 focus:outline-none min-h-[300px] max-h-[600px] overflow-y-auto flex-1",
           "prose-headings:font-bold prose-h1:text-3xl prose-h2:text-2xl prose-h3:text-xl",
           "prose-p:my-2 prose-a:text-primary prose-blockquote:border-l-4 prose-blockquote:border-primary/30 prose-blockquote:pl-4 prose-blockquote:py-0.5 prose-blockquote:italic",
           "prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:rounded-md prose-code:before:content-none prose-code:after:content-none",

@@ -62,7 +62,7 @@ const AssetGrid: React.FC<AssetGridProps> = ({
 
   return (
     <div className="space-y-2">
-      <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2">
+      <div className="grid grid-cols-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-2">
         {filteredAssets.map((asset) => (
           <Card 
             key={asset.id} 
@@ -98,12 +98,12 @@ const AssetGrid: React.FC<AssetGridProps> = ({
               <h3 className="font-medium text-sm truncate">
                 {asset.title || asset.originalName}
               </h3>
-              <p className="text-xs text-gray-500 truncate">
+              {/* <p className="text-xs text-gray-500 truncate">
                 {new Date(asset.createdAt).toLocaleDateString()}
-              </p>
+              </p> */}
             </CardContent>
             
-            <CardFooter className="p-2 pt-0 flex flex-wrap gap-1">
+            {/* <CardFooter className="p-2 pt-0 flex flex-wrap gap-1">
               {Array.isArray(asset.tags) && asset.tags.length > 0 && 
                 asset.tags.slice(0, 1).map((tag: string, index: number) => (
                   <Badge key={index} variant="secondary" className="text-xs px-1 py-0">
@@ -116,7 +116,7 @@ const AssetGrid: React.FC<AssetGridProps> = ({
                   +{asset.tags.length - 1}
                 </Badge>
               )}
-            </CardFooter>
+            </CardFooter> */}
           </Card>
         ))}
       </div>

@@ -6,8 +6,8 @@ import { Button } from "./button";
 import { Badge } from "./badge";
 import { useToast } from "@/hooks/use-toast";
 import { Bell, CheckCheck, RefreshCw, ExternalLink } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
 import { apiRequest } from "@/lib/queryClient";
+import { getFormatDistanceToNow } from "@/utils/distanceToNow";
 
 // Define Notification type based on the database schema
 interface Notification {
@@ -216,9 +216,7 @@ const NotificationsList: React.FC = () => {
               <div className="flex justify-between items-center mt-2">
                 <div className="text-xs text-gray-400 flex items-center">
                   <span>
-                    {formatDistanceToNow(new Date(notification.createdAt), {
-                      addSuffix: true,
-                    })}
+                    {getFormatDistanceToNow(notification.createdAt)}
                   </span>
                   {notification.read && (
                     <span className="text-green-500 text-xs ml-2">Read</span>

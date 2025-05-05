@@ -165,9 +165,7 @@ const AddAuthor: React.FC = () => {
                             {...field} 
                           />
                         </FormControl>
-                        <FormDescription>
-                          Temporary password - the author can change this after logging in
-                        </FormDescription>
+                        
                         <FormMessage />
                       </FormItem>
                     )}

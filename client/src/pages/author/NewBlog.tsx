@@ -206,7 +206,7 @@ const NewBlogPage: React.FC = () => {
       const formattedData = {
         ...data,
         tags: data.customTags, // Send as plain string array for the server to process
-        published: data.status === ArticleStatus.PUBLISHED,
+        published: (data.status === ArticleStatus.PUBLISHED).toString(),
       };
 
       // Remove customTags as it's not in the API schema
@@ -292,7 +292,7 @@ const NewBlogPage: React.FC = () => {
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)}>
                 <Tabs defaultValue="content" className="space-y-4">
-                  <TabsList className="mt-2 px-4">
+                  <TabsList className="mt-2 mx-4">
                     <TabsTrigger value="content">
                       <Layout className="w-4 h-4 mr-2" />
                       Content
