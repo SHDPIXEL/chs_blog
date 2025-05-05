@@ -12,7 +12,7 @@ const connectionString = `mysql://${process.env.MYSQL_USER}:${process.env.MYSQL_
 export default defineConfig({
   out: "./mysql-migrations",
   schema: "./shared/schema.ts",
-  dialect: "mysql2",
+  dialect: "mysql",
   dbCredentials: {
     uri: connectionString,
   },
