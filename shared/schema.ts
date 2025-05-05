@@ -62,7 +62,7 @@ export const assets = pgTable("assets", {
   url: text("url",{ length: 512 }).notNull(),
   mimetype: text("mimetype",{ length: 512 }).notNull(),
   size: integer("size").notNull(),
-  userId: integer("user_id").unsigned().references(() => users.id).notNull(),
+  userId: integer("user_id", { unsigned: true }).references(() => users.id).notNull(),
   title: text("title",{ length: 512 }),
   description: text("description",{ length: 512 }),
   tags: jsonb("tags").default([]),
@@ -94,7 +94,7 @@ export const articles = pgTable("articles", {
   slug: longtext("slug",{ length: 512 }).notNull(),
   content: longtext("content").notNull(),
   excerpt: longtext("excerpt"),
-  authorId: integer("author_id").unsigned().references(() => users.id).notNull(),
+  authorId: integer("author_id", { unsigned: true }).references(() => users.id).notNull(),
   status: text("status", { enum: [ArticleStatus.DRAFT, ArticleStatus.REVIEW, ArticleStatus.PUBLISHED],length: 20 })
     .default(ArticleStatus.DRAFT)
     .notNull(),
@@ -115,7 +115,7 @@ export const articles = pgTable("articles", {
   
   // Review and approval fields
   reviewRemarks: text("review_remarks",{ length: 512 }),
-  reviewedBy: integer("reviewed_by").unsigned().references(() => users.id),
+  reviewedBy: integer("reviewed_by", { unsigned: true }).references(() => users.id),
   reviewedAt: timestamp("reviewed_at"),
   
   createdAt: timestamp("created_at", { mode: "date", fsp: 3 }).default(new Date()).notNull(),
@@ -125,8 +125,8 @@ export const articles = pgTable("articles", {
 
 // Article-Category relation (many-to-many)
 export const articleCategories = pgTable("article_categories", {
-  articleId: integer("article_id").unsigned().references(() => articles.id).notNull(), // <-- add `.unsigned()`
-  categoryId: integer("category_id").unsigned().references(() => categories.id).notNull(), // optional, but recommended too
+  articleId: integer("article_id", { unsigned: true }).references(() => articles.id).notNull(), 
+  categoryId: integer("category_id", { unsigned: true }).references(() => categories.id).notNull(),
 }, (t) => ({
   pk: primaryKey({ columns: [t.articleId, t.categoryId] }),
 }));
@@ -153,7 +153,7 @@ export const comments = pgTable("comments", {
   content: longtext("content").notNull(),
   authorName: text("author_name",{ length: 512 }).notNull(),
   authorEmail: text("author_email",{ length: 512 }).notNull(),
-  articleId: integer("article_id").unsigned().references(() => articles.id).notNull(),
+  articleId: integer("article_id", { unsigned: true }).references(() => articles.id).notNull(),
   parentId: integer("parent_id").references((): any => comments.id), // For nested replies
   replyCount: integer("reply_count").default(0).notNull(), // Store count of replies to this comment
   isApproved: text("is_approved",{ length: 512 }).default('true').notNull(),
