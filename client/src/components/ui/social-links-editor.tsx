@@ -135,7 +135,7 @@ const SocialLinksEditor: React.FC<SocialLinksEditorProps> = ({ value, onChange }
       <div className="flex items-center justify-between">
         <Label>Social Links</Label>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
+{/*           <DialogTrigger asChild>
             <Button 
               variant="outline" 
               size="sm" 
@@ -145,7 +145,7 @@ const SocialLinksEditor: React.FC<SocialLinksEditorProps> = ({ value, onChange }
               <PlusCircleIcon className="h-4 w-4 mr-2" />
               Add Link
             </Button>
-          </DialogTrigger>
+          </DialogTrigger> */}
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Add Social Link</DialogTitle>
