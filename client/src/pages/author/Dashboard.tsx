@@ -47,7 +47,7 @@ const AuthorDashboard: React.FC = () => {
           onButtonClick={handleNewBlog}
         />
 
-        <div className="max-w-7xl ">
+        <div className="max-w-full ">
           <div className="py-4">
             {/* Dashboard content */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
