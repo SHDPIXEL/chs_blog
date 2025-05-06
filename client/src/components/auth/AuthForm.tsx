@@ -30,14 +30,14 @@ const AuthForm: React.FC = () => {
           <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="login">Log In</TabsTrigger>
-              <TabsTrigger value="register">Register</TabsTrigger>
+{/*               <TabsTrigger value="register">Register</TabsTrigger> */}
             </TabsList>
             <TabsContent value="login">
               <LoginForm />
             </TabsContent>
-            <TabsContent value="register">
+{/*             <TabsContent value="register">
               <RegisterForm onSuccess={() => setActiveTab('login')} />
-            </TabsContent>
+            </TabsContent> */}
           </Tabs>
         </div>
       </div>
