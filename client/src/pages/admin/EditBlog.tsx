@@ -470,7 +470,7 @@ const AdminEditBlogPage: React.FC = () => {
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)}>
                 <Tabs defaultValue="content" className="space-y-4">
-                  <TabsList className="mt-2 px-4">
+                  <TabsList className="mt-2 mx-4">
                     <TabsTrigger value="content">
                       <Layout className="w-4 h-4 mr-2" />
                       Content
@@ -1181,7 +1181,7 @@ const AdminEditBlogPage: React.FC = () => {
                 </Tabs>
 
                 <CardFooter className="flex justify-between border-t px-6 py-4 mt-4">
-                  <div className="flex gap-2">
+{/*                   <div className="flex gap-2">
                     <Button
                       variant="outline"
                       type="button"
@@ -1215,9 +1215,9 @@ const AdminEditBlogPage: React.FC = () => {
                         </AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
-                  </div>
+                  </div> */}
                   <div className="flex gap-2">
-                    {article.article.status === "published" && (
+{/*                     {article.article.status === "published" && (
                       <Button
                         type="button"
                         variant="outline"
@@ -1226,7 +1226,7 @@ const AdminEditBlogPage: React.FC = () => {
                         <Eye className="h-4 w-4 mr-2" />
                         View Article
                       </Button>
-                    )}
+                    )} */}
                     <Button
                       type="button"
                       variant="outline"
