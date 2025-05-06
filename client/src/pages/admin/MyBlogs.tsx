@@ -344,15 +344,15 @@ const AdminMyBlogs: React.FC = () => {
                                     <Eye className="mr-2 h-4 w-4" /> View Published
                                   </DropdownMenuItem>
                                 )}
-                                <DropdownMenuItem
+{/*                                 <DropdownMenuItem
                                   onClick={() =>
                                     navigate(`/admin/blogs/${blog.id}`)
                                   }
                                 >
                                   <Pencil className="mr-2 h-4 w-4" /> Edit
-                                </DropdownMenuItem>
+                                </DropdownMenuItem> */}
                                 <DropdownMenuSeparator />
-                                {!blog.published ? (
+{/*                                 {!blog.published ? (
                                   <DropdownMenuItem
                                     onClick={() =>
                                       updateStatusMutation.mutate({
@@ -397,7 +397,7 @@ const AdminMyBlogs: React.FC = () => {
                                   className="text-destructive focus:text-destructive"
                                 >
                                   <Trash2 className="mr-2 h-4 w-4" /> Delete
-                                </DropdownMenuItem>
+                                </DropdownMenuItem> */}
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </TableCell>
