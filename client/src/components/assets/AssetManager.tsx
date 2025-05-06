@@ -174,7 +174,7 @@ const AssetManager: React.FC = () => {
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && closeAssetManager()}>
-      <DialogContent className="sm:max-w-4xl max-h-[90vh] h-[90vh] flex flex-col overflow-hidden p-0">
+      <DialogContent className="sm:max-w-4xl max-h-[90vh] h-[90vh] flex flex-col overflow-y-auto p-0">
         <DialogHeader className="px-6 pt-6 pb-2">
           <DialogTitle>Asset Manager</DialogTitle>
           <DialogDescription>
