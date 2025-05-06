@@ -682,7 +682,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (!req.user?.id) {
           return res.status(401).json({ message: "Authentication required" });
         }
-
+        console.error(req.body);
         // Check if extended data is present (categories, tags, etc.)
         if (
           req.body.categoryIds ||
