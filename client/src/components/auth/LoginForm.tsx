@@ -119,11 +119,11 @@ const LoginForm: React.FC = () => {
               </FormItem>
             )}
           />
-          <div className="text-sm">
+{/*           <div className="text-sm">
             <a href="#" className="font-medium text-primary hover:text-primary/80">
               Forgot your password?
             </a>
-          </div>
+          </div> */}
         </div>
 
         {auth.error && (
