@@ -296,7 +296,7 @@ const AdminDashboard: React.FC = () => {
           </Card>
 
           {/* Post Status Chart */}
-{/*           <Card>
+          <Card>
             <CardHeader>
               <CardTitle>Posts by Status</CardTitle>
               <CardDescription>
@@ -334,10 +334,10 @@ const AdminDashboard: React.FC = () => {
                 </ResponsiveContainer>
               </div>
             </CardContent>
-          </Card> */}
+          </Card>
 
           {/* Popular Categories Chart */}
-{/*           <Card>
+          <Card>
             <CardHeader>
               <CardTitle>Popular Categories</CardTitle>
               <CardDescription>
@@ -361,7 +361,7 @@ const AdminDashboard: React.FC = () => {
               </div>
             </CardContent>
           </Card>
-        </div> */}
+        </div>
 
         {/* Recent Activity */}
         <Card>
